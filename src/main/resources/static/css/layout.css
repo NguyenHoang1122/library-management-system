@@ -1,0 +1,61 @@
+:root {
+    --waka-bg: #121212;
+    --waka-green: #14b4a0;
+    --waka-gray: #a0a0a0;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: #000;
+    color: white;
+    display: flex;
+    flex-direction: column; /* Xếp các thành phần theo chiều dọc */
+}
+
+main, .content-wrapper {
+    flex: 1 0 auto; /* Tự động giãn để đẩy footer xuống đáy */
+}
+.footer-waka {
+    flex-shrink: 0; /* Không cho phép footer bị co lại */
+    background-color: var(--waka-bg);
+}
+
+.logo-waka {
+    color: var(--waka-green) !important;
+    font-weight: 800;
+    font-size: 1.8rem;
+    text-decoration: none;
+}
+
+.nav-link {
+    color: white !important;
+    font-size: 0.9rem;
+}
+
+.nav-link:hover {
+    color: var(--waka-green) !important;
+}
+
+.btn-waka-green {
+    background-color: var(--waka-green);
+    color: white;
+    border: none;
+}
+
+.btn-waka-green:hover {
+    background-color: #119685;
+    color: white;
+}
+.footer-links a {
+    text-decoration: none;
+    color: var(--waka-gray);
+    font-size: 0.85rem;
+    transition: 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--waka-green);
+}

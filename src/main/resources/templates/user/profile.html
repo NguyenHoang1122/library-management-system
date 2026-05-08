@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Cập nhật Profile</title>
+</head>
+<body>
+<h1>Cập nhật Thông Tin Cá Nhân</h1>
+<form th:action="@{/user/profile/update}" th:object="${userDTO}" method="post" enctype="multipart/form-data">
+    <input type="hidden" th:field="*{userName}" />
+    <label>Ảnh Đại Diện Hiện Tại:</label>
+    <img th:src="${user.image}" alt="Avatar" width="100" th:if="${user.image}" />
+    <br>
+    <label>Chọn Ảnh Mới :</label>
+    <input type="file" name="imageFile" accept="image/*" />
+    <br>
+    <label>Họ Tên :</label>
+    <input type="text" th:field="*{fullName}" />
+    <br>
+    <label>Email :</label>
+    <input type="email" th:field="*{email}" />
+    <br>
+    <label>Số Điện Thoại :</label>
+    <input type="text" th:field="*{phoneNumber}" />
+    <br>
+    <button type="submit">Cập Nhật</button>
+</form>
+<div th:if="${message}" th:text="${message}" style="color: green;"></div>
+<div th:if="${error}" th:text="${error}" style="color: red;"></div>
+</body>
+</html>

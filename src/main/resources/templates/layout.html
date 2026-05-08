@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="header_head">
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+</head>
+<body>
+
+<header th:fragment="header" class="header-waka sticky-top">
+    <div class="top-banner w-100">
+        <a href="#">
+            <img th:src="@{/uploads/anh-header.jpg}" alt="Sách Số 360 Banner" class="img-fluid w-100" style="display: block;">
+        </a>
+    </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+        <div class="container">
+            <a class="navbar-brand logo-waka" th:href="@{/}">Sách Số 360</a>
+            <div class="collapse navbar-collapse" id="360Nav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="#">Tu Tiên</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Trùng sinh</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Tiểu thuyết</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Truyện tranh</a></li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="#" class="text-white"><i class="fas fa-search"></i></a>
+
+                    <div sec:authorize="isAnonymous()" class="d-flex align-items-center gap-3">
+                        <a th:href="@{/register}" class="text-white text-decoration-none small">Đăng ký</a>
+                        <a th:href="@{/login}" class="btn btn-waka-green btn-sm rounded-pill px-4">Đăng nhập</a>
+                    </div>
+
+                    <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center text-white"
+                               href="#" role="button" data-bs-toggle="dropdown" style="text-decoration: none;">
+                                <img th:src="${#authentication.principal.username != null ?
+                         'https://ui-avatars.com/api/?name=' + #authentication.principal.username + '&background=random'
+                         : 'https://via.placeholder.com/30'}"
+                                     alt="Avatar" class="rounded-circle me-2"
+                                     style="width:30px; height:30px; object-fit: cover;">
+                                <span th:text="${#authentication.principal.username ?: 'Thành viên'}" class="text-white">User</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                                <li><a class="dropdown-item" th:href="@{/profile}">Trang cá nhân</a></li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/dashboard}">Dashboard</a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form th:action="@{/logout}" method="post" class="m-0">
+                                        <button type="submit" class="dropdown-item text-danger">Đăng xuất</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<footer th:fragment="footer" class="footer-waka text-secondary pt-5 pb-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <h2 class="logo-waka mb-3">Sách Số 360</h2>
+                <p class="text-light small">Công ty cổ phần sách điện tử Sách Số 360</p>
+                <div class="contact-info small mb-4">
+                    <p class="mb-1"><i class="fas fa-phone me-2"></i> 0999999999</p>
+                    <p><i class="fas fa-envelope me-2"></i> support@sachso360.vn</p>
+                </div>
+                <div class="d-flex gap-3">
+                    <img th:src="@{/uploads/code-bank.jpg}" alt="QR" class="p-1 bg-white" width="90">
+                    <div class="d-flex flex-column gap-2">
+                        <img th:src="@{/uploads/app-store.png}" width="110" alt="App Store">
+                        <img th:src="@{/uploads/google-play.png}" width="110" alt="Google Play">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-md-4 mb-4">
+                <h6 class="text-white mb-3 fw-bold">Về chúng tôi</h6>
+                <ul class="list-unstyled footer-links">
+                    <li class="mb-2"><a href="#">Giới thiệu</a></li>
+                    <li class="mb-2"><a href="#">Tuyển dụng</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-3 col-md-4 mb-4">
+                <h6 class="text-white mb-3 fw-bold">Thông tin hữu ích</h6>
+                <ul class="list-unstyled footer-links">
+                    <li class="mb-2"><a href="#">Thỏa thuận sử dụng</a></li>
+                    <li class="mb-2"><a href="#">Quy định riêng tư</a></li>
+                </ul>
+            </div>
+
+            <div class="col-lg-3 col-md-4 text-lg-end text-start">
+                <div class="d-flex flex-column align-items-lg-end gap-3">
+                    <img th:src="@{/uploads/bo-cong-thuong-shop.png}" width="140" alt="Bộ Công Thương">
+                    <img th:src="@{/uploads/bo-cong-thuong.png}" width="140" alt="Bộ Công Thương">
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
