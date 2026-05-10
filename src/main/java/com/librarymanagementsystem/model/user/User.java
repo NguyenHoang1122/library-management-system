@@ -43,6 +43,7 @@ public class User {
     private UserStatus userStatus;
 
     @CreatedDate
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createDate;
 
     @LastModifiedDate

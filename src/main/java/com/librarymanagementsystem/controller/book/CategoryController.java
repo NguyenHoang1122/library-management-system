@@ -1,4 +1,4 @@
-package com.librarymanagementsystem.controller;
+package com.librarymanagementsystem.controller.book;
 
 import com.librarymanagementsystem.model.book.Category;
 import com.librarymanagementsystem.service.CategoryService;

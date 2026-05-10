@@ -19,8 +19,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class UserController {
     private final UserService userService;
 
-    // Hiển thị form cập nhật profile (chỉ user hiện tại)
     @GetMapping("/profile")
+    public String showUserDetail(Authentication authentication, Model model) {
+        String userName = authentication.getName();
+        User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+        model.addAttribute("user", user);
+        return "user/user-detail";
+    }
+
+    @GetMapping("/profile/edit")
     public String showProfileForm(Authentication authentication, Model model) {
         String userName = authentication.getName();
         User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
@@ -32,7 +39,7 @@ public class UserController {
         userDTO.setAddress(user.getAddress());
         model.addAttribute("userDTO", userDTO);
         model.addAttribute("user", user);
-        return "user/profile";
+        return "user/edit-profile";
     }
 
     @PostMapping("/profile/update")

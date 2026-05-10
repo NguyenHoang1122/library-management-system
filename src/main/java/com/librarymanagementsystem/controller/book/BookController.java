@@ -1,8 +1,10 @@
-package com.librarymanagementsystem.controller;
+package com.librarymanagementsystem.controller.book;
 
 import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
+import com.librarymanagementsystem.service.AuthorService;
 import com.librarymanagementsystem.service.BookService;
+import com.librarymanagementsystem.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -15,6 +17,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 public class BookController {
     private final BookService bookService;
+    private final CategoryService categoryService;
+    private final AuthorService authorService;
 
 
     @GetMapping
@@ -37,7 +41,8 @@ public class BookController {
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("bookDTO", new BookDTO());
-        // Thêm danh sách categories và authors nếu cần
+        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("authors", authorService.getAllAuthors());
         return "book/book-form";
     }
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
@@ -65,6 +70,8 @@ public class BookController {
         if (book.getCategory() != null) bookDTO.setCategoryId(book.getCategory().getId());
         if (book.getAuthor() != null) bookDTO.setAuthorId(book.getAuthor().getId());
         model.addAttribute("bookDTO", bookDTO);
+        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("authors", authorService.getAllAuthors());
         return "book/book-form";
     }
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
