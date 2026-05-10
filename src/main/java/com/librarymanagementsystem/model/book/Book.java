@@ -2,17 +2,17 @@ package com.librarymanagementsystem.model.book;
 
 import com.librarymanagementsystem.model.user.Author;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "books")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Book {
@@ -30,7 +30,7 @@ public class Book {
     @Column(length = 500)
     private String image;
 
-    private LocalDateTime publishYear;
+    private LocalDate publishYear;
 
     @CreatedDate
     private LocalDateTime createdDate;

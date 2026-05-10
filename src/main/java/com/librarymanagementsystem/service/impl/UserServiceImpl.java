@@ -50,8 +50,10 @@ public class UserServiceImpl implements UserService {
         Role userRole = roleRepository.findByRoleName(RoleStatus.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Role không tồn tại"));
         user.setRole(userRole);
+
         user.setUserStatus(UserStatus.ACTIVE);
 
+        user.setCreateDate(LocalDateTime.now());
         return userRepository.save(user);
     }
 
