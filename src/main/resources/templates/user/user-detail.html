@@ -32,7 +32,7 @@
 <main class="container-fluid my-5 px-4">
     <div class="row">
         <div class="col-md-3 col-lg-2 mb-4" sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')">
-            <div th:replace="~{admin/dashboard :: admin_sidebar(activePage='profile')}"></div>
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='profile')}"></div>
         </div>
 
         <!-- Nội dung chính -->
@@ -44,7 +44,7 @@
 
                 <div class="card-body p-4">
                     <div class="row">
-                        <!-- Phần bên trái: Ảnh đại diện -->
+                        <!--Ảnh đại diện -->
                         <div class="col-md-4 text-center border-end">
                             <div class="mb-3">
                                 <img th:src="${user.image != null ? user.image : 'https://via.placeholder.com/150'}"
@@ -53,7 +53,7 @@
                             </div>
                         </div>
 
-                        <!-- Phần bên phải: Thông tin chi tiết -->
+                        <!--Thông tin chi tiết -->
                         <div class="col-md-8 ps-md-4">
                             <div class="row">
                                 <div class="col-md-6 mb-3">

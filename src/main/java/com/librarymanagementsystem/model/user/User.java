@@ -22,8 +22,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
-@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@Where(clause = "delete_at IS NULL")
+@SQLDelete(sql = "UPDATE users SET delete_at = CURRENT_TIMESTAMP WHERE id = ?")
+//@Where(clause = "delete_at IS NULL")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,7 +49,7 @@ public class User {
     @LastModifiedDate
     private LocalDateTime updateDate;
 
-
+    @Column(name = "delete_at")
     private LocalDateTime deleteAt;
 
     @ManyToOne(fetch = FetchType.EAGER)

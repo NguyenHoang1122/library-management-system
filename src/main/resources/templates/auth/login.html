@@ -63,7 +63,6 @@
 <main class="container">
     <div class="login-container">
         <h2>Đăng nhập</h2>
-        <div th:if="${error}" class="error" th:text="'Tên đăng nhập hoặc mật khẩu không đúng'"></div>
 
         <form th:action="@{/perform_login}" method="post">
             <div class="form-group">
@@ -72,6 +71,7 @@
             <div class="form-group">
                 <input type="password" name="password" placeholder="Mật khẩu" required>
             </div>
+            <div th:if="${error}" class="error" th:text="'Tên đăng nhập hoặc mật khẩu không đúng'"></div>
             <button type="submit" class="btn-login">Đăng nhập</button>
         </form>
 
