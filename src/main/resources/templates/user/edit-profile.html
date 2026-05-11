@@ -12,10 +12,25 @@
             border-radius: 50%;
             border: 3px solid #0d6efd;
             padding: 3px;
+            transition: all 0.3s ease; /* Thêm hiệu ứng mượt */
         }
+
+        .avatar-preview:hover {
+            box-shadow: 0 0 20px rgba(13, 110, 253, 0.5);
+        }
+
         .profile-card {
             border: none;
             border-radius: 15px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -25,7 +40,7 @@
 <main class="container-fluid my-5 px-4">
     <div class="row">
         <div class="col-md-3 col-lg-2 mb-4" sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')">
-            <div th:replace="~{admin/dashboard :: admin_sidebar(activePage='profile')}"></div>
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='profile')}"></div>
         </div>
 
         <!-- CỘT 2: NỘI DUNG PROFILE -->
@@ -47,19 +62,27 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
 
-                    <form th:action="@{/user/profile/update}" th:object="${userDTO}" method="post" enctype="multipart/form-data">
-                        <input type="hidden" th:field="*{userName}" />
+                    <form th:action="@{/user/profile/update}" th:object="${userDTO}" method="post"
+                          enctype="multipart/form-data">
+                        <input type="hidden" th:field="*{userName}"/>
 
                         <div class="row">
                             <!-- Phần bên trái: Ảnh đại diện -->
                             <div class="col-md-4 text-center border-end">
                                 <div class="mb-3">
                                     <label class="d-block fw-bold mb-2">Ảnh đại diện</label>
-                                    <img th:src="${user.image != null ? user.image : '/images/default-avatar.png'}"
-                                         alt="Avatar" class="avatar-preview mb-3 shadow-sm" />
+                                    <img id="previewImage"
+                                         th:src="${user.image != null ? user.image : '/images/default-avatar.png'}"
+                                         alt="Avatar" class="avatar-preview mb-3 shadow-sm"/>
                                     <div class="px-3">
-                                        <input type="file" name="imageFile" id="imageFile" class="form-control form-control-sm" accept="image/*" />
-                                        <small class="text-muted d-block mt-2">Chọn file ảnh mới để thay đổi</small>
+                                        <div class="file-input-wrapper">
+                                            <input type="file" name="imageFile" id="imageFile"
+                                                   class="form-control form-control-sm" accept="image/*"/>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>Chọn file ảnh mới để thay đổi
+                                        </small>
+                                        <small id="fileName" class="text-success d-block mt-2"></small>
                                     </div>
                                 </div>
                             </div>
@@ -95,6 +118,13 @@
                                             <input type="text" th:field="*{phoneNumber}" class="form-control">
                                         </div>
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Địa chỉ:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                                            <input type="text" th:field="*{address}" class="form-control">
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">
@@ -114,5 +144,33 @@
 
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('imageFile').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (file) {
+            if (file.type.startsWith('image/')) {
+                const maxSize = 10 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    alert('Kích thước file quá lớn! Tối đa 10MB');
+                    document.getElementById('imageFile').value = '';
+                    document.getElementById('fileName').textContent = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const previewImage = document.getElementById('previewImage');
+                    previewImage.src = e.target.result;
+                    const fileName = document.getElementById('fileName');
+                    fileName.textContent = '✓ Đã chọn: ' + file.name;
+                    fileName.style.color = '#28a745';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Vui lòng chọn một file ảnh!');
+                document.getElementById('imageFile').value = '';
+                document.getElementById('fileName').textContent = '';
+            }
+        }
+    });</script>
 </body>
 </html>

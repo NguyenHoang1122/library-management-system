@@ -11,7 +11,8 @@
 <header th:fragment="header" class="header-waka sticky-top">
     <div class="top-banner w-100">
         <a href="#">
-            <img th:src="@{/uploads/anh-header.jpg}" alt="Sách Số 360 Banner" class="img-fluid w-100" style="display: block;">
+            <img th:src="@{/image/anh-header.jpg}" alt="Sách Số 360 Banner" class="img-fluid w-100"
+                 style="display: block;">
         </a>
     </div>
     <nav class="navbar navbar-expand-lg navbar-dark bg-black">
@@ -34,27 +35,33 @@
 
                     <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
                         <div class="dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center text-white"
-                               href="#" role="button" data-bs-toggle="dropdown" style="text-decoration: none;">
-                                <img th:src="${#authentication.principal.username != null ?
-                         'https://ui-avatars.com/api/?name=' + #authentication.principal.username + '&background=random'
-                         : 'https://via.placeholder.com/30'}"
-                                     alt="Avatar" class="rounded-circle me-2"
-                                     style="width:30px; height:30px; object-fit: cover;">
-                                <span th:text="${#authentication.principal.username ?: 'Thành viên'}" class="text-white">User</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
-                                <li><a class="dropdown-item" th:href="@{/user/profile}">Trang cá nhân</a></li>
-                                <li>
-                                    <a class="dropdown-item" th:href="@{/books}">Dashboard</a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form th:action="@{/logout}" method="post" class="m-0">
-                                        <button type="submit" class="dropdown-item text-danger">Đăng xuất</button>
-                                    </form>
-                                </li>
-                            </ul>
+                            <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
+                                <div class="dropdown"><a
+                                        class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
+                                        role="button" data-bs-toggle="dropdown" style="text-decoration: none;"> <img
+                                        th:src="${currentUser != null and currentUser.image != null ? currentUser.image : 'https://ui-avatars.com/api/?name=' + #authentication.principal.username + '&background=random'}"
+                                        alt="Avatar" class="rounded-circle me-2"
+                                        style="width:30px; height:30px; object-fit: cover;"> <span
+                                        th:text="${#authentication.principal.username ?: 'Thành viên'}"
+                                        class="text-white">User</span>
+                                </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                                        <li><a class="dropdown-item" th:href="@{/user/profile}">Trang cá nhân</a></li>
+                                        <li>
+                                            <a class="dropdown-item" th:href="@{/books}">Dashboard</a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <form th:action="@{/logout}" method="post" class="m-0">
+                                                <button type="submit" class="dropdown-item text-danger">Đăng xuất
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -94,10 +101,10 @@
             <div class="col-lg-3 col-md-6 mb-4">
                 <h6 class="text-white mb-3 fw-bold">Tải ứng dụng</h6>
                 <div class="d-flex gap-3">
-                    <img th:src="@{/uploads/code-bank.jpg}" alt="QR" class="p-1 bg-white" width="80" height="80">
+                    <img th:src="@{/image/code-bank.jpg}" alt="QR" class="p-1 bg-white" width="80" height="80">
                     <div class="d-flex flex-column gap-2">
-                        <img th:src="@{/uploads/app-store.png}" width="100" alt="App Store">
-                        <img th:src="@{/uploads/google-play.png}" width="100" alt="Google Play">
+                        <img th:src="@{/image/app-store.png}" width="100" alt="App Store">
+                        <img th:src="@{/image/google-play.png}" width="100" alt="Google Play">
                     </div>
                 </div>
             </div>
@@ -105,8 +112,8 @@
             <div class="col-lg-2 col-md-6 mb-4 text-lg-end">
                 <h6 class="text-white mb-3 fw-bold opacity-0 d-none d-lg-block">Chứng nhận</h6>
                 <div class="d-flex flex-column align-items-lg-end gap-2">
-                    <img th:src="@{/uploads/bo-cong-thuong-shop.png}" width="120" alt="Bộ Công Thương">
-                    <img th:src="@{/uploads/bo-cong-thuong.png}" width="120" alt="Bộ Công Thương">
+                    <img th:src="@{/image/bo-cong-thuong-shop.png}" width="120" alt="Bộ Công Thương">
+                    <img th:src="@{/image/bo-cong-thuong.png}" width="120" alt="Bộ Công Thương">
                 </div>
             </div>
         </div>

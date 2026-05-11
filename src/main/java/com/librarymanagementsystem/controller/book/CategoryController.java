@@ -18,19 +18,19 @@ public class CategoryController {
     @GetMapping
     public String listCategories(Model model) {
         model.addAttribute("categories", categoryService.getAllCategories());
-        return "categories";
+        return "book/categori/categories";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("category", new Category());
-        return "category-form";
+        return "book/categori/category-form";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/save")
-    public String saveCategory(@ModelAttribute Category category, RedirectAttributes redirectAttributes) {
+    public String saveCategory(@ModelAttribute("category") Category category, RedirectAttributes redirectAttributes) {
         try {
             categoryService.saveCategory(category);
             redirectAttributes.addFlashAttribute("message", "Thêm danh mục thành công");
@@ -42,14 +42,14 @@ public class CategoryController {
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
+    public String showEditForm(@PathVariable("id") Long id, Model model) {
         model.addAttribute("category", categoryService.getCategoryById(id).orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
-        return "category-form";
+        return "book/categori/category-form";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/update/{id}")
-    public String updateCategory(@PathVariable Long id, @ModelAttribute Category category, RedirectAttributes redirectAttributes) {
+    public String updateCategory(@PathVariable("id") Long id, @ModelAttribute("category") Category category, RedirectAttributes redirectAttributes) {
         try {
             categoryService.updateCategory(id, category);
             redirectAttributes.addFlashAttribute("message", "Cập nhật danh mục thành công");
@@ -61,7 +61,7 @@ public class CategoryController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/delete/{id}")
-    public String deleteCategory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteCategory(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         try {
             categoryService.deleteCategory(id);
             redirectAttributes.addFlashAttribute("message", "Xóa danh mục thành công");
