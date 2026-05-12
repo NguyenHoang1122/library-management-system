@@ -140,7 +140,7 @@ public class UserServiceImpl implements UserService {
         if (user.getRole().getRoleName() == RoleStatus.ROLE_ADMIN) {
             throw new RuntimeException("Không thể xóa tài khoản Admin");
         }
-
+        user.setUserStatus(UserStatus.BANNED);
         user.setDeleteAt(LocalDateTime.now());
         userRepository.save(user);
     }
@@ -149,7 +149,7 @@ public class UserServiceImpl implements UserService {
     public void restoreUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-
+        user.setUserStatus(UserStatus.ACTIVE);
         user.setDeleteAt(null);
         userRepository.save(user);
     }

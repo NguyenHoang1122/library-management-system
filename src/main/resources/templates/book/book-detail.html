@@ -1,30 +1,283 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Chi tiết sách</title>
     <div th:replace="~{layout :: header_head}"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .book-cover {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .book-info-section {
+            padding: 20px;
+            border-left: 4px solid #0d6efd;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .book-info-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .book-info-value {
+            color: #212529;
+            line-height: 1.6;
+        }
+        .wishlist-btn {
+            transition: all 0.3s ease;
+        }
+        .wishlist-btn.active {
+            color: #dc3545;
+        }
+        .description-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            line-height: 1.8;
+        }
+    </style>
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
-<main class="container mt-4">
-    <h2 th:text="'Chi tiết sách: ' + ${book.title}"></h2>
+
+<main class="container-fluid my-5 px-4">
     <div class="row">
-        <div class="col-md-4">
-            <img th:if="${book.image}" th:src="${book.image}" alt="Ảnh sách" class="img-fluid">
-            <p th:if="${!book.image}">Không có ảnh</p>
+        <!-- SIDEBAR -->
+        <div class="col-md-3 col-lg-2 mb-4">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='books')}"></div>
         </div>
-        <div class="col-md-8">
-            <p><strong>Mô tả:</strong> <span th:text="${book.description} ?: 'N/A'"></span></p>
-            <p><strong>ISBN:</strong> <span th:text="${book.isbn} ?: 'N/A'"></span></p>
-            <p><strong>Năm xuất bản:</strong> <span th:text="${book.publishYear} ?: 'N/A'"></span></p>
-            <p><strong>Tác giả:</strong> <span th:text="${book.author?.name} ?: 'N/A'"></span></p>
-            <p><strong>Danh mục:</strong> <span th:text="${book.category?.categoryName} ?: 'N/A'"></span></p>
-            <p><strong>Tổng số bản sao:</strong> <span th:text="${book.totalCopies}"></span></p>
-            <p><strong>Số bản sao khả dụng:</strong> <span th:text="${book.availableCopies}"></span></p>
+
+        <!-- BOOK DETAIL CONTENT -->
+        <div class="col-md-9 col-lg-10">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/books}">Danh sách sách</a></li>
+                    <li class="breadcrumb-item active" th:text="${book.title}"></li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <!-- Nút quay lại -->
+                    <div class="mb-3">
+                        <a th:href="@{/books}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                        </a>
+                    </div>
+
+                    <!-- Thông báo -->
+                    <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle me-2"></i> <span th:text="${message}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i> <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <div class="row">
+                        <!-- Hình ảnh sách -->
+                        <div class="col-md-4 mb-4">
+                            <div class="text-center">
+                                <img th:src="${book.image != null ? book.image : 'https://via.placeholder.com/250x350?text=Book+Cover'}"
+                                     alt="Book Cover" class="book-cover img-fluid" />
+                                <!-- Wishlist Button cho USER -->
+                                <div sec:authorize="hasRole('USER')" class="mt-4">
+                                    <button type="button" class="btn btn-lg btn-outline-danger wishlist-btn"
+                                            id="wishlistBtn"
+                                            th:attr="data-book-id=${book.id}">
+                                        <i class="bi bi-heart"></i> Thêm vào danh sách yêu thích
+                                    </button>
+                                </div>
+
+                                <!-- Action buttons cho ADMIN/LIBRARIAN -->
+                                <div sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')" class="mt-4">
+                                    <div class="btn-group" role="group" style="width: 100%;">
+                                        <a th:href="@{/books/edit/{id}(id=${book.id})}"
+                                           class="btn btn-warning" style="flex: 1;">
+                                            <i class="bi bi-pencil"></i> Chỉnh sửa
+                                        </a>
+                                        <a th:href="@{/books/delete/{id}(id=${book.id})}"
+                                           class="btn btn-danger" style="flex: 1;"
+                                           onclick="return confirm('Bạn có chắc muốn xóa?')">
+                                            <i class="bi bi-trash"></i> Xóa
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin sách -->
+                        <div class="col-md-8">
+                            <!-- Tiêu đề -->
+                            <h2 th:text="${book.title}" class="mb-4 text-primary"></h2>
+
+                            <!-- Tác giả -->
+                            <div class="book-info-section" th:if="${book.author != null}">
+                                <div class="book-info-label">
+                                    <i class="bi bi-person-fill"></i> Tác giả
+                                </div>
+                                <div class="book-info-value" th:text="${book.author.name}"></div>
+                            </div>
+
+                            <!-- ISBN -->
+                            <div class="book-info-section" th:if="${book.isbn != null}">
+                                <div class="book-info-label">
+                                    <i class="bi bi-qr-code"></i> ISBN
+                                </div>
+                                <div class="book-info-value" th:text="${book.isbn}"></div>
+                            </div>
+
+                            <!-- Năm xuất bản -->
+                            <div class="book-info-section" th:if="${book.publishYear != null}">
+                                <div class="book-info-label">
+                                    <i class="bi bi-calendar-event"></i> Năm xuất bản
+                                </div>
+                                <div class="book-info-value" th:text="${#temporals.format(book.publishYear, 'yyyy')}"></div>
+                            </div>
+
+                            <!-- Danh mục -->
+                            <div class="book-info-section" th:if="${book.categories != null and !book.categories.isEmpty()}">
+                                <div class="book-info-label">
+                                    <i class="bi bi-tag-fill"></i> Danh mục
+                                </div>
+                                <div class="book-info-value">
+                                    <span th:each="category : ${book.categories}" class="badge bg-info text-dark me-2 mb-2"
+                                          th:text="${category.categoryName}"></span>
+                                </div>
+                            </div>
+
+                            <!-- Mô tả -->
+                            <div class="book-info-section" th:if="${book.description != null}">
+                                <div class="book-info-label">
+                                    <i class="bi bi-file-text"></i> Mô tả
+                                </div>
+                                <div class="book-info-value description-box">
+                                    <p th:text="${book.description}"></p>
+                                </div>
+                            </div>
+
+                            <!-- Nút Mượn sách cho USER -->
+                            <div sec:authorize="hasRole('USER')" class="mt-5">
+                                <button type="button" class="btn btn-primary btn-lg w-100"
+                                        id="borrowBtn"
+                                        th:attr="data-book-id=${book.id}">
+                                    <i class="bi bi-book"></i> Gửi yêu cầu mượn sách
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <hr class="my-5">
+
+                    <!-- Thông tin thêm -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5 class="text-primary mb-3"><i class="bi bi-info-circle"></i> Thông tin khác</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Ngày tạo:</strong>
+                                        <span th:text="${book.createdDate != null ? #temporals.format(book.createdDate, 'dd/MM/yyyy HH:mm') : 'N/A'}"></span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Lần cập nhật cuối:</strong>
+                                        <span th:text="${book.updatedDate != null ? #temporals.format(book.updatedDate, 'dd/MM/yyyy HH:mm') : 'N/A'}"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <a th:href="@{/books}" class="btn btn-secondary">Quay lại danh sách</a>
 </main>
+
+<div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Wishlist functionality
+    const wishlistBtn = document.getElementById('wishlistBtn');
+    const borrowBtn = document.getElementById('borrowBtn');
+
+    if (wishlistBtn) {
+        const bookId = wishlistBtn.getAttribute('data-book-id');  // Lấy bookId từ data-book-id của wishlistBtn
+        wishlistBtn.addEventListener('click', function() {
+            addToWishlist(bookId);
+        });
+
+        // Check if book is in wishlist on page load
+        checkWishlistStatus(bookId);
+    }
+
+    if (borrowBtn) {
+        const bookId = borrowBtn.getAttribute('data-book-id');  // Lấy bookId từ data-book-id của borrowBtn
+        borrowBtn.addEventListener('click', function() {
+            borrowBook(bookId);
+        });
+    }
+
+    function addToWishlist(bookId) {
+        fetch(`/wishlist/add/${bookId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.added) {
+                        wishlistBtn.classList.add('active');
+                        wishlistBtn.innerHTML = '<i class="bi bi-heart-fill"></i> Đã thêm vào danh sách yêu thích';
+                    } else {
+                        wishlistBtn.classList.remove('active');
+                        wishlistBtn.innerHTML = '<i class="bi bi-heart"></i> Thêm vào danh sách yêu thích';
+                    }
+                    showAlert(data.message, 'success');
+                } else {
+                    showAlert(data.message, 'danger');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function checkWishlistStatus(bookId) {
+        fetch(`/wishlist/check/${bookId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.inWishlist) {
+                    wishlistBtn.classList.add('active');
+                    wishlistBtn.innerHTML = '<i class="bi bi-heart-fill"></i> Đã thêm vào danh sách yêu thích';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function borrowBook(bookId) {
+        window.location.href = `/borrow/request/${bookId}`;
+    }
+
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `             <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2></i>
+             ${message}             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+         `;
+        document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('.card-body').firstChild);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+</script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 package com.librarymanagementsystem.controller.book;
 
 import com.librarymanagementsystem.model.book.Book;
+import com.librarymanagementsystem.model.book.Category;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
 import com.librarymanagementsystem.service.AuthorService;
 import com.librarymanagementsystem.service.BookService;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/books")
@@ -28,11 +31,11 @@ public class BookController {
         } else {
             model.addAttribute("books", bookService.getAllBooks());
         }
-        return "book/books"; // Template: user/books.html
+        return "book/list";
     }
 
     @GetMapping("/{id}")
-    public String viewBook(@PathVariable Long id, Model model) {
+    public String viewBook(@PathVariable("id") Long id, Model model) {
         model.addAttribute("book", bookService.getBookById(id).orElseThrow(() -> new RuntimeException("Sách không tồn tại")));
         return "book/book-detail";
     }
@@ -66,9 +69,8 @@ public class BookController {
         bookDTO.setDescription(book.getDescription());
         bookDTO.setIsbn(book.getIsbn());
         bookDTO.setPublishYear(book.getPublishYear());
-        bookDTO.setTotalCopies(book.getTotalCopies());
-        if (book.getCategory() != null) bookDTO.setCategoryId(book.getCategory().getId());
-        if (book.getAuthor() != null) bookDTO.setAuthorId(book.getAuthor().getId());
+        if (book.getCategories() != null) bookDTO.setCategoryIds(book.getCategories().stream().map(Category::getId).collect(Collectors.toList()));
+        if (book.getAuthor() != null) bookDTO.setAuthorName(book.getAuthor().getName());
         model.addAttribute("bookDTO", bookDTO);
         model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("authors", authorService.getAllAuthors());

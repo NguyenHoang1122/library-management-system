@@ -11,7 +11,7 @@
     <div class="row">
         <!--SIDEBAR -->
         <div class="col-md-3 col-lg-2 mb-4">
-            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='categories')}"></div>
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='books')}"></div>
         </div>
 
         <!-- FORM -->
@@ -32,7 +32,7 @@
                                 <input type="text" th:field="*{title}" class="form-control" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="fw-bold">ISBN:</label>
+                                <label class="fw-bold">Mã sách:</label>
                                 <input type="text" th:field="*{isbn}" class="form-control" required>
                             </div>
                         </div>
@@ -48,10 +48,6 @@
                                 <input type="date" th:field="*{publishYear}" class="form-control">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="fw-bold">Tổng số bản sao:</label>
-                                <input type="number" th:field="*{totalCopies}" class="form-control" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
                                 <label class="fw-bold">Ảnh:</label>
                                 <input type="file" th:field="*{imageFile}" class="form-control" accept="image/*">
                             </div>
@@ -59,18 +55,23 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="fw-bold">Danh mục:</label>
-                                <select th:field="*{categoryId}" class="form-select">
-                                    <option value="">Chọn danh mục</option>
-                                    <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.categoryName}"></option>
-                                </select>
+                                <label class="fw-bold mb-2">Danh mục:</label>
+                                <div class="form-control" style="height: auto; min-height: 38px; overflow-y: auto; max-height: 150px; background-color: #f8f9fa;">
+                                    <div class="row px-2">
+                                        <div th:each="cat : ${categories}" class="form-check col-6">
+                                            <input class="form-check-input" type="checkbox"
+                                                   th:field="*{categoryIds}"
+                                                   th:value="${cat.id}"
+                                                   th:id="'cat-' + ${cat.id}">
+                                            <label class="form-check-label small" th:for="'cat-' + ${cat.id}" th:text="${cat.categoryName}"></label>
+                                        </div>
+                                    </div>
+                                    <div th:if="${#lists.isEmpty(categories)}" class="text-muted small">Không có danh mục</div>
+                                </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="fw-bold">Tác giả:</label>
-                                <select th:field="*{authorId}" class="form-select">
-                                    <option value="">Chọn tác giả</option>
-                                    <option th:each="auth : ${authors}" th:value="${auth.id}" th:text="${auth.name}"></option>
-                                </select>
+                                <input type="text" th:field="*{authorName}" class="form-control" placeholder="Nhập tên tác giả">
                             </div>
                         </div>
 

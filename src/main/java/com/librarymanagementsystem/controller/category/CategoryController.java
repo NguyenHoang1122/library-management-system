@@ -1,4 +1,4 @@
-package com.librarymanagementsystem.controller.book;
+package com.librarymanagementsystem.controller.category;
 
 import com.librarymanagementsystem.model.book.Category;
 import com.librarymanagementsystem.service.CategoryService;
@@ -18,14 +18,14 @@ public class CategoryController {
     @GetMapping
     public String listCategories(Model model) {
         model.addAttribute("categories", categoryService.getAllCategories());
-        return "book/categori/categories";
+        return "categori/list";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("category", new Category());
-        return "book/categori/category-form";
+        return "categori/category-form";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
@@ -44,7 +44,7 @@ public class CategoryController {
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable("id") Long id, Model model) {
         model.addAttribute("category", categoryService.getCategoryById(id).orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
-        return "book/categori/category-form";
+        return "categori/category-form";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")

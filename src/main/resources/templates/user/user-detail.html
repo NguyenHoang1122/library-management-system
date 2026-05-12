@@ -31,12 +31,11 @@
 
 <main class="container-fluid my-5 px-4">
     <div class="row">
-        <div class="col-md-3 col-lg-2 mb-4" sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')">
+        <div class="col-md-3 col-lg-2 mb-4">
             <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='profile')}"></div>
         </div>
-
         <!-- Nội dung chính -->
-        <div th:class="${#authorization.expression('hasAnyRole(''ADMIN'',''LIBRARIAN'')')} ? 'col-md-9 col-lg-10' : 'col-md-8 mx-auto'">
+        <div class="col-md-9 col-lg-10">
             <div class="card shadow profile-card">
                 <div class="card-header bg-primary text-white py-3">
                     <h4 class="mb-0"><i class="bi bi-person-bounding-box me-2"></i> Thông Tin Cá Nhân</h4>

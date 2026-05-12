@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -31,13 +32,9 @@ public class BookDTO {
 
     private LocalDate publishYear;
 
-    @NotNull(message = "Tổng số bản sao không được để trống")
-    @Positive(message = "Tổng số bản sao phải lớn hơn 0")
-    private Integer totalCopies;
-
     @NotNull(message = "Danh mục không được để trống")
-    private Long categoryId;
+    private List<Long> categoryIds;
 
-    @NotNull(message = "Tác giả không được để trống")
-    private Long authorId;
+    @NotBlank(message = "Tên tác giả không được để trống")
+    private String authorName;
 }
