@@ -5,6 +5,7 @@ import com.librarymanagementsystem.model.borrow.BorrowItem;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowRequestItem;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
+import com.librarymanagementsystem.model.borrow.dto.BorrowHistoryDTO;
 import com.librarymanagementsystem.model.borrow.status.RequestStatus;
 import com.librarymanagementsystem.model.borrow.status.TransactionStatus;
 import com.librarymanagementsystem.model.user.User;
@@ -21,9 +22,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -158,10 +161,24 @@ public class BorrowServiceImpl implements BorrowService {
     }
 
     @Override
-    public List<BorrowTransaction> getUserBorrowHistory(Long userId) {
+    public List<BorrowHistoryDTO> getUserBorrowHistory(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
-        return borrowTransactionRepository.findByUser(user);
+        List<BorrowTransaction> transactions = borrowTransactionRepository.findByUser(user);
+        return transactions.stream().map(this::mapToBorrowHistoryDTO).collect(Collectors.toList());
+    }
+
+    private BorrowHistoryDTO mapToBorrowHistoryDTO(BorrowTransaction transaction) {
+        List<BorrowItem> items = borrowItemRepository.findByTransaction(transaction);
+        String bookName = items.isEmpty() ? "Không xác định" : items.get(0).getBook().getTitle(); // Giả sử 1 sách/giao dịch
+        return new BorrowHistoryDTO(
+                transaction.getId(),
+                bookName,
+                transaction.getBorrowDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                transaction.getDueDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                transaction.getReturnDate() != null ? transaction.getReturnDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "Chưa trả",
+                transaction.getStatus().toString()
+        );
     }
 
     @Override
@@ -173,8 +190,10 @@ public class BorrowServiceImpl implements BorrowService {
     public void returnBorrowItems(Long transactionId, Long librarianId) {
         BorrowTransaction transaction = borrowTransactionRepository.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException("Giao dịch mượn không tồn tại"));
-        User librarian = userRepository.findById(librarianId)
-                .orElseThrow(() -> new RuntimeException("Thủ thư không tồn tại"));
+        User librarian = null;
+        if (librarianId != null) {
+            librarian = userRepository.findById(librarianId).orElseThrow(() -> new RuntimeException("Thủ thư không tồn tại"));
+        }
 
         if (transaction.getStatus() != TransactionStatus.BORROWED) {
             throw new RuntimeException("Giao dịch này không ở trạng thái đang mượn");
@@ -182,7 +201,7 @@ public class BorrowServiceImpl implements BorrowService {
 
         // Cập nhật thông tin trả
         transaction.setReturnDate(LocalDateTime.now());
-        transaction.setLibrarian(librarian);
+        if (librarian != null) transaction.setLibrarian(librarian);
 
         // Kiểm tra quá hạn
         if (transaction.getReturnDate().isAfter(transaction.getDueDate())) {
@@ -218,10 +237,11 @@ public class BorrowServiceImpl implements BorrowService {
     }
 
     @Override
-    public List<BorrowTransaction> getActiveBorrows(Long userId) {
+    public List<BorrowHistoryDTO> getActiveBorrows(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
-        return borrowTransactionRepository.findByUserAndStatus(user, TransactionStatus.BORROWED);
+        List<BorrowTransaction> transactions = borrowTransactionRepository.findByUserAndStatus(user, TransactionStatus.BORROWED);
+        return transactions.stream().map(this::mapToBorrowHistoryDTO).collect(Collectors.toList());
     }
 
     @Override

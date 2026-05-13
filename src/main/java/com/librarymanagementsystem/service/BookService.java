@@ -15,4 +15,5 @@ public interface BookService {
     List<Book> searchBooks(String title);
     List<Book> getBooksByCategory(Long categoryId);
     List<Book> getBooksByAuthor(Long authorId);
+    boolean isBookBorrowedByUser(Long bookId, Long userId);
 }

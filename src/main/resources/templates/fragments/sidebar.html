@@ -20,12 +20,12 @@
         <div class="list-group list-group-flush">
 
             <!-- ========== MENU CHUNG CHO TẤT CẢ ROLE ========== -->
-            <a th:href="@{/user/profile}"
-               class="list-group-item list-group-item-action d-flex align-items-center"
-               th:classappend="${activePage == 'profile' ? 'active' : ''}">
-                <i class="bi bi-person me-3"></i>
-                <span>Hồ sơ cá nhân</span>
-            </a>
+<!--            <a th:href="@{/user/profile}"-->
+<!--               class="list-group-item list-group-item-action d-flex align-items-center"-->
+<!--               th:classappend="${activePage == 'profile' ? 'active' : ''}">-->
+<!--                <i class="bi bi-person me-3"></i>-->
+<!--                <span>Hồ sơ cá nhân</span>-->
+<!--            </a>-->
 
             <!-- ========== MENU CHO ADMIN ========== -->
             <div sec:authorize="hasRole('ADMIN')">
@@ -40,14 +40,14 @@
                    class="list-group-item list-group-item-action d-flex align-items-center"
                    th:classappend="${activePage == 'categories' ? 'active' : ''}">
                     <i class="bi bi-collection me-3"></i>
-                    <span>Danh mục sách</span>
+                    <span>Danh mục truyện</span>
                 </a>
 
                 <a th:href="@{/books}"
                    class="list-group-item list-group-item-action d-flex align-items-center"
                    th:classappend="${activePage == 'books' ? 'active' : ''}">
                     <i class="bi bi-book me-3"></i>
-                    <span>Quản lý sách</span>
+                    <span>Quản lý truyện</span>
                 </a>
 
                 <a th:href="@{/user/trash}"
@@ -78,14 +78,14 @@
                    class="list-group-item list-group-item-action d-flex align-items-center"
                    th:classappend="${activePage == 'books' ? 'active' : ''}">
                     <i class="bi bi-book me-3"></i>
-                    <span>Quản lý sách</span>
+                    <span>Quản lý truyện</span>
                 </a>
 
                 <a th:href="@{/returns}"
                    class="list-group-item list-group-item-action d-flex align-items-center"
                    th:classappend="${activePage == 'returns' ? 'active' : ''}">
                     <i class="bi bi-arrow-counterclockwise me-3"></i>
-                    <span>Quản lý trả sách</span>
+                    <span>Quản lý trả truyện</span>
                 </a>
 
                 <a th:href="@{/members}"
@@ -98,18 +98,12 @@
 
             <!-- ========== MENU CHO USER ========== -->
             <div sec:authorize="hasRole('USER')">
-                <a th:href="@{/books}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'books' ? 'active' : ''}">
-                    <i class="bi bi-book me-3"></i>
-                    <span>Trang sách</span>
-                </a>
 
-                <a th:href="@{/borrow/history}"
+                <a th:href="@{/borrow/active}"
                    class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'myborrows' ? 'active' : ''}">
-                    <i class="bi bi-bookmark me-3"></i>
-                    <span>Lịch sử mượn sách</span>
+                   th:classappend="${activePage == 'activeborrows' ? 'active' : ''}">
+                    <i class="fas fa-book-reader me-3"></i>
+                    <span>Truyện đang mượn</span>
                 </a>
 
                 <a th:href="@{/wishlist}"
@@ -117,6 +111,20 @@
                    th:classappend="${activePage == 'wishlist' ? 'active' : ''}">
                     <i class="bi bi-heart me-3"></i>
                     <span>Danh sách yêu thích</span>
+                </a>
+
+                <a th:href="@{/borrow}"
+                   class="list-group-item list-group-item-action d-flex align-items-center"
+                   th:classappend="${activePage == 'borrow' ? 'active' : ''}">
+                    <i class="fa fa-book me-3"></i>
+                    <span>Yêu cầu mượn truyện</span>
+                </a>
+
+                <a th:href="@{/borrow/history}"
+                   class="list-group-item list-group-item-action d-flex align-items-center"
+                   th:classappend="${activePage == 'myborrows' ? 'active' : ''}">
+                    <i class="bi bi-bookmark me-3"></i>
+                    <span>Lịch sử mượn truyện</span>
                 </a>
 
                 <a th:href="@{/my-notifications}"

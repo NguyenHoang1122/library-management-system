@@ -84,12 +84,25 @@
                                                    title="Xem chi tiết">
                                                     <i class="bi bi-eye"></i> Xem
                                                 </a>
-                                                <a th:href="@{/borrow/request/{id}(id=${wishlist.book.id})}"
-                                                   class="btn btn-outline-primary btn-sm" style="flex: 1;"
-                                                   title="Mượn sách">
-                                                    <i class="bi bi-book"></i> Mượn
-                                                </a>
-                                                <form th:action="@{/wishlist/remove/{id}(id=${wishlist.id})}" method="post" class="d-inline" style="flex: 1;">
+
+                                                <!-- Kiểm tra xem đã mượn chưa -->
+                                                <th:block th:if="${wishlist.book in #arrays.toList(borrowedBookIds)}">
+                                                    <button class="btn btn-outline-secondary btn-sm disabled"
+                                                            style="flex: 1;"
+                                                            title="Đang mượn">
+                                                        <i class="bi bi-check-circle"></i> Đang mượn
+                                                    </button>
+                                                </th:block>
+                                                <th:block th:unless="${wishlist.book in #arrays.toList(borrowedBookIds)}">
+                                                    <a th:href="@{/borrow/request/{id}(id=${wishlist.book.id})}"
+                                                       class="btn btn-outline-primary btn-sm" style="flex: 1;"
+                                                       title="Mượn sách">
+                                                        <i class="bi bi-book"></i> Mượn
+                                                    </a>
+                                                </th:block>
+
+                                                <form th:action="@{/wishlist/remove/{id}(id=${wishlist.id})}"
+                                                      method="post" class="d-inline" style="flex: 1;">
                                                     <button type="submit" class="btn btn-outline-danger btn-sm w-100"
                                                             title="Xóa khỏi danh sách yêu thích"
                                                             onclick="return confirm('Xóa khỏi danh sách yêu thích?')">

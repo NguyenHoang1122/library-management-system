@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <title>Lịch sử mượn sách</title>
+    <title>Lịch sử mượn truyện</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -51,57 +51,8 @@
                 <div class="col-md-6 mb-3">
                     <div class="card bg-success text-white">
                         <div class="card-body">
-                            <h5 class="card-title">Tổng lộc sử</h5>
+                            <h5 class="card-title">Tổng lịch sử mượn truyện</h5>
                             <h2 th:text="${totalBorrows}"></h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Active Borrows -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white py-3">
-                    <h4 class="mb-0 text-primary">
-                        <i class="bi bi-bookmark-fill"></i> Sách đang mượn
-                    </h4>
-                </div>
-                <div class="card-body p-4">
-                    <div th:if="${activeBorrows.isEmpty()}" class="text-center py-4 text-muted">
-                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                        <p class="mt-2">Hiện tại bạn chưa mượn sách nào</p>
-                    </div>
-                    <div th:if="${!activeBorrows.isEmpty()}">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Ngày mượn</th>
-                                    <th>Ngày trả dự định</th>
-                                    <th>Trạng thái</th>
-                                    <th class="text-center">Hành động</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr th:each="borrow : ${activeBorrows}">
-                                    <td th:text="${borrow.id}" class="fw-bold"></td>
-                                    <td th:text="${#temporals.format(borrow.borrowDate, 'dd/MM/yyyy HH:mm')}"></td>
-                                    <td>
-                                        <span th:text="${#temporals.format(borrow.dueDate, 'dd/MM/yyyy')}"></span>
-                                        <span th:if="${#dates.createNow() > borrow.dueDate}" class="badge bg-danger ms-2">QUÁSẠN</span>
-                                    </td>
-                                    <td>
-                                        <span th:if="${borrow.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).BORROWED}"
-                                              class="status-badge status-borrowed">Đang mượn</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <a th:href="@{/borrow/{id}(id=${borrow.id})}" class="btn btn-outline-info btn-sm">
-                                            <i class="bi bi-eye"></i> Xem chi tiết
-                                        </a>
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
@@ -117,34 +68,27 @@
                 <div class="card-body p-4">
                     <div th:if="${borrowHistory.isEmpty()}" class="text-center py-4 text-muted">
                         <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                        <p class="mt-2">Bạn chưa có lịch sử mượn sách</p>
+                        <p class="mt-2">Bạn chưa có lịch sử mượn truyện</p>
                     </div>
                     <div th:if="${!borrowHistory.isEmpty()}">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
                                 <tr>
-                                    <th>ID</th>
+                                    <th>STT</th>
+                                    <th>Tên truyện</th>
                                     <th>Ngày mượn</th>
-                                    <th>Ngày trả dự định</th>
-                                    <th>Ngày trả thực tế</th>
-                                    <th>Trạng thái</th>
-                                    <th class="text-center">Hành động</th>
+                                    <th>Ngày phải trả</th>
+                                    <th>Hành động</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr th:each="borrow : ${borrowHistory}">
-                                    <td th:text="${borrow.id}" class="fw-bold text-muted"></td>
-                                    <td th:text="${#temporals.format(borrow.borrowDate, 'dd/MM/yyyy')}"></td>
-                                    <td th:text="${#temporals.format(borrow.dueDate, 'dd/MM/yyyy')}"></td>
-                                    <td th:text="${borrow.returnDate != null ? #temporals.format(borrow.returnDate, 'dd/MM/yyyy') : 'Chưa trả'}"></td>
+                                <tr th:each="borrow, borrowStat : ${borrowHistory}">
+                                    <td th:text="${borrowStat.index + 1}"></td>
+                                    <td th:text="${borrow.bookName}"></td>
+                                    <td th:text="${borrow.borrowDate}"></td>
+                                    <td th:text="${borrow.dueDate}"></td>
                                     <td>
-                                        <span th:if="${borrow.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).RETURNED}"
-                                              class="status-badge status-returned">Đã trả</span>
-                                        <span th:if="${borrow.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).OVERDUE}"
-                                              class="status-badge status-overdue">Quá hạn</span>
-                                    </td>
-                                    <td class="text-center">
                                         <a th:href="@{/borrow/{id}(id=${borrow.id})}" class="btn btn-outline-info btn-sm">
                                             <i class="bi bi-eye"></i> Xem
                                         </a>

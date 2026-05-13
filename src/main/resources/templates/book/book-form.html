@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="${bookDTO.id != null} ? 'Sửa sách' : 'Thêm sách'"></title>
+    <title th:text="${bookDTO.id != null} ? 'Sửa truyện' : 'Thêm truyện'"></title>
     <div th:replace="~{layout :: header_head}"></div>
 </head>
 <body>
@@ -18,21 +18,21 @@
         <div class="col-md-9 col-lg-10">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white py-3">
-                    <h3 class="mb-0 text-primary" th:text="${bookDTO.id != null} ? 'Cập nhật thông tin sách' : 'Thêm sách mới'"></h3>
+                    <h3 class="mb-0 text-primary" th:text="${bookDTO.id != null} ? 'Cập nhật thông tin truyện' : 'Thêm truyện mới'"></h3>
                 </div>
                 <div class="card-body p-4">
                     <form th:action="${bookDTO.id != null ? '/books/update/' + bookDTO.id : '/books/save'}"
                           method="post"
                           enctype="multipart/form-data"
                           th:object="${bookDTO}">
-
+                        <input type="hidden" th:field="*{id}" />
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="fw-bold">Tiêu đề:</label>
                                 <input type="text" th:field="*{title}" class="form-control" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="fw-bold">Mã sách:</label>
+                                <label class="fw-bold">Mã truyện:</label>
                                 <input type="text" th:field="*{isbn}" class="form-control" required>
                             </div>
                         </div>
@@ -48,8 +48,16 @@
                                 <input type="date" th:field="*{publishYear}" class="form-control">
                             </div>
                             <div class="col-md-4 mb-3">
+                                <label class="fw-bold">Số lượng:</label>
+                                <input type="number" th:field="*{quantity}" class="form-control" required min="1">
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label class="fw-bold">Ảnh:</label>
                                 <input type="file" th:field="*{imageFile}" class="form-control" accept="image/*">
+                                <small class="form-text text-muted d-block mt-2" th:if="*{image}">
+                                    <img th:src="*{image}" style="max-width: 80px; max-height: 80px; margin-right: 10px; border-radius: 4px;" alt="Ảnh hiện tại">
+                                    <span>Ảnh hiện tại. Để trống nếu không muốn thay đổi.</span>
+                                </small>
                             </div>
                         </div>
 

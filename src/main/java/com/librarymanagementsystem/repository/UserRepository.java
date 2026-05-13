@@ -20,7 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUserName(String userName);
     boolean existsByEmail(String email);
 
-    // Thêm các method mới cho admin
     @Query("SELECT u FROM User u WHERE u.deleteAt IS NULL")
     List<User> findAllActiveUsers();
 

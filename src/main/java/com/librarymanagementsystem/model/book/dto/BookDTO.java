@@ -30,7 +30,13 @@ public class BookDTO {
 
     private MultipartFile imageFile;
 
+    private String image;
+
     private LocalDate publishYear;
+
+    @NotNull(message = "Số lượng không được để trống")
+    @Positive(message = "Số lượng phải lớn hơn 0")
+    private Integer quantity;
 
     @NotNull(message = "Danh mục không được để trống")
     private List<Long> categoryIds;

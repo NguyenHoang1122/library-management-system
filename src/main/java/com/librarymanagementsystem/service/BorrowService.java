@@ -2,7 +2,10 @@ package com.librarymanagementsystem.service;
 
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
+import com.librarymanagementsystem.model.borrow.ReturnRequest;
+import com.librarymanagementsystem.model.borrow.dto.BorrowHistoryDTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +23,7 @@ public interface BorrowService {
 
     void rejectBorrowRequest(Long requestId);
 
-    List<BorrowTransaction> getUserBorrowHistory(Long userId);
+    List<BorrowHistoryDTO> getUserBorrowHistory(Long userId);
 
     Optional<BorrowTransaction> getBorrowTransactionDetail(Long transactionId);
 
@@ -28,7 +31,7 @@ public interface BorrowService {
 
     long calculateLateFine(Long transactionId);
 
-    List<BorrowTransaction> getActiveBorrows(Long userId);
+    List<BorrowHistoryDTO> getActiveBorrows(Long userId);
 
     boolean isOverdue(Long transactionId);
 

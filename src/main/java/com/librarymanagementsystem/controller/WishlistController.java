@@ -2,6 +2,7 @@ package com.librarymanagementsystem.controller;
 
 import com.librarymanagementsystem.model.book.Wishlist;
 import com.librarymanagementsystem.model.user.User;
+import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
 import com.librarymanagementsystem.service.UserService;
 import com.librarymanagementsystem.service.WishlistService;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -25,16 +27,24 @@ import java.util.Map;
 public class WishlistController {
     private final WishlistService wishlistService;
     private final UserService userService;
+    private final BorrowTransactionRepository borrowTransactionRepository;
 
     /**     * Xem danh sách yêu thích của user     */
     @GetMapping
-    public String showWishlist(Authentication authentication, Model model) {
-        User user = userService.findByUserName(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+    public String getMyWishlist(Model model, Authentication authentication) {
+        String userName = authentication.getName();
+        User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        Long userId = user.getId();
 
-        List<Wishlist> wishlists = wishlistService.getUserWishlist(user.getId());
+        List<Wishlist> wishlists = wishlistService.getUserWishlist(userId);
         model.addAttribute("wishlists", wishlists);
         model.addAttribute("totalWishlists", wishlists.size());
+
+        // Lấy danh sách sách đang được mượn
+        List<Long> borrowedBookIds = borrowTransactionRepository
+                .findBorrowedBookIdsByUser(userId);
+        model.addAttribute("borrowedBookIds", borrowedBookIds);
+
         return "wishlist/my-wishlist";
     }
 

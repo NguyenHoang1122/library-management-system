@@ -8,14 +8,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
+
 
 @Entity
 @Data
-@Table(name = "borrow_requests")
+@Table(name = "return_requests")
 @NoArgsConstructor
 @AllArgsConstructor
-public class BorrowRequest {
+public class ReturnRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,13 +24,22 @@ public class BorrowRequest {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transaction_id")
+    private BorrowTransaction borrowTransaction;
+
+    @Column(name = "request_date")
     private LocalDateTime requestDate;
 
-    @Enumerated(EnumType.STRING)
-    private RequestStatus requestStatus;
+    @Column(name = "return_date_time")
+    private LocalDateTime returnDateTime;  // Ngày giờ user muốn đến trả
 
     private String note;
 
-    @OneToMany(mappedBy = "borrowRequest", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private List<BorrowRequestItem> borrowRequestItems;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "request_status")
+    private RequestStatus requestStatus;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;  // Lý do từ chối từ librarian
 }

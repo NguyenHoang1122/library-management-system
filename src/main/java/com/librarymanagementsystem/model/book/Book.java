@@ -44,6 +44,8 @@ public class Book {
     @LastModifiedDate
     private LocalDateTime updatedDate;
 
+    @Column(nullable = false)
+    private Integer quantity = 0;
 
 
     @ManyToMany(fetch = FetchType.LAZY)

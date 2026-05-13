@@ -14,7 +14,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/librarian")
@@ -41,7 +44,7 @@ public class LibrarianController {
             User librarian = userService.findByUserName(authentication.getName())
                     .orElseThrow(() -> new RuntimeException("Librarian not found"));
             borrowService.approveBorrowRequest(requestId, librarian.getId(), borrowDays);
-            redirectAttributes.addFlashAttribute("message", "Đã duyệt yêu cầu mượn sách");
+            redirectAttributes.addFlashAttribute("message", "Đã duyệt yêu cầu mượn truyện");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -53,7 +56,7 @@ public class LibrarianController {
                                RedirectAttributes redirectAttributes) {
         try {
             borrowService.rejectBorrowRequest(requestId);
-            redirectAttributes.addFlashAttribute("message", "Đã từ chối yêu cầu mượn sách");
+            redirectAttributes.addFlashAttribute("message", "Đã từ chối yêu cầu mượn truyện");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -63,7 +66,18 @@ public class LibrarianController {
     @GetMapping("/returns")
     public String listActiveBorrows(Model model) {
         List<BorrowTransaction> activeBorrows = borrowService.getAllActiveBorrows();
+
+        // Chuẩn bị dữ liệu cho template
+        List<Map<String, Object>> borrowData = activeBorrows.stream().map(borrow -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put("borrow", borrow);
+            data.put("isOverdue", borrowService.isOverdue(borrow.getId()));
+            data.put("lateFine", borrowService.calculateLateFine(borrow.getId()));
+            return data;
+        }).collect(Collectors.toList());
+
         model.addAttribute("activeBorrows", activeBorrows);
+        model.addAttribute("borrowDataMap", borrowData);
         return "librarian/returns";
     }
 
@@ -74,8 +88,21 @@ public class LibrarianController {
         try {
             User librarian = userService.findByUserName(authentication.getName())
                     .orElseThrow(() -> new RuntimeException("Librarian not found"));
+
+            // Kiểm tra quá hạn trước khi trả
+            BorrowTransaction transaction = borrowService.getBorrowTransactionDetail(transactionId)
+                    .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+            boolean isOverdue = borrowService.isOverdue(transactionId);
+            long fine = borrowService.calculateLateFine(transactionId);
+
             borrowService.returnBorrowItems(transactionId, librarian.getId());
-            redirectAttributes.addFlashAttribute("message", "Đã xử lý trả sách");
+
+            String message = "Đã xử lý trả truyện thành công";
+            if (isOverdue) {
+                message += String.format(" (Quá hạn, phạt: %,d VND)", fine);
+            }
+            redirectAttributes.addFlashAttribute("message", message);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

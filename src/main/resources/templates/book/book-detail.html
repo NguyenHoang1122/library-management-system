@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <title>Chi tiết sách</title>
+    <title>Chi tiết truyện</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -53,15 +53,6 @@
 
         <!-- BOOK DETAIL CONTENT -->
         <div class="col-md-9 col-lg-10">
-            <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
-                    <li class="breadcrumb-item"><a th:href="@{/books}">Danh sách sách</a></li>
-                    <li class="breadcrumb-item active" th:text="${book.title}"></li>
-                </ol>
-            </nav>
-
             <div class="card shadow-sm border-0">
                 <div class="card-body p-4">
                     <!-- Nút quay lại -->
@@ -113,7 +104,7 @@
                             </div>
                         </div>
 
-                        <!-- Thông tin sách -->
+                        <!-- Thông tin tryện -->
                         <div class="col-md-8">
                             <!-- Tiêu đề -->
                             <h2 th:text="${book.title}" class="mb-4 text-primary"></h2>
@@ -165,11 +156,22 @@
 
                             <!-- Nút Mượn sách cho USER -->
                             <div sec:authorize="hasRole('USER')" class="mt-5">
-                                <button type="button" class="btn btn-primary btn-lg w-100"
-                                        id="borrowBtn"
-                                        th:attr="data-book-id=${book.id}">
-                                    <i class="bi bi-book"></i> Gửi yêu cầu mượn sách
-                                </button>
+                                <!-- Nếu sách đang được mượn -->
+                                <div th:if="${isBookBorrowed}">
+                                    <div class="alert alert-info mb-0" role="alert">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>Đang mượn:</strong> Bạn hiện đang mượn truyện này.
+                                        <a th:href="@{/borrow/history}" class="alert-link">Xem lịch sử mượn</a>
+                                    </div>
+                                </div>
+                                <!-- Nếu sách chưa được mượn -->
+                                <div th:unless="${isBookBorrowed}">
+                                    <button type="button" class="btn btn-primary btn-lg w-100"
+                                            id="borrowBtn"
+                                            th:attr="data-book-id=${book.id}">
+                                        <i class="bi bi-book"></i> Gửi yêu cầu mượn truyện
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -212,7 +214,7 @@
     const borrowBtn = document.getElementById('borrowBtn');
 
     if (wishlistBtn) {
-        const bookId = wishlistBtn.getAttribute('data-book-id');  // Lấy bookId từ data-book-id của wishlistBtn
+        const bookId = wishlistBtn.getAttribute('data-book-id');
         wishlistBtn.addEventListener('click', function() {
             addToWishlist(bookId);
         });
@@ -222,7 +224,7 @@
     }
 
     if (borrowBtn) {
-        const bookId = borrowBtn.getAttribute('data-book-id');  // Lấy bookId từ data-book-id của borrowBtn
+        const bookId = borrowBtn.getAttribute('data-book-id');
         borrowBtn.addEventListener('click', function() {
             borrowBook(bookId);
         });
@@ -235,7 +237,12 @@
                 'Content-Type': 'application/json'
             }
         })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     if (data.added) {
@@ -250,12 +257,22 @@
                     showAlert(data.message, 'danger');
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra. Vui lòng thử lại.', 'danger');
+            });
     }
 
     function checkWishlistStatus(bookId) {
+        if (!wishlistBtn) return;
+
         fetch(`/wishlist/check/${bookId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.inWishlist) {
                     wishlistBtn.classList.add('active');
@@ -272,9 +289,8 @@
     function showAlert(message, type) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `             <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2></i>
-             ${message}             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-         `;
+        alertDiv.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
         document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('.card-body').firstChild);
         setTimeout(() => alertDiv.remove(), 3000);
     }

@@ -3,8 +3,11 @@ package com.librarymanagementsystem.service.impl;
 import com.librarymanagementsystem.model.Notification;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
+import com.librarymanagementsystem.model.user.User;
+import com.librarymanagementsystem.model.user.status.RoleStatus;
 import com.librarymanagementsystem.repository.NotificationRepository;
 import com.librarymanagementsystem.service.NotificationService;
+import com.librarymanagementsystem.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,7 @@ import java.util.Optional;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserService userService;
 
     @Override
     public List<Notification> getUserNotifications(Long userId) {
@@ -64,23 +68,29 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void notifyReviewBorrowRequest(BorrowRequest borrowRequest) {
-        Notification notification = new Notification();
-        notification.setUser(borrowRequest.getUser());
-        notification.setTitle("Yêu cầu mượn sách mới");
-        notification.setContent("Bạn có một yêu cầu mượn sách mới từ " + borrowRequest.getRequestDate().toLocalDate() +
-                ". Vui lòng kiểm tra và duyệt yêu cầu.");
-        notification.setRead(false);
-        notification.setCreatedAt(LocalDateTime.now());
-        notificationRepository.save(notification);
+        List<User> librarians = userService.getAllActiveUsers().stream()
+                .filter(user -> user.getRole().getRoleName() == RoleStatus.ROLE_LIBRARIAN)
+                .toList();
+        for (User librarian : librarians) {
+            Notification notification = new Notification();
+            notification.setUser(librarian);
+            notification.setTitle("Yêu cầu mượn truyện mới");
+            notification.setContent("Có một yêu cầu mượn truyện mới từ user " + borrowRequest.getUser().getFullName() +
+                    " vào ngày " + borrowRequest.getRequestDate().toLocalDate() +
+                    ". Vui lòng kiểm tra và duyệt yêu cầu.");
+            notification.setRead(false);
+            notification.setCreatedAt(LocalDateTime.now());
+            notificationRepository.save(notification);
+        }
     }
 
     @Override
     public void notifyBorrowApproved(BorrowTransaction transaction) {
         Notification notification = new Notification();
         notification.setUser(transaction.getUser());
-        notification.setTitle("Yêu cầu mượn sách được duyệt");
-        notification.setContent("Yêu cầu mượn sách của bạn đã được thủ thư duyệt. " +
-                "Vui lòng đến thư viện để nhận sách. " +
+        notification.setTitle("Yêu cầu mượn truyện được duyệt");
+        notification.setContent("Yêu cầu mượn truyện của bạn đã được thủ thư duyệt. " +
+                "Vui lòng đến thư viện để nhận truyện. " +
                 "Hạn trả: " + transaction.getDueDate().toLocalDate());
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
@@ -91,8 +101,8 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifyBorrowRejected(BorrowRequest borrowRequest) {
         Notification notification = new Notification();
         notification.setUser(borrowRequest.getUser());
-        notification.setTitle("Yêu cầu mượn sách bị từ chối");
-        notification.setContent("Yêu cầu mượn sách của bạn đã bị từ chối. " +
+        notification.setTitle("Yêu cầu mượn truyện bị từ chối");
+        notification.setContent("Yêu cầu mượn truyện của bạn đã bị từ chối. " +
                 "Vui lòng liên hệ thủ thư để biết thêm chi tiết.");
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
@@ -103,8 +113,8 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifyBorrowReturned(BorrowTransaction transaction) {
         Notification notification = new Notification();
         notification.setUser(transaction.getUser());
-        notification.setTitle("Sách được xác nhận trả");
-        notification.setContent("Giao dịch mượn sách #" + transaction.getId() + " của bạn đã được xác nhận trả.");
+        notification.setTitle("Truyện được xác nhận trả");
+        notification.setContent("Giao dịch mượn truyện #" + transaction.getId() + " của bạn đã được xác nhận trả.");
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
@@ -114,8 +124,8 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifyBorrowRequestCancelled(BorrowRequest borrowRequest) {
         Notification notification = new Notification();
         notification.setUser(borrowRequest.getUser());
-        notification.setTitle("Yêu cầu mượn sách bị hủy");
-        notification.setContent("Yêu cầu mượn sách của bạn đã bị hủy.");
+        notification.setTitle("Yêu cầu mượn truyện bị hủy");
+        notification.setContent("Yêu cầu mượn truyện của bạn đã bị hủy.");
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
@@ -125,9 +135,9 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifyBookDueSoon(BorrowTransaction transaction, int daysLeft) {
         Notification notification = new Notification();
         notification.setUser(transaction.getUser());
-        notification.setTitle("Nhắc nhở: Sách sắp hết hạn");
-        notification.setContent("Bạn còn " + daysLeft + " ngày để trả sách. " +
-                "Vui lòng trả sách trước ngày " + transaction.getDueDate().toLocalDate());
+        notification.setTitle("Nhắc nhở: truyện sắp hết hạn");
+        notification.setContent("Bạn còn " + daysLeft + " ngày để trả truyện. " +
+                "Vui lòng trả truyện trước ngày " + transaction.getDueDate().toLocalDate());
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
@@ -137,9 +147,9 @@ public class NotificationServiceImpl implements NotificationService {
     public void notifyBookOverdue(BorrowTransaction transaction) {
         Notification notification = new Notification();
         notification.setUser(transaction.getUser());
-        notification.setTitle("⚠️ Cảnh báo: Sách quá hạn");
-        notification.setContent("Sách của bạn đã quá hạn trả từ ngày " + transaction.getDueDate().toLocalDate() +
-                ". Vui lòng trả sách tại thư viện ngay lập tức");
+        notification.setTitle("⚠️ Cảnh báo: Truyện quá hạn");
+        notification.setContent("Truyện của bạn đã quá hạn trả từ ngày " + transaction.getDueDate().toLocalDate() +
+                ". Vui lòng trả truyện tại thư viện ngay lập tức");
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);

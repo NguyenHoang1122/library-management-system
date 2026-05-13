@@ -42,4 +42,25 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
     // Count giao dịch quá hạn
     @Query("SELECT COUNT(bt) FROM BorrowTransaction bt WHERE bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
     long countOverdueTransactions();
+
+
+    // Kiểm tra xem user có đang mượn sách này hay không (chỉ trạng thái BORROWED)
+    @Query("SELECT COUNT(bi) > 0 FROM BorrowTransaction bt " +
+            "JOIN bt.items bi " +
+            "WHERE bt.user.id = :userId " +
+            "AND bi.book.id = :bookId " +
+            "AND bt.status = 'BORROWED'")
+    boolean isBookBorrowedByUser(@Param("userId") Long userId, @Param("bookId") Long bookId);
+
+    // Kiểm tra xem user có bất kỳ sách nào đang mượn hay không
+    @Query("SELECT COUNT(bt) > 0 FROM BorrowTransaction bt " +
+            "WHERE bt.user.id = :userId " +
+            "AND bt.status = 'BORROWED'")
+    boolean hasAnyBorrowedBooks(@Param("userId") Long userId);
+
+    @Query("SELECT DISTINCT bi.book.id FROM BorrowTransaction bt " +
+            "JOIN bt.items bi " +
+            "WHERE bt.user.id = :userId " +
+            "AND bt.status = 'BORROWED'")
+    List<Long> findBorrowedBookIdsByUser(@Param("userId") Long userId);
 }

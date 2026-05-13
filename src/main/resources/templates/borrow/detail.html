@@ -139,7 +139,7 @@
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <h6 class="mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo</h6>
-                                <p class="mb-0">Bạn có sách quá hạn. Vui lòng thanh toán tiền phạt:</p>
+                                <p class="mb-0">Bạn có truyện quá hạn. Vui lòng thanh toán tiền phạt:</p>
                             </div>
                             <div class="col-md-4 text-end">
                                 <h4 class="mb-0 text-danger" th:text="'₫' + ${#numbers.formatInteger(lateFine, 0)}"></h4>
@@ -150,12 +150,12 @@
                     <!-- Overdue Status -->
                     <div th:if="${isOverdue}" class="alert alert-danger mt-4">
                         <i class="bi bi-exclamation-circle me-2"></i>
-                        <strong>Chú ý:</strong> Sách của bạn đã quá hạn trả. Vui lòng trả sách tại thư viện soonest.
+                        <strong>Chú ý:</strong> Truyện của bạn đã quá hạn trả. Vui lòng trả truyện tại thư viện.
                     </div>
 
                     <!-- Sách đang mượn -->
                     <h5 class="mb-3 mt-4 text-primary">
-                        <i class="bi bi-book"></i> Sách trong giao dịch
+                        <i class="bi bi-book"></i> Truyện trong giao dịch
                     </h5>
 
                     <div class="table-responsive">
@@ -163,30 +163,25 @@
                             <thead class="table-light">
                             <tr>
                                 <th>STT</th>
-                                <th>Tên sách</th>
+                                <th>Tên truyện</th>
                                 <th>Tác giả</th>
                                 <th>Danh mục</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="item,stat : ${transaction.user.borrowTransactions}">
+                            <tr th:each="item,stat : ${transaction.items}">
                                 <td th:text="${stat.count}"></td>
-                                <td th:text="'Sách'"></td>
-                                <td th:text="'Tác giả'"></td>
-                                <td th:text="'Danh mục'"></td>
+                                <td th:text="${item.book.title}"></td>
+                                <td th:text="${item.book.author.name}"></td>
+                                <td>
+                                    <span th:each="cat, iterStat : ${item.book.categories}">
+                                    <span th:text="${cat.categoryName}"></span>
+                                    <th:block th:if="${!iterStat.last}">, </th:block>
+                                    </span>
+                                </td>
                             </tr>
                             </tbody>
                         </table>
-                    </div>
-
-                    <!-- Thủ thư -->
-                    <h5 class="mb-3 mt-4 text-primary">
-                        <i class="bi bi-person-badge"></i> Thủ thư
-                    </h5>
-
-                    <div th:if="${transaction.librarian != null}" class="info-box">
-                        <div class="info-label">Tên thủ thư</div>
-                        <div class="info-value" th:text="${transaction.librarian.fullName}"></div>
                     </div>
 
                     <!-- Buttons -->

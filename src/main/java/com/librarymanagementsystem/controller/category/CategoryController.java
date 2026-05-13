@@ -18,14 +18,14 @@ public class CategoryController {
     @GetMapping
     public String listCategories(Model model) {
         model.addAttribute("categories", categoryService.getAllCategories());
-        return "categori/list";
+        return "category/list";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("category", new Category());
-        return "categori/category-form";
+        return "category/category-form";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
@@ -44,7 +44,7 @@ public class CategoryController {
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable("id") Long id, Model model) {
         model.addAttribute("category", categoryService.getCategoryById(id).orElseThrow(() -> new RuntimeException("Danh mục không tồn tại")));
-        return "categori/category-form";
+        return "category/category-form";
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")

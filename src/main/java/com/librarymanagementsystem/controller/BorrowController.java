@@ -1,8 +1,11 @@
 package com.librarymanagementsystem.controller;
 
+import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
+import com.librarymanagementsystem.model.borrow.dto.BorrowHistoryDTO;
 import com.librarymanagementsystem.model.user.User;
+import com.librarymanagementsystem.service.BookService;
 import com.librarymanagementsystem.service.BorrowService;
 import com.librarymanagementsystem.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +27,14 @@ public class BorrowController {
 
     private final BorrowService borrowService;
     private final UserService userService;
+    private final BookService bookService;
 
     /**     * Gửi yêu cầu mượn sách     */
     @GetMapping("/request/{bookId}")
     public String showBorrowRequestForm(@PathVariable Long bookId, Model model) {
+        Book book = bookService.getBookById(bookId)
+                .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+        model.addAttribute("book", book);
         model.addAttribute("bookId", bookId);
         return "borrow/request-form";
     }
@@ -68,8 +75,8 @@ public class BorrowController {
         User user = userService.findByUserName(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
-        List<BorrowTransaction> borrowHistory = borrowService.getUserBorrowHistory(user.getId());
-        List<BorrowTransaction> activeBorrows = borrowService.getActiveBorrows(user.getId());
+        List<BorrowHistoryDTO> borrowHistory = borrowService.getUserBorrowHistory(user.getId());
+        List<BorrowHistoryDTO> activeBorrows = borrowService.getActiveBorrows(user.getId());
 
         model.addAttribute("borrowHistory", borrowHistory);
         model.addAttribute("activeBorrows", activeBorrows);
@@ -77,6 +84,16 @@ public class BorrowController {
         model.addAttribute("totalActive", activeBorrows.size());
 
         return "borrow/history";
+    }
+
+    @GetMapping("/active")
+    public String showActiveBorrows(Authentication authentication, Model model) {
+        User user = userService.findByUserName(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        List<BorrowHistoryDTO> activeBorrows = borrowService.getActiveBorrows(user.getId());
+        model.addAttribute("activeBorrows", activeBorrows);
+        model.addAttribute("activePage", "activeborrows");
+        return "borrow/active";
     }
 
     /**     * Xem chi tiết giao dịch mượn     */
@@ -104,6 +121,22 @@ public class BorrowController {
         model.addAttribute("isOverdue", isOverdue);
 
         return "borrow/detail";
+    }
+
+    @PostMapping("/{transactionId}/return")
+    public String returnBorrow(@PathVariable Long transactionId, Authentication authentication, RedirectAttributes redirectAttributes) {
+        try {
+            User user = userService.findByUserName(authentication.getName()).orElseThrow();
+            BorrowTransaction transaction = borrowService.getBorrowTransactionDetail(transactionId).orElseThrow();
+            if (!transaction.getUser().getId().equals(user.getId())) {
+                throw new RuntimeException("Không có quyền");
+            }
+            borrowService.returnBorrowItems(transactionId, null);  // Giả sử sửa service để cho phép null librarian
+            redirectAttributes.addFlashAttribute("message", "Đã trả truyện thành công");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/borrow/active";  // Redirect về trang active sau khi trả
     }
 
     /**     * Hủy yêu cầu mượn     */
