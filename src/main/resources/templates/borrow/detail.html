@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Chi tiết giao dịch mượn</title>
+    <div th:replace="~{layout :: header_head}"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .info-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #0d6efd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            color: #212529;
+            font-size: 1.1rem;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 500;
+        }
+        .status-borrowed {
+            background-color: #0dcaf0;
+            color: white;
+        }
+        .status-returned {
+            background-color: #198754;
+            color: white;
+        }
+        .status-overdue {
+            background-color: #dc3545;
+            color: white;
+        }
+        .fine-alert {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{layout :: header}"></div>
+
+<main class="container-fluid my-5 px-4">
+    <div class="row">
+        <!-- SIDEBAR -->
+        <div class="col-md-3 col-lg-2 mb-4">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='myborrows')}"></div>
+        </div>
+
+        <!-- DETAIL CONTENT -->
+        <div class="col-md-9 col-lg-10">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/borrow/history}">Lịch sử mượn</a></li>
+                    <li class="breadcrumb-item active" th:text="'Giao dịch #' + ${transaction.id}"></li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0 text-primary">
+                        <i class="bi bi-file-earmark-check"></i> Chi tiết giao dịch mượn
+                    </h3>
+                    <span th:if="${transaction.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).BORROWED}"
+                          class="status-badge status-borrowed">Đang mượn</span>
+                    <span th:if="${transaction.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).RETURNED}"
+                          class="status-badge status-returned">Đã trả</span>
+                    <span th:if="${transaction.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).OVERDUE}"
+                          class="status-badge status-overdue">Quá hạn</span>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Thông tin giao dịch -->
+                    <h5 class="mb-3 text-primary">
+                        <i class="bi bi-info-circle"></i> Thông tin giao dịch
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Mã giao dịch</div>
+                                <div class="info-value" th:text="${transaction.id}"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Trạng thái</div>
+                                <div class="info-value">
+                                    <span th:if="${transaction.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).BORROWED}">Đang mượn</span>
+                                    <span th:if="${transaction.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).RETURNED}">Đã trả</span>
+                                    <span th:if="${transaction.status == T(com.librarymanagementsystem.model.borrow.status.TransactionStatus).OVERDUE}">Quá hạn</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4 text-primary">
+                        <i class="bi bi-calendar-event"></i> Thống kê thời gian
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Ngày mượn</div>
+                                <div class="info-value" th:text="${#temporals.format(transaction.borrowDate, 'dd/MM/yyyy HH:mm')}"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Ngày trả dự định</div>
+                                <div class="info-value" th:text="${#temporals.format(transaction.dueDate, 'dd/MM/yyyy')}"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" th:if="${transaction.returnDate != null}">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Ngày trả thực tế</div>
+                                <div class="info-value" th:text="${#temporals.format(transaction.returnDate, 'dd/MM/yyyy HH:mm')}"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Late Fine Warning -->
+                    <div th:if="${lateFine > 0}" class="fine-alert mt-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo</h6>
+                                <p class="mb-0">Bạn có truyện quá hạn. Vui lòng thanh toán tiền phạt:</p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <h4 class="mb-0 text-danger" th:text="'₫' + ${#numbers.formatInteger(lateFine, 0)}"></h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Overdue Status -->
+                    <div th:if="${isOverdue}" class="alert alert-danger mt-4">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        <strong>Chú ý:</strong> Truyện của bạn đã quá hạn trả. Vui lòng trả truyện tại thư viện.
+                    </div>
+
+                    <!-- Sách đang mượn -->
+                    <h5 class="mb-3 mt-4 text-primary">
+                        <i class="bi bi-book"></i> Truyện trong giao dịch
+                    </h5>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th>STT</th>
+                                <th>Tên truyện</th>
+                                <th>Tác giả</th>
+                                <th>Danh mục</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item,stat : ${transaction.items}">
+                                <td th:text="${stat.count}"></td>
+                                <td th:text="${item.book.title}"></td>
+                                <td th:text="${item.book.author.name}"></td>
+                                <td>
+                                    <span th:each="cat, iterStat : ${item.book.categories}">
+                                    <span th:text="${cat.categoryName}"></span>
+                                    <th:block th:if="${!iterStat.last}">, </th:block>
+                                    </span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="mt-4 d-flex justify-content-end gap-2">
+                        <a th:href="@{/borrow/history}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{layout :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

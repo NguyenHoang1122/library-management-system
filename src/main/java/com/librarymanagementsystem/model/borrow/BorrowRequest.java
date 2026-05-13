@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -30,4 +31,6 @@ public class BorrowRequest {
 
     private String note;
 
+    @OneToMany(mappedBy = "borrowRequest", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    private List<BorrowRequestItem> borrowRequestItems;
 }

@@ -7,6 +7,7 @@ import com.librarymanagementsystem.model.user.Author;
 import com.librarymanagementsystem.repository.AuthorRepository;
 import com.librarymanagementsystem.repository.BookRepository;
 import com.librarymanagementsystem.repository.CategoryRepository;
+import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
 import com.librarymanagementsystem.service.BookService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional
@@ -31,6 +30,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final CategoryRepository categoryRepository;
     private final AuthorRepository authorRepository;
+    private final BorrowTransactionRepository borrowTransactionRepository;
 
     @Value("${file.upload-dir}")
     private String upload;
@@ -53,18 +53,76 @@ public class BookServiceImpl implements BookService {
         Book book = mapDtoToEntity(bookDTO);
         book.setCreatedDate(LocalDateTime.now());
         book.setUpdatedDate(LocalDateTime.now());
-        book.setAvailableCopies(book.getTotalCopies());
         return bookRepository.save(book);
     }
 
     @Override
     public Book updateBook(Long id, BookDTO bookDTO) {
         Book book = bookRepository.findById(id).orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
-        Book updatedBook = mapDtoToEntity(bookDTO);
-        updatedBook.setId(id);
-        updatedBook.setCreatedDate(book.getCreatedDate());
-        updatedBook.setUpdatedDate(LocalDateTime.now());
-        return bookRepository.save(updatedBook);
+
+        if (!book.getIsbn().equals(bookDTO.getIsbn()) && bookRepository.existsByIsbn(bookDTO.getIsbn())) {
+            throw new RuntimeException("ISBN đã tồn tại");
+        }
+
+
+        // Cập nhật thông tin từ DTO
+        book.setTitle(bookDTO.getTitle());
+        book.setDescription(bookDTO.getDescription());
+        book.setIsbn(bookDTO.getIsbn());
+        book.setPublishYear(bookDTO.getPublishYear());
+        book.setQuantity(bookDTO.getQuantity());
+
+        // Xử lý ảnh: nếu có ảnh mới thì upload, nếu không thì giữ ảnh cũ
+        if (bookDTO.getImageFile() != null && !bookDTO.getImageFile().isEmpty()) {
+            // Xóa ảnh cũ nếu có
+            if (book.getImage() != null && !book.getImage().isEmpty()) {
+                try {
+                    String oldFileName = book.getImage().substring(book.getImage().lastIndexOf("/") + 1);
+                    Path oldPath = Paths.get(upload + oldFileName);
+                    Files.deleteIfExists(oldPath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            // Upload ảnh mới
+            String fileName = UUID.randomUUID().toString() + "_" + bookDTO.getImageFile().getOriginalFilename();
+            Path path = Paths.get(upload + fileName);
+            try {
+                Files.createDirectories(path.getParent());
+                Files.write(path, bookDTO.getImageFile().getBytes());
+                book.setImage("/uploads/" + fileName); // Giữ ảnh mới
+            } catch (IOException e) {
+                throw new RuntimeException("Lỗi upload ảnh: " + e.getMessage());
+            }
+        }
+        // Nếu không chọn ảnh mới, ảnh cũ sẽ được giữ lại (không thay đổi)
+
+        // Cập nhật Category
+        if (bookDTO.getCategoryIds() != null && !bookDTO.getCategoryIds().isEmpty()) {
+            Set<Category> categories = new HashSet<>();
+            for (Long categoryId : bookDTO.getCategoryIds()) {
+                Category category = categoryRepository.findById(categoryId).orElseThrow(() -> new RuntimeException("Danh mục không tồn tại"));
+                categories.add(category);
+            }
+            book.setCategories(categories);
+        }
+
+        // Cập nhật Author
+        if (bookDTO.getAuthorName() != null && !bookDTO.getAuthorName().trim().isEmpty()) {
+            Optional<Author> existingAuthor = authorRepository.findByName(bookDTO.getAuthorName().trim());
+            Author author;
+            if (existingAuthor.isPresent()) {
+                author = existingAuthor.get();
+            } else {
+                author = new Author();
+                author.setName(bookDTO.getAuthorName().trim());
+                author = authorRepository.save(author);
+            }
+            book.setAuthor(author);
+        }
+
+        book.setUpdatedDate(LocalDateTime.now());
+        return bookRepository.save(book);
     }
 
     @Override
@@ -89,7 +147,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public List<Book> getBooksByCategory(Long categoryId) {
-        return bookRepository.findByCategoryId(categoryId);
+        return bookRepository.findByCategoriesId(categoryId);
     }
 
     @Override
@@ -103,7 +161,7 @@ public class BookServiceImpl implements BookService {
         book.setDescription(bookDTO.getDescription());
         book.setIsbn(bookDTO.getIsbn());
         book.setPublishYear(bookDTO.getPublishYear());
-        book.setTotalCopies(bookDTO.getTotalCopies());
+        book.setQuantity(bookDTO.getQuantity());
 
         // Upload ảnh
         if (bookDTO.getImageFile() != null && !bookDTO.getImageFile().isEmpty()) {
@@ -119,17 +177,32 @@ public class BookServiceImpl implements BookService {
         }
 
         // Liên kết Category và Author
-        if (bookDTO.getCategoryId() != null) {
-            Category category = categoryRepository.findById(bookDTO.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Danh mục không tồn tại"));
-            book.setCategory(category);
+        if (bookDTO.getCategoryIds() != null && !bookDTO.getCategoryIds().isEmpty()) {
+            Set<Category> categories = new HashSet<>();
+            for (Long categoryId : bookDTO.getCategoryIds()) {
+                Category category = categoryRepository.findById(categoryId).orElseThrow(() -> new RuntimeException("Danh mục không tồn tại"));
+                categories.add(category);
+            }
+            book.setCategories(categories);
         }
-        if (bookDTO.getAuthorId() != null) {
-            Author author = authorRepository.findById(bookDTO.getAuthorId())
-                    .orElseThrow(() -> new RuntimeException("Tác giả không tồn tại"));
+        if (bookDTO.getAuthorName() != null && !bookDTO.getAuthorName().trim().isEmpty()) {
+            Optional<Author> existingAuthor = authorRepository.findByName(bookDTO.getAuthorName().trim());
+            Author author;
+            if (existingAuthor.isPresent()) {
+                author = existingAuthor.get();
+            } else {
+                author = new Author();
+                author.setName(bookDTO.getAuthorName().trim());
+                author = authorRepository.save(author);
+            }
             book.setAuthor(author);
         }
 
         return book;
+    }
+
+    @Override
+    public boolean isBookBorrowedByUser(Long bookId, Long userId) {
+        return borrowTransactionRepository.isBookBorrowedByUser(userId, bookId);
     }
 }

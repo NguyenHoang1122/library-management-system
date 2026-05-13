@@ -13,4 +13,12 @@ public interface UserService {
     List<User> getAllUsers();
     Optional<User> findByUserName(String name);
     User updateProfile(Long userId, UserDTO userDTO);
+
+    List<User> getAllActiveUsers();
+    List<User> getAllDeletedUsers();
+    void softDeleteUser(Long userId);
+    void restoreUser(Long userId);
+    void permanentlyDeleteUser(Long userId);
+    void changeUserRole(Long userId, String roleName);
+    void permanentlyDeleteOldUsers();
 }

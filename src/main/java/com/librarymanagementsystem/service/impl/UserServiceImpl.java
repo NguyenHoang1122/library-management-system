@@ -11,6 +11,7 @@ import com.librarymanagementsystem.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,8 +52,10 @@ public class UserServiceImpl implements UserService {
         Role userRole = roleRepository.findByRoleName(RoleStatus.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Role không tồn tại"));
         user.setRole(userRole);
+
         user.setUserStatus(UserStatus.ACTIVE);
 
+        user.setCreateDate(LocalDateTime.now());
         return userRepository.save(user);
     }
 
@@ -93,18 +97,21 @@ public class UserServiceImpl implements UserService {
             // Xóa ảnh cũ nếu tồn tại
             if (user.getImage() != null && !user.getImage().isEmpty()) {
                 try {
-                    Path oldPath = Paths.get(upload + user.getImage().substring(user.getImage().lastIndexOf("/") + 1));
+                    String oldFileName = user.getImage().substring(user.getImage().lastIndexOf("/") + 1);
+                    Path oldPath = Paths.get(upload, oldFileName);
                     Files.deleteIfExists(oldPath);
                 } catch (IOException e) {
-                    throw new RuntimeException("Lỗi xóa ảnh cũ: " + e.getMessage());
+                    System.err.println("Cảnh báo: Không thể xóa ảnh cũ: " + e.getMessage());
                 }
             }
+
             // Upload ảnh mới
             String fileName = UUID.randomUUID().toString() + "_" + userDTO.getImageFile().getOriginalFilename();
-            Path path = Paths.get(upload + fileName);
+            Path uploadPath = Paths.get(upload);
             try {
-                Files.createDirectories(path.getParent());
-                Files.write(path, userDTO.getImageFile().getBytes());
+                Files.createDirectories(uploadPath);
+                Path filePath = uploadPath.resolve(fileName);
+                Files.write(filePath, userDTO.getImageFile().getBytes());
                 user.setImage("/uploads/" + fileName);
             } catch (IOException e) {
                 throw new RuntimeException("Lỗi upload ảnh đại diện: " + e.getMessage());
@@ -112,5 +119,106 @@ public class UserServiceImpl implements UserService {
         }
 
         return userRepository.save(user);
+    }
+
+    @Override
+    public List<User> getAllActiveUsers() {
+        return userRepository.findAllActiveUsers();
+    }
+
+    @Override
+    public List<User> getAllDeletedUsers() {
+        return userRepository.findAllDeletedUsers();
+    }
+
+    @Override
+    public void softDeleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+        // Không cho phép xóa ADMIN
+        if (user.getRole().getRoleName() == RoleStatus.ROLE_ADMIN) {
+            throw new RuntimeException("Không thể xóa tài khoản Admin");
+        }
+        user.setUserStatus(UserStatus.BANNED);
+        user.setDeleteAt(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    @Override
+    public void restoreUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+        user.setUserStatus(UserStatus.ACTIVE);
+        user.setDeleteAt(null);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void permanentlyDeleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+        // Không cho phép xóa ADMIN
+        if (user.getRole().getRoleName() == RoleStatus.ROLE_ADMIN) {
+            throw new RuntimeException("Không thể xóa vĩnh viễn tài khoản Admin");
+        }
+
+        // Xóa ảnh đại diện nếu có
+        if (user.getImage() != null && !user.getImage().isEmpty()) {
+            try {
+                String fileName = user.getImage().substring(user.getImage().lastIndexOf("/") + 1);
+                Path path = Paths.get(upload, fileName);
+                Files.deleteIfExists(path);
+            } catch (IOException e) {
+                System.err.println("Cảnh báo: Không thể xóa ảnh đại diện: " + e.getMessage());
+            }
+        }
+
+        userRepository.hardDeleteById(userId);
+    }
+
+    @Override
+    public void changeUserRole(Long userId, String roleName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+        if (user.getRole().getRoleName() == RoleStatus.ROLE_ADMIN) {
+            throw new RuntimeException("Không thể thay đổi role của tài khoản Admin");
+        }
+
+        RoleStatus roleStatus;
+        try {
+            roleStatus = RoleStatus.valueOf(roleName);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Role không hợp lệ");
+        }
+
+        Role role = roleRepository.findByRoleName(roleStatus)
+                .orElseThrow(() -> new RuntimeException("Role không tồn tại"));
+
+        user.setRole(role);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Scheduled(cron = "0 0 2 * * ?") // Chạy hàng ngày lúc 2:00 AM
+    public void permanentlyDeleteOldUsers() {
+        LocalDateTime cutoffDate = LocalDateTime.now().minus(5, ChronoUnit.DAYS);
+        List<User> usersToDelete = userRepository.findUsersToPermanentlyDelete(cutoffDate);
+
+        for (User user : usersToDelete) {
+            // Xóa ảnh đại diện
+            if (user.getImage() != null && !user.getImage().isEmpty()) {
+                try {
+                    String fileName = user.getImage().substring(user.getImage().lastIndexOf("/") + 1);
+                    Path path = Paths.get(upload, fileName);
+                    Files.deleteIfExists(path);
+                } catch (IOException e) {
+                    System.err.println("Cảnh báo: Không thể xóa ảnh đại diện: " + e.getMessage());
+                }
+            }
+        }
+
+        userRepository.permanentlyDeleteOldUsers(cutoffDate);
     }
 }
