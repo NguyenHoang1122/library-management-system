@@ -79,6 +79,10 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUserName(name);
     }
 
+    @Override
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
+    }
 
     @Override
     public User updateProfile(Long userId, UserDTO userDTO) {

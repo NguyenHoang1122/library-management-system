@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/user")
@@ -30,17 +31,7 @@ public class UserController {
 
     @GetMapping("/profile/edit")
     public String showProfileForm(Authentication authentication, Model model) {
-        String userName = authentication.getName();
-        User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-        UserDTO userDTO = new UserDTO();
-        userDTO.setFullName(user.getFullName());
-        userDTO.setUserName(user.getUserName());
-        userDTO.setEmail(user.getEmail());
-        userDTO.setPhoneNumber(user.getPhoneNumber());
-        userDTO.setAddress(user.getAddress());
-        model.addAttribute("userDTO", userDTO);
-        model.addAttribute("user", user);
-        return "user/edit-profile";
+        return "redirect:/user/profile";
     }
 
     @PostMapping("/profile/update")
@@ -48,7 +39,7 @@ public class UserController {
                                 RedirectAttributes redirectAttributes, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("error", "Dữ liệu không hợp lệ");
-            return "redirect:/user/profile/edit";
+            return "redirect:/user/profile";
         }
 
         String userName = authentication.getName();
@@ -61,19 +52,85 @@ public class UserController {
         }
         return "redirect:/user/profile";
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public String listActiveUsers(Model model) {
+    public String listActiveUsers(@RequestParam(defaultValue = "1") int page, Model model) {
+        return searchActiveUsers(null, page, model);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/search")
+    public String searchActiveUsers(@RequestParam(required = false) String query,
+                                    @RequestParam(defaultValue = "1") int page,
+                                    Model model) {
         List<User> users = userService.getAllActiveUsers();
-        model.addAttribute("users", users);
+        if (query != null && !query.trim().isEmpty()) {
+            String lowerQuery = query.toLowerCase();
+            users = users.stream()
+                .filter(u -> (u.getFullName() != null && u.getFullName().toLowerCase().contains(lowerQuery)) ||
+                             (u.getUserName() != null && u.getUserName().toLowerCase().contains(lowerQuery)) ||
+                             (u.getEmail() != null && u.getEmail().toLowerCase().contains(lowerQuery)))
+                .collect(Collectors.toList());
+        }
+
+        int pageSize = 10;
+        int totalItems = users.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, totalItems);
+        List<User> pagedUsers = users.subList(start, end);
+
+        model.addAttribute("users", pagedUsers);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("searchQuery", query);
         model.addAttribute("isTrash", false);
         return "user/list-users";
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/trash")
-    public String listDeletedUsers(Model model) {
+    public String listDeletedUsers(@RequestParam(defaultValue = "1") int page, Model model) {
+        return searchDeletedUsers(null, page, model);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/trash/search")
+    public String searchDeletedUsers(@RequestParam(required = false) String query,
+                                     @RequestParam(defaultValue = "1") int page,
+                                     Model model) {
         List<User> deletedUsers = userService.getAllDeletedUsers();
-        model.addAttribute("users", deletedUsers);
+        if (query != null && !query.trim().isEmpty()) {
+            String lowerQuery = query.toLowerCase();
+            deletedUsers = deletedUsers.stream()
+                .filter(u -> (u.getFullName() != null && u.getFullName().toLowerCase().contains(lowerQuery)) ||
+                             (u.getUserName() != null && u.getUserName().toLowerCase().contains(lowerQuery)) ||
+                             (u.getEmail() != null && u.getEmail().toLowerCase().contains(lowerQuery)))
+                .collect(Collectors.toList());
+        }
+
+        int pageSize = 10;
+        int totalItems = deletedUsers.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, totalItems);
+        List<User> pagedUsers = deletedUsers.subList(start, end);
+
+        model.addAttribute("users", pagedUsers);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("searchQuery", query);
         model.addAttribute("isTrash", true);
         return "user/trash";
     }

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/layout.css}">
     
     <!-- CSRF Meta Tags for AJAX -->
@@ -14,27 +15,6 @@
     <!-- Nhúng CSS sidebar toàn cục để hiển thị đúng trên tất cả các trang -->
     <style th:replace="~{fragments/sidebar :: sidebar_styles}"></style>
     
-    <style>
-        .notification-list {
-            max-height: 350px;
-            overflow-y: auto;
-            min-width: 300px;
-        }
-        .notification-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        .notification-list::-webkit-scrollbar-thumb {
-            background-color: #444;
-            border-radius: 10px;
-        }
-        .notification-header {
-            padding: 8px 16px;
-            border-bottom: 1px solid #444;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-    </style>
 </head>
 
 <body>
@@ -56,12 +36,12 @@
 <!--        </div>-->
 
         <div class="top-banner w-100">
-            <a href="#">
+            <a th:href="@{/}">
                 <img th:src="@{/image/anh-header1.png}" alt="Truyện 360 Banner" class="img-fluid w-100"
                     style="display: block;">
             </a>
         </div>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-waka-navbar">
             <div class="container">
                 <a class="navbar-brand logo-waka" th:href="@{/}">Truyện 360</a>
                 <div class="collapse navbar-collapse" id="360Nav">
@@ -97,11 +77,13 @@
 
                         <!-- Dropdown notifications -->
                         <div class="dropdown" sec:authorize="isAuthenticated()">
-                            <a class="text-white dropdown-toggle" href="#" role="button" id="notificationDropdown"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-bell"></i>
-                                <span th:if="${notifications != null and !notifications.isEmpty()}"
-                                    class="badge bg-danger" th:text="${#lists.size(notifications)}">0</span>
+                            <a class="text-white no-caret d-flex align-items-center" href="#" role="button" id="notificationDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none;">
+                                <div class="notification-wrapper">
+                                    <i class="bi bi-bell text-white fs-5"></i>
+                                    <span th:if="${notifications != null and !notifications.isEmpty()}"
+                                        class="notification-badge-dot" th:text="${#lists.size(notifications)}">0</span>
+                                </div>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end notification-list"
                                 aria-labelledby="notificationDropdown">
@@ -140,49 +122,75 @@
                         <!-- User dropdown -->
                         <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
                             <div class="dropdown">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
-                                    role="button" data-bs-toggle="dropdown" style="text-decoration: none;">
-                                    <img th:src="${currentUser != null and currentUser.image != null ? currentUser.image : 'https://ui-avatars.com/api/?name=' + #authentication.principal.username + '&background=random'}"
+                                <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle no-caret" href="#"
+                                    role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <img th:src="${currentUser != null and currentUser.image != null ? currentUser.image : 'https://ui-avatars.com/api/?name=' + #authentication.principal.username + '&background=16a085&color=fff'}"
                                         alt="Avatar" class="rounded-circle me-2"
-                                        style="width:30px; height:30px; object-fit: cover;">
-                                    <span th:text="${#authentication.principal.username ?: 'Thành viên'}"
-                                        class="text-white">User</span>
+                                        style="width:32px; height:32px; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.2);">
+                                    <span th:text="${currentUser != null ? currentUser.fullName : (#authentication.principal.username ?: 'Thành viên')}"
+                                        class="text-white me-1 fw-medium" style="font-size: 0.95rem;">User</span>
+                                    <i class="bi bi-chevron-down text-secondary" style="font-size: 0.85rem;"></i>
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
-                                    <li><a class="dropdown-item" th:href="@{/user/profile}">Thông tin cá nhân</a></li>
-                                    
-                                    <!-- MENU DÀNH CHO ADMIN -->
-                                    <th:block sec:authorize="hasRole('ADMIN')">
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" th:href="@{/user}">Quản lý người dùng</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/categories}">Danh mục truyện</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/books}">Quản lý truyện</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/reports}">Báo cáo thống kê</a></li>
-                                    </th:block>
+                                <div class="dropdown-menu waka-dropdown-menu dropdown-menu-end">
+                                    <!-- Menu Links -->
+                                    <div class="d-flex flex-column gap-1">
+                                        <a class="waka-dropdown-item" th:href="@{/user/profile}">
+                                            <i class="bi bi-person me-3 text-secondary"></i>Quản lý tài khoản
+                                        </a>
 
-                                    <!-- MENU DÀNH CHO THỦ THƯ -->
-                                    <th:block sec:authorize="hasRole('LIBRARIAN')">
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" th:href="@{/librarian/borrows}">Yêu cầu mượn</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/librarian/returns}">Yêu cầu trả truyện</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/librarian/active-borrows}">Sách đang được mượn</a></li>
-                                    </th:block>
+                                        <!-- MENU DÀNH CHO ADMIN -->
+                                        <th:block sec:authorize="hasRole('ADMIN')">
+                                            <a class="waka-dropdown-item" th:href="@{/user}">
+                                                <i class="bi bi-people me-3 text-secondary"></i>Quản lý người dùng
+                                            </a>
+                                            <a class="waka-dropdown-item" th:href="@{/categories}">
+                                                <i class="bi bi-collection me-3 text-secondary"></i>Danh mục truyện
+                                            </a>
+                                            <a class="waka-dropdown-item" th:href="@{/books}">
+                                                <i class="bi bi-book me-3 text-secondary"></i>Quản lý truyện
+                                            </a>
+                                            <a class="waka-dropdown-item" th:href="@{/reports}">
+                                                <i class="bi bi-graph-up me-3 text-secondary"></i>Báo cáo thống kê
+                                            </a>
+                                        </th:block>
 
-                                    <!-- MENU DÀNH CHO NGƯỜI DÙNG -->
-                                    <th:block sec:authorize="hasRole('USER')">
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" th:href="@{/borrow/active}">Truyện đang mượn</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/wishlist}">Danh sách yêu thích</a></li>
-                                        <li><a class="dropdown-item" th:href="@{/borrow/history}">Lịch sử mượn truyện</a></li>
-                                    </th:block>
+                                        <!-- MENU DÀNH CHO THỦ THƯ -->
+                                        <th:block sec:authorize="hasRole('LIBRARIAN')">
+                                            <a class="waka-dropdown-item" th:href="@{/librarian/borrows}">
+                                                <i class="bi bi-journal-plus me-3 text-secondary"></i>Yêu cầu mượn
+                                            </a>
+                                            <a class="waka-dropdown-item" th:href="@{/librarian/returns}">
+                                                <i class="bi bi-journal-arrow-down me-3 text-secondary"></i>Yêu cầu trả truyện
+                                            </a>
+                                            <a class="waka-dropdown-item" th:href="@{/librarian/active-borrows}">
+                                                <i class="bi bi-journal-bookmark me-3 text-secondary"></i>Sách đang được mượn
+                                            </a>
+                                        </th:block>
 
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <form th:action="@{/logout}" method="post" class="m-0">
-                                            <button type="submit" class="dropdown-item text-danger">Đăng xuất</button>
+                                        <!-- MENU DÀNH CHO NGƯỜI DÙNG -->
+                                        <th:block sec:authorize="hasRole('USER')">
+                                            <a class="waka-dropdown-item" th:href="@{/borrow/active}">
+                                                <i class="bi bi-bookmark-star me-3 text-secondary"></i>Truyện đang mượn
+                                            </a>
+                                            <a class="waka-dropdown-item" th:href="@{/wishlist}">
+                                                <i class="bi bi-heart me-3 text-secondary"></i>Danh sách yêu thích
+                                            </a>
+                                            <a class="waka-dropdown-item" th:href="@{/borrow/history}">
+                                                <i class="bi bi-clock-history me-3 text-secondary"></i>Lịch sử mượn truyện
+                                            </a>
+                                        </th:block>
+
+                                        <hr class="border-secondary border-opacity-25 my-2">
+
+                                        <!-- Logout Action -->
+                                        <form th:action="@{/logout}" method="post" class="m-0 w-100">
+                                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                            <button type="submit" class="waka-dropdown-item text-danger w-100 border-0 bg-transparent text-start">
+                                                <i class="bi bi-box-arrow-right me-3 text-danger"></i>Đăng xuất
+                                            </button>
                                         </form>
-                                    </li>
-                                </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

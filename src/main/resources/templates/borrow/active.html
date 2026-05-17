@@ -4,131 +4,7 @@
     <title>Truyện đang mượn | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-        .waka-tabs-main {
-            display: flex;
-            gap: 25px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-        }
-        .waka-tab-item {
-            color: #888;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 1rem;
-            transition: color 0.3s;
-        }
-        .waka-tab-item:hover, .waka-tab-item.active {
-            color: #16a085;
-        }
-        .waka-tab-item.active {
-            position: relative;
-        }
-        .waka-tab-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -11px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background-color: #16a085;
-        }
-        .filter-btns {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-        }
-        .btn-filter {
-            background: #2c2c2c;
-            color: #ccc;
-            border: none;
-            padding: 6px 20px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            transition: all 0.3s;
-        }
-        .btn-filter.active {
-            background: #fff;
-            color: #000;
-            font-weight: bold;
-        }
-        .book-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 25px;
-        }
-        .waka-card {
-            background: transparent;
-            border: none;
-            transition: transform 0.3s;
-        }
-        .waka-card:hover {
-            transform: translateY(-8px);
-        }
-        .waka-img-container {
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            aspect-ratio: 2/3;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            margin-bottom: 12px;
-        }
-        .waka-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .badge-hv {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: #f39c12;
-            color: #fff;
-            font-size: 0.65rem;
-            font-weight: bold;
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
-        .due-date-badge {
-            position: absolute;
-            bottom: 8px;
-            left: 8px;
-            background: rgba(0,0,0,0.7);
-            color: #f1c40f;
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border-radius: 3px;
-        }
-        .waka-card-title {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #eee;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            height: 2.7rem;
-            margin-bottom: 8px;
-        }
-        .waka-card-actions {
-            display: flex;
-            gap: 5px;
-        }
-        .btn-action-sm {
-            flex: 1;
-            padding: 4px;
-            font-size: 0.75rem;
-            border-radius: 4px;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/borrow-active.css}">
 </head>
 <body>
 <!-- Nhúng CSS sidebar -->
@@ -148,6 +24,8 @@
             <!-- Main Tabs -->
             <div class="waka-tabs-main">
                 <a href="#" class="waka-tab-item active">Đang mượn</a>
+                <a th:href="@{/wishlist}" class="waka-tab-item">Yêu thích</a>
+                <a th:href="@{/borrow/history}" class="waka-tab-item">Lịch sử</a>
             </div>
 
             <!-- Content Area -->
@@ -238,19 +116,6 @@
 
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script th:inline="javascript">
-    function prepareReturnModal(button) {
-        const transactionId = button.getAttribute('data-id');
-        const bookName = button.getAttribute('data-name');
-        
-        document.getElementById('modalBookName').innerText = bookName;
-        document.getElementById('returnForm').action = '/borrow/' + transactionId + '/return';
-        
-        // Đặt thời gian mặc định là hiện tại
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('returnDateTime').value = now.toISOString().slice(0, 16);
-    }
-</script>
+<script th:src="@{/js/borrow-active.js}"></script>
 </body>
 </html>

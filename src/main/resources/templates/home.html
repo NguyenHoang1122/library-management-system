@@ -3,85 +3,7 @@
 <head>
     <title>Trang chủ | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
-    <style>
-        body {
-            background-color: #000;
-            color: #fff;
-        }
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-        .section-title span {
-            font-size: 0.9rem;
-            color: #aaa;
-            font-weight: normal;
-        }
-        .book-card {
-            background: transparent;
-            border: none;
-            transition: transform 0.3s;
-            margin-bottom: 30px;
-        }
-        .book-card:hover {
-            transform: translateY(-10px);
-        }
-        .book-img-container {
-            position: relative;
-            border-radius: 8px;
-            overflow: hidden;
-            aspect-ratio: 2/3;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        .book-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .badge-waka {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #f39c12;
-            color: white;
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .rank-number {
-            position: absolute;
-            bottom: -10px;
-            left: 0;
-            font-size: 6rem;
-            font-weight: 900;
-            line-height: 1;
-            color: rgba(255, 255, 255, 0.8);
-            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
-            font-style: italic;
-            z-index: 1;
-            opacity: 0.9;
-            -webkit-text-stroke: 1px #fff;
-        }
-        .book-title {
-            margin-top: 12px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            height: 2.7rem;
-            line-height: 1.35;
-        }
-        .banner-home {
-            margin-bottom: 40px;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
 </head>
 <body>
 
@@ -136,7 +58,6 @@
                     <div class="book-card">
                         <div class="book-img-container">
                             <img th:src="${book.image}" class="book-img" th:alt="${book.title}">
-                            <span th:if="${book.quantity > 0}" class="badge-waka">HỘI VIÊN</span>
                             <span th:if="${book.quantity <= 0}" class="badge-waka bg-danger">Hết Hàng</span>
                         </div>
                         <div class="book-title" th:text="${book.title}"></div>
@@ -155,7 +76,6 @@
                     <div class="book-card">
                         <div class="book-img-container">
                             <img th:src="${book.image}" class="book-img" th:alt="${book.title}">
-                            <span th:if="${book.quantity > 0}" class="badge-waka">HỘI VIÊN</span>
                             <span th:if="${book.quantity <= 0}" class="badge-waka bg-danger">Hết Hàng</span>
                         </div>
                         <div class="book-title" th:text="${book.title}"></div>

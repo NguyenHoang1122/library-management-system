@@ -1,0 +1,29 @@
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+.admin-header-waka {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+.table-waka {
+    color: #ccc;
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.table-waka thead {
+    background: #252525;
+    color: #16a085;
+}
+.table-waka th, .table-waka td {
+    padding: 15px;
+    border-color: #333;
+}
+.table-waka tbody tr:hover {
+    background: rgba(22, 160, 133, 0.05);
+}

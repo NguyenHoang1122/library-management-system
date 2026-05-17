@@ -12,6 +12,7 @@ public interface UserService {
     User login(String userName, String password);
     List<User> getAllUsers();
     Optional<User> findByUserName(String name);
+    Optional<User> findById(Long id);
     User updateProfile(Long userId, UserDTO userDTO);
 
     List<User> getAllActiveUsers();

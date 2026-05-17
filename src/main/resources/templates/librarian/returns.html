@@ -4,42 +4,7 @@
     <title>Quản lý trả truyện | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-        .admin-header-waka {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #333;
-        }
-        .table-waka {
-            color: #ccc;
-            background: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .table-waka thead {
-            background: #252525;
-            color: #16a085;
-        }
-        .table-waka th, .table-waka td {
-            padding: 15px;
-            border-color: #333;
-        }
-        .table-waka tbody tr:hover {
-            background: rgba(22, 160, 133, 0.05);
-        }
-        .row-overdue {
-            background: rgba(231, 76, 60, 0.05) !important;
-        }
-        .badge-overdue { background: #e74c3c; color: #fff; }
-        .badge-normal { background: #16a085; color: #fff; }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/returns.css}">
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
@@ -54,8 +19,17 @@
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 px-5">
             <div class="admin-header-waka">
-                <h3 class="mb-0">Yêu cầu trả truyện chờ duyệt</h3>
+                <h3 class="mb-0"><i class="bi bi-arrow-counterclockwise me-2 text-warning"></i> Yêu cầu trả truyện chờ duyệt</h3>
             </div>
+
+            <!-- Search Area -->
+            <form th:action="@{/librarian/returns/search}" method="get" class="mb-4">
+                <div class="search-box-waka">
+                    <i class="bi bi-search text-secondary me-2"></i>
+                    <input type="text" name="query" class="form-control" placeholder="Tìm kiếm theo tên thành viên, email hoặc username..." th:value="${searchQuery}">
+                    <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold">TÌM</button>
+                </div>
+            </form>
 
             <!-- Pending Return Requests Table -->
             <div class="table-responsive mb-5">
@@ -109,11 +83,30 @@
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(pendingReturnRequests)}">
-                            <td colspan="6" class="text-center py-4 text-secondary">Không có yêu cầu trả truyện nào đang chờ duyệt.</td>
+                            <td colspan="7" class="text-center py-4 text-secondary">Không có yêu cầu trả truyện nào đang chờ duyệt.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4 mb-5">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/librarian/returns/search' : '/librarian/returns'}(query=${searchQuery}, page=${currentPage - 1})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{${searchQuery != null ? '/librarian/returns/search' : '/librarian/returns'}(query=${searchQuery}, page=${i})}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/librarian/returns/search' : '/librarian/returns'}(query=${searchQuery}, page=${currentPage + 1})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
 
         </div>
     </div>
@@ -147,19 +140,6 @@
 
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function confirmReturn(button) {
-        const row = button.closest('tr');
-        const isOverdue = row.classList.contains('row-overdue');
-        const message = isOverdue ? 'Truyện đã QUÁ HẠN! Xác nhận trả và tính phí phạt?' : 'Xác nhận xử lý trả truyện trực tiếp (không qua yêu cầu)?';
-        return confirm(message);
-    }
-
-    function openRejectModal(requestId) {
-        const modal = new bootstrap.Modal(document.getElementById('rejectReturnModal'));
-        document.getElementById('rejectReturnForm').action = '/librarian/returns/reject/' + requestId;
-        modal.show();
-    }
-</script>
+<script th:src="@{/js/returns.js}"></script>
 </body>
 </html>

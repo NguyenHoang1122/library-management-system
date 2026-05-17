@@ -16,7 +16,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
+import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Controller
@@ -32,28 +33,119 @@ public class BookController {
     @GetMapping
     public String listBooks(@RequestParam(required = false) String title,
                             @RequestParam(required = false) Long category,
+                            @RequestParam(defaultValue = "1") int page,
+                            @RequestParam(required = false) String sortBy,
                             Model model,
                             Authentication authentication) {
+        List<Book> books;
         if (title != null && !title.isEmpty()) {
-            model.addAttribute("books", bookService.searchBooks(title));
+            books = new ArrayList<>(bookService.searchBooks(title));
         } else if (category != null) {
-            model.addAttribute("books", bookService.getBooksByCategory(category));
+            books = new ArrayList<>(bookService.getBooksByCategory(category));
         } else {
-            model.addAttribute("books", bookService.getAllBooks());
+            books = new ArrayList<>(bookService.getAllBooks());
         }
 
+        // Sắp xếp
+        if ("author".equals(sortBy)) {
+            books.sort((b1, b2) -> {
+                String a1 = b1.getAuthor() != null ? b1.getAuthor().getName() : "";
+                String a2 = b2.getAuthor() != null ? b2.getAuthor().getName() : "";
+                return a1.compareToIgnoreCase(a2);
+            });
+        } else if ("category".equals(sortBy)) {
+            books.sort((b1, b2) -> {
+                String c1 = b1.getCategories().isEmpty() ? "" : b1.getCategories().iterator().next().getCategoryName();
+                String c2 = b2.getCategories().isEmpty() ? "" : b2.getCategories().iterator().next().getCategoryName();
+                return c1.compareToIgnoreCase(c2);
+            });
+        } else if ("quantity".equals(sortBy)) {
+            books.sort((b1, b2) -> Integer.compare(b2.getQuantity(), b1.getQuantity()));
+        }
+
+        // Phân trang (10 phần tử mỗi trang)
+        int pageSize = 10;
+        int totalItems = books.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, totalItems);
+        List<Book> pagedBooks = books.subList(start, end);
+
+        model.addAttribute("books", pagedBooks);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("category", category);
+
         addUserDataToModel(model, authentication);
-        return "book/list";
+
+        boolean isAdminOrLibrarian = false;
+        if (authentication != null && authentication.isAuthenticated()) {
+            isAdminOrLibrarian = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_LIBRARIAN"));
+        }
+
+        return isAdminOrLibrarian ? "book/list" : "book/user-list";
     }
 
     @GetMapping("/search")
     public String searchBooks(@RequestParam("query") String query,
-                             Model model,
-                             Authentication authentication) {
-        model.addAttribute("books", bookService.searchBooks(query));
+                              @RequestParam(defaultValue = "1") int page,
+                              @RequestParam(required = false) String sortBy,
+                              Model model,
+                              Authentication authentication) {
+        List<Book> books = new ArrayList<>(bookService.searchBooks(query));
+
+        // Sắp xếp
+        if ("author".equals(sortBy)) {
+            books.sort((b1, b2) -> {
+                String a1 = b1.getAuthor() != null ? b1.getAuthor().getName() : "";
+                String a2 = b2.getAuthor() != null ? b2.getAuthor().getName() : "";
+                return a1.compareToIgnoreCase(a2);
+            });
+        } else if ("category".equals(sortBy)) {
+            books.sort((b1, b2) -> {
+                String c1 = b1.getCategories().isEmpty() ? "" : b1.getCategories().iterator().next().getCategoryName();
+                String c2 = b2.getCategories().isEmpty() ? "" : b2.getCategories().iterator().next().getCategoryName();
+                return c1.compareToIgnoreCase(c2);
+            });
+        } else if ("quantity".equals(sortBy)) {
+            books.sort((b1, b2) -> Integer.compare(b2.getQuantity(), b1.getQuantity()));
+        }
+
+        // Phân trang
+        int pageSize = 10;
+        int totalItems = books.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, totalItems);
+        List<Book> pagedBooks = books.subList(start, end);
+
+        model.addAttribute("books", pagedBooks);
         model.addAttribute("searchQuery", query);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("sortBy", sortBy);
+        
         addUserDataToModel(model, authentication);
-        return "book/list";
+
+        boolean isAdminOrLibrarian = false;
+        if (authentication != null && authentication.isAuthenticated()) {
+            isAdminOrLibrarian = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_LIBRARIAN"));
+        }
+
+        return isAdminOrLibrarian ? "book/list" : "book/user-list";
     }
 
     private void addUserDataToModel(Model model, Authentication authentication) {
@@ -91,10 +183,7 @@ public class BookController {
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/add")
     public String showAddForm(Model model) {
-        model.addAttribute("bookDTO", new BookDTO());
-        model.addAttribute("categories", categoryService.getAllCategories());
-        model.addAttribute("authors", authorService.getAllAuthors());
-        return "book/book-form";
+        return "redirect:/books";
     }
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/save")
@@ -110,23 +199,7 @@ public class BookController {
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
-        Book book = bookService.getBookById(id).orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
-        BookDTO bookDTO = new BookDTO();
-        // Map entity to DTO (bỏ qua imageFile nếu không edit ảnh)
-        bookDTO.setId(id);
-        bookDTO.setTitle(book.getTitle());
-        bookDTO.setDescription(book.getDescription());
-        bookDTO.setIsbn(book.getIsbn());
-        bookDTO.setPublishYear(book.getPublishYear());
-        bookDTO.setQuantity(book.getQuantity());
-        bookDTO.setImage(book.getImage());
-
-        if (book.getCategories() != null) bookDTO.setCategoryIds(book.getCategories().stream().map(Category::getId).collect(Collectors.toList()));
-        if (book.getAuthor() != null) bookDTO.setAuthorName(book.getAuthor().getName());
-        model.addAttribute("bookDTO", bookDTO);
-        model.addAttribute("categories", categoryService.getAllCategories());
-        model.addAttribute("authors", authorService.getAllAuthors());
-        return "book/book-form";
+        return "redirect:/books";
     }
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/update/{id}")

@@ -23,6 +23,11 @@
             <!-- ========== MENU CHO ADMIN ========== -->
             <th:block sec:authorize="hasRole('ADMIN')">
                 <li class="nav-item">
+                    <a th:href="@{/user/profile}" class="nav-link-waka" th:classappend="${activePage == 'profile' ? 'active' : ''}">
+                        <i class="far fa-user me-3"></i> Thông tin người dùng
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a th:href="@{/user}" class="nav-link-waka" th:classappend="${activePage == 'users' ? 'active' : ''}">
                         <i class="bi bi-people me-3"></i> Quản lý người dùng
                     </a>
@@ -52,6 +57,11 @@
             <!-- ========== MENU CHO LIBRARIAN ========== -->
             <th:block sec:authorize="hasRole('LIBRARIAN')">
                 <li class="nav-item">
+                    <a th:href="@{/user/profile}" class="nav-link-waka" th:classappend="${activePage == 'profile' ? 'active' : ''}">
+                        <i class="far fa-user me-3"></i> Thông tin người dùng
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a th:href="@{/librarian/borrows}" class="nav-link-waka" th:classappend="${activePage == 'borrows' ? 'active' : ''}">
                         <i class="bi bi-arrow-left-right me-3"></i> Yêu cầu mượn
                     </a>
@@ -71,8 +81,13 @@
                         <i class="bi bi-journal-check me-3"></i> Sách đang được mượn
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a th:href="@{/my-notifications}" class="nav-link-waka" th:classappend="${activePage == 'notifications' ? 'active' : ''}">
+                        <i class="bi bi-bell me-3"></i> Thông báo
+                    </a>
+                </li>
             </th:block>
-
+            
             <!-- ========== MENU CHO USER ========== -->
             <th:block sec:authorize="hasRole('USER')">
                 <li class="nav-item">
@@ -116,67 +131,7 @@
 </div>
 
 <!-- CSS cho Waka Sidebar -->
-<style th:fragment="sidebar_styles">
-    .waka-sidebar {
-        background-color: #121212;
-        padding: 20px;
-        min-height: 100vh;
-    }
-    .profile-name {
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: #fff;
-    }
-    .profile-avatar {
-        width: 45px;
-        height: 45px;
-        border: 2px solid #16a085;
-    }
-    .profile-stats {
-        font-size: 0.85rem;
-        color: #888;
-    }
-    .btn-nap-soi {
-        background: #2c2c2c;
-        color: #f39c12;
-        border: none;
-        border-radius: 20px;
-        padding: 5px 15px;
-        font-weight: 600;
-        font-size: 0.8rem;
-    }
-    .btn-hoi-vien {
-        background: #16a085;
-        color: #fff;
-        border: none;
-        border-radius: 20px;
-        padding: 5px 15px;
-        font-weight: 600;
-        font-size: 0.8rem;
-    }
-    .nav-link-waka {
-        color: #888;
-        padding: 10px 15px;
-        border-radius: 8px;
-        display: block;
-        text-decoration: none;
-        transition: all 0.3s;
-        font-size: 0.95rem;
-    }
-    .nav-link-waka:hover {
-        background: rgba(255,255,255,0.05);
-        color: #fff;
-    }
-    .nav-link-waka.active {
-        background: rgba(255,255,255,0.1);
-        color: #16a085;
-        font-weight: 600;
-    }
-    .nav-link-waka i {
-        font-size: 1.1rem;
-        width: 20px;
-    }
-</style>
+<link th:fragment="sidebar_styles" rel="stylesheet" th:href="@{/css/sidebar.css}" />
 
 </body>
 </html>
