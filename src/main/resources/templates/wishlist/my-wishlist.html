@@ -46,12 +46,13 @@
 
             <div th:if="${totalWishlists > 0}" class="book-grid">
                 <div th:each="wishlist : ${wishlists}" class="waka-card">
-                    <div class="waka-img-container" th:onclick="|window.location.href='/books/${wishlist.book.id}'|" style="cursor: pointer;">
-                        <img th:src="${wishlist.book.image != null ? wishlist.book.image : 'https://via.placeholder.com/200x300?text=No+Image'}"
-                             class="waka-img" th:alt="${wishlist.book.title}">
-                    </div>
-
-                    <div class="waka-card-title" th:text="${wishlist.book.title}"></div>
+                    <a th:href="@{/books/{id}(id=${wishlist.book.id})}" class="text-decoration-none">
+                        <div class="waka-img-container">
+                            <img th:src="${wishlist.book.image != null ? wishlist.book.image : 'https://via.placeholder.com/200x300?text=No+Image'}"
+                                 class="waka-img" th:alt="${wishlist.book.title}">
+                        </div>
+                        <div class="waka-card-title text-light" th:text="${wishlist.book.title}"></div>
+                    </a>
 
                     <div class="waka-card-actions">
                         <!-- Nút Mượn/Đang mượn -->

@@ -62,7 +62,9 @@
                     <tbody>
                         <tr th:each="borrow, borrowStat : ${borrowHistory}">
                             <td th:text="${borrowStat.index + 1}">1</td>
-                            <td class="fw-bold" th:text="${borrow.bookName}">Tên truyện</td>
+                            <td class="fw-bold">
+                                <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="text-info text-decoration-none" th:text="${borrow.bookName}">Tên truyện</a>
+                            </td>
                             <td th:text="${borrow.borrowDate}">Ngày mượn</td>
                             <td th:text="${borrow.dueDate}">Ngày phải trả</td>
                             <td class="text-end">

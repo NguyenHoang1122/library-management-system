@@ -16,6 +16,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.librarymanagementsystem.service.BookReviewService;
+import com.librarymanagementsystem.service.BorrowService;
+import com.librarymanagementsystem.model.borrow.BorrowRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -28,6 +34,8 @@ public class BookController {
     private final CategoryService categoryService;
     private final AuthorService authorService;
     private final UserService userService;
+    private final BookReviewService bookReviewService;
+    private final BorrowService borrowService;
 
 
     @GetMapping
@@ -167,17 +175,65 @@ public class BookController {
                 .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
         model.addAttribute("book", book);
 
+        // Load reviews & stats
+        model.addAttribute("reviews", bookReviewService.getReviewsByBookId(id));
+        model.addAttribute("averageRating", bookReviewService.getAverageRatingForBook(id));
+        model.addAttribute("reviewCount", bookReviewService.countReviewsForBook(id));
+
+        boolean hasRented = false;
+        boolean hasPendingRequest = false;
+        com.librarymanagementsystem.model.book.BookReview existingReview = null;
         // Kiểm tra xem user đã mượn truyện này chưa
         if (authentication != null && authentication.isAuthenticated()) {
             String userName = authentication.getName();
             User user = userService.findByUserName(userName).orElse(null);
             if (user != null) {
                 boolean isBorrowed = bookService.isBookBorrowedByUser(id, user.getId());
+                
+                List<BorrowRequest> userRequests = borrowService.getUserBorrowRequests(user.getId());
+                if (userRequests != null) {
+                    for (BorrowRequest req : userRequests) {
+                        if (req.getRequestStatus() == com.librarymanagementsystem.model.borrow.status.RequestStatus.PENDING) {
+                            for (com.librarymanagementsystem.model.borrow.BorrowRequestItem item : req.getBorrowRequestItems()) {
+                                if (item.getBook().getId().equals(id)) {
+                                    hasPendingRequest = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (hasPendingRequest) break;
+                    }
+                }
+                
                 model.addAttribute("isBookBorrowed", isBorrowed);
                 model.addAttribute("userId", user.getId());
+                hasRented = bookReviewService.hasUserRentedBook(user.getId(), id);
+                existingReview = bookReviewService.getReviewByBookAndUser(id, user.getId()).orElse(null);
             }
         }
+        model.addAttribute("hasRented", hasRented);
+        model.addAttribute("hasPendingRequest", hasPendingRequest);
+        model.addAttribute("existingReview", existingReview);
         return "book/book-detail";
+    }
+
+    @PostMapping("/{id}/review")
+    @ResponseBody
+    public ResponseEntity<?> submitReview(@PathVariable("id") Long bookId,
+                                          @RequestParam("rating") Integer rating,
+                                          @RequestParam("comment") String comment,
+                                          Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "message", "Bạn cần đăng nhập để đánh giá!"));
+        }
+        try {
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            bookReviewService.saveReview(bookId, user.getId(), rating, comment);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Cảm ơn bạn đã đánh giá truyện!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")

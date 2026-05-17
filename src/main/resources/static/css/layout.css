@@ -275,3 +275,9 @@ main, .content-wrapper {
     color: #fff !important;
     box-shadow: 0 4px 12px rgba(22, 160, 133, 0.3) !important;
 }
+.hover-scale {
+    transition: transform 0.2s ease-in-out;
+}
+.hover-scale:hover {
+    transform: scale(1.2) !important;
+}

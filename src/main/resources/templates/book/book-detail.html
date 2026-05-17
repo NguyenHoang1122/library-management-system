@@ -4,20 +4,21 @@
     <title th:text="${book.title + ' | Truyện 360'}"></title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" th:href="@{/css/book-detail.css}">
+    <link rel="stylesheet" th:href="@{/css/book-detail.css?v=1.6}">
 </head>
 <body>
 
 <div th:replace="~{layout :: header}"></div>
 
 <div class="book-detail-container">
-    <div class="breadcrumb-waka">
-        <a th:href="@{/}">Trang chủ</a> / <span th:text="${book.title}">Tên truyện</span>
-    </div>
+    <div class="container">
+        <div class="breadcrumb-waka">
+            <a th:href="@{/}">Trang chủ</a> / <span th:text="${book.title}">Tên truyện</span>
+        </div>
 
     <div class="row">
         <!-- Cột trái: Bìa sách -->
-        <div class="col-lg-4 col-md-5 mb-5">
+        <div class="col-lg-4 col-md-5 mb-5 text-center text-md-start">
             <img th:src="${book.image != null ? book.image : 'https://via.placeholder.com/400x600?text=No+Cover'}"
                  class="book-cover-large" th:alt="${book.title}">
         </div>
@@ -27,8 +28,13 @@
             <h1 class="book-title-main" th:text="${book.title}"></h1>
 
             <div class="rating-section">
-                <span>4.8 <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></span>
-                <span class="text-secondary ms-2">• 1.450 đánh giá</span>
+                <span th:text="${averageRating} + ' '">0.0</span>
+                <span class="stars-display">
+                    <i th:each="starIdx : ${#numbers.sequence(1, 5)}" 
+                       class="bi" 
+                       th:classappend="${averageRating >= starIdx} ? 'bi-star-fill text-warning' : (${averageRating >= starIdx - 0.5} ? 'bi-star-half text-warning' : 'bi-star text-secondary')"></i>
+                </span>
+                <span class="text-secondary ms-2" th:text="'• ' + ${reviewCount} + ' đánh giá'">• 0 đánh giá</span>
             </div>
 
             <div class="info-grid">
@@ -61,16 +67,22 @@
             <div class="action-btns">
                 <!-- Nút Mượn sách -->
                 <div sec:authorize="isAuthenticated()">
-                    <th:block th:if="${book.quantity > 0}">
-                        <button th:if="${!isBookBorrowed}" class="btn btn-waka-primary" id="borrowBtn" th:attr="data-book-id=${book.id}">
+                    <!-- 1. Nếu đang mượn -->
+                    <button th:if="${isBookBorrowed}" class="btn btn-secondary rounded-pill px-4 disabled">
+                        <i class="fas fa-check-circle"></i> Đang mượn
+                    </button>
+                    
+                    <!-- 2. Nếu đang chờ duyệt -->
+                    <button th:if="${!isBookBorrowed && hasPendingRequest}" class="btn btn-secondary rounded-pill px-4 disabled">
+                        <i class="fas fa-check-circle"></i> Đang chờ duyệt
+                    </button>
+                    
+                    <!-- 3. Nếu chưa mượn và chưa chờ duyệt -->
+                    <th:block th:if="${!isBookBorrowed && !hasPendingRequest}">
+                        <button th:if="${book.quantity > 0}" class="btn btn-waka-primary" id="borrowBtn" th:attr="data-book-id=${book.id}">
                             <i class="fas fa-book-open"></i> Mượn truyện
                         </button>
-                        <button th:if="${isBookBorrowed}" class="btn btn-secondary rounded-pill px-4 disabled">
-                            <i class="fas fa-check-circle"></i> Đang mượn
-                        </button>
-                    </th:block>
-                    <th:block th:if="${book.quantity <= 0}">
-                        <button class="btn btn-danger rounded-pill px-4 disabled">
+                        <button th:if="${book.quantity <= 0}" class="btn btn-danger rounded-pill px-4 disabled">
                             <i class="fas fa-times-circle"></i> Tạm hết hàng
                         </button>
                     </th:block>
@@ -117,43 +129,92 @@
                 <p th:text="${book.description}">Mô tả truyện...</p>
             </div>
 
-            <!-- Phần bình luận (Placeholder) -->
+            <!-- Phần bình luận & Đánh giá -->
             <div class="comment-section">
                 <h3 class="comment-section-title">Độc giả nói gì về "<span th:text="${book.title}"></span>"</h3>
 
                 <div class="comment-tabs">
-                    <a href="#" class="comment-tab active">Bình luận (52)</a>
-                    <a href="#" class="comment-tab">Đánh giá & nhận xét (12)</a>
-                    <a href="#" class="comment-tab">Hỏi đáp</a>
+                    <a href="#" class="comment-tab active">Đánh giá & Bình luận</a>
+                </div>
+
+                <!-- Form viết đánh giá dành cho user đã thuê sách -->
+                <div th:if="${hasRented}" class="review-form-container mb-5 p-4 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05);">
+                    <h4 class="mb-3 text-light">
+                        <i class="bi bi-pencil-square me-2 text-info"></i>
+                        <span th:text="${existingReview != null ? 'Chỉnh sửa đánh giá của bạn' : 'Viết đánh giá của bạn'}">Viết đánh giá của bạn</span>
+                    </h4>
+                    <form id="reviewForm" th:attr="data-book-id=${book.id}">
+                        <!-- Chọn sao -->
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">ĐÁNH GIÁ CỦA BẠN (1-5 SAO)</label>
+                            <div class="star-rating-select fs-3 d-flex gap-2">
+                                <i class="bi bi-star-fill star-select" data-value="1" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                <i class="bi bi-star-fill star-select" data-value="2" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                <i class="bi bi-star-fill star-select" data-value="3" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                <i class="bi bi-star-fill star-select" data-value="4" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                <i class="bi bi-star-fill star-select" data-value="5" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                            </div>
+                            <input type="hidden" name="rating" id="selectedRating" th:value="${existingReview != null ? existingReview.rating : 5}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="reviewComment" class="form-label text-secondary small fw-bold">BÌNH LUẬN CHI TIẾT</label>
+                            <textarea class="form-control bg-black text-light border-secondary" id="reviewComment" name="comment" rows="3" required placeholder="Chia sẻ cảm nhận của bạn về cuốn truyện này..." th:text="${existingReview != null ? existingReview.comment : ''}"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-waka-primary px-4" id="submitReviewBtn" th:text="${existingReview != null ? 'Cập nhật đánh giá' : 'Gửi đánh giá'}">
+                            Gửi đánh giá
+                        </button>
+                    </form>
+                </div>
+                <div th:if="${!hasRented}" class="alert alert-secondary bg-dark bg-opacity-50 border-secondary text-secondary mb-5">
+                    <span sec:authorize="isAnonymous()">
+                        <i class="bi bi-info-circle me-2 text-info"></i> Bạn cần <a th:href="@{/login}" class="text-info fw-bold">Đăng nhập</a> và mượn truyện này để có thể đánh giá và bình luận.
+                    </span>
+                    <span sec:authorize="isAuthenticated()">
+                        <i class="bi bi-info-circle me-2 text-warning"></i> Bạn chỉ có thể đánh giá và bình luận sau khi đã được duyệt mượn truyện này.
+                    </span>
                 </div>
 
                 <div class="comment-list">
-                    <div class="comment-item">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="https://ui-avatars.com/api/?name=User+1&background=random" class="user-avatar" alt="Avatar">
-                            <div>
-                                <div class="fw-bold">Nguyễn Văn A</div>
-                                <small class="text-muted">1 ngày trước</small>
+                    <div th:each="review : ${reviews}" class="comment-item">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <img th:src="${review.user.image != null ? review.user.image : 'https://ui-avatars.com/api/?name=' + review.user.fullName + '&background=random'}" class="user-avatar" alt="Avatar">
+                                <div>
+                                    <div class="fw-bold text-light" th:text="${review.user.fullName}"></div>
+                                    <small class="text-muted" th:text="${#temporals.format(review.createdDate, 'dd/MM/yyyy HH:mm')}"></small>
+                                </div>
+                            </div>
+                            <div class="rating-stars">
+                                <i th:each="i : ${#numbers.sequence(1, 5)}" class="bi bi-star-fill" th:classappend="${review.rating >= i} ? 'text-warning' : 'text-secondary'"></i>
                             </div>
                         </div>
-                        <p class="mb-0">"Cốt truyện quá hấp dẫn, mình không thể rời mắt được. Rất đáng mượn!"</p>
+                        <p class="mb-0 text-light" th:text="${review.comment}">Nội dung bình luận...</p>
                     </div>
-
-                    <div class="comment-item">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="https://ui-avatars.com/api/?name=User+2&background=random" class="user-avatar" alt="Avatar">
-                            <div>
-                                <div class="fw-bold">Trần Thị B</div>
-                                <small class="text-muted">3 ngày trước</small>
-                            </div>
-                        </div>
-                        <p class="mb-0">"Lời văn rất mượt mà, cảm xúc. Mong thư viện cập nhật thêm nhiều bộ như thế này nữa."</p>
+                    <div th:if="${#lists.isEmpty(reviews)}" class="text-center py-4 text-secondary">
+                        Chưa có đánh giá nào cho cuốn truyện này. Hãy là người đầu tiên đánh giá!
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
 
-                <div class="text-center mt-4">
-                    <button class="btn btn-outline-secondary rounded-pill px-4">Xem thêm</button>
-                </div>
+<!-- Modal thông báo thành công -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="successModalLabel"><i class="bi bi-check-circle-fill text-success me-2"></i> Thành công</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p id="successModalMessage" class="fs-5 mb-0">Đã gửi đánh giá thành công!</p>
+            </div>
+            <div class="modal-footer border-secondary justify-content-center">
+                <button type="button" class="btn btn-waka-primary px-4" data-bs-dismiss="modal" id="successModalCloseBtn">Đóng</button>
             </div>
         </div>
     </div>
@@ -162,7 +223,6 @@
 <div th:replace="~{layout :: footer}"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script th:src="@{/js/book-detail.js}"></script>
 
 </body>
