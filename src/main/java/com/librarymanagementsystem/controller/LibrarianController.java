@@ -2,6 +2,7 @@ package com.librarymanagementsystem.controller;
 
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
+import com.librarymanagementsystem.model.borrow.ReturnRequest;
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.model.user.status.RoleStatus;
 import com.librarymanagementsystem.service.BorrowService;
@@ -29,9 +30,53 @@ public class LibrarianController {
     private final UserService userService;
 
     @GetMapping("/borrows")
-    public String listPendingBorrows(Model model) {
+    public String listPendingBorrows(@RequestParam(defaultValue = "1") int page,
+                                     Model model) {
+        return searchPendingBorrows(null, page, model);
+    }
+
+    @GetMapping("/borrows/search")
+    public String searchPendingBorrows(@RequestParam(required = false) String query,
+                                       @RequestParam(defaultValue = "1") int page,
+                                       Model model) {
         List<BorrowRequest> pendingRequests = borrowService.getAllPendingRequests();
-        model.addAttribute("pendingRequests", pendingRequests);
+        
+        // Tìm kiếm
+        if (query != null && !query.trim().isEmpty()) {
+            String lowerQuery = query.toLowerCase();
+            pendingRequests = pendingRequests.stream()
+                .filter(r -> (r.getUser() != null && (
+                                (r.getUser().getFullName() != null && r.getUser().getFullName().toLowerCase().contains(lowerQuery)) ||
+                                (r.getUser().getUserName() != null && r.getUser().getUserName().toLowerCase().contains(lowerQuery)) ||
+                                (r.getUser().getEmail() != null && r.getUser().getEmail().toLowerCase().contains(lowerQuery))
+                             )) || 
+                             (!r.getBorrowRequestItems().isEmpty() && 
+                                r.getBorrowRequestItems().get(0).getBook() != null && 
+                                r.getBorrowRequestItems().get(0).getBook().getTitle() != null && 
+                                r.getBorrowRequestItems().get(0).getBook().getTitle().toLowerCase().contains(lowerQuery)
+                             )
+                )
+                .collect(Collectors.toList());
+        }
+
+        // Phân trang
+        int pageSize = 10;
+        int totalItems = pendingRequests.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, totalItems);
+        List<BorrowRequest> pagedRequests = pendingRequests.subList(start, end);
+
+        model.addAttribute("pendingRequests", pagedRequests);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("searchQuery", query);
+
         return "librarian/borrows";
     }
 
@@ -64,17 +109,135 @@ public class LibrarianController {
     }
 
     @GetMapping("/returns")
-    public String listPendingReturnRequests(Model model) {
-        model.addAttribute("pendingReturnRequests", borrowService.getAllPendingReturnRequests());
+    public String listPendingReturnRequests(@RequestParam(defaultValue = "1") int page,
+                                            Model model) {
+        return searchPendingReturnRequests(null, page, model);
+    }
+
+    @GetMapping("/returns/search")
+    public String searchPendingReturnRequests(@RequestParam(required = false) String query,
+                                              @RequestParam(defaultValue = "1") int page,
+                                              Model model) {
+        List<ReturnRequest> pendingReturnRequests = borrowService.getAllPendingReturnRequests();
+        
+        // Tìm kiếm
+        if (query != null && !query.trim().isEmpty()) {
+            String lowerQuery = query.toLowerCase();
+            pendingReturnRequests = pendingReturnRequests.stream()
+                .filter(r -> r.getUser() != null && (
+                                (r.getUser().getFullName() != null && r.getUser().getFullName().toLowerCase().contains(lowerQuery)) ||
+                                (r.getUser().getUserName() != null && r.getUser().getUserName().toLowerCase().contains(lowerQuery)) ||
+                                (r.getUser().getEmail() != null && r.getUser().getEmail().toLowerCase().contains(lowerQuery))
+                             )
+                )
+                .collect(Collectors.toList());
+        }
+
+        // Phân trang
+        int pageSize = 10;
+        int totalItems = pendingReturnRequests.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, totalItems);
+        List<ReturnRequest> pagedRequests = pendingReturnRequests.subList(start, end);
+
+        model.addAttribute("pendingReturnRequests", pagedRequests);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("searchQuery", query);
+
         return "librarian/returns";
     }
 
     @GetMapping("/active-borrows")
-    public String listAllActiveBorrows(Model model) {
+    public String listAllActiveBorrows(@RequestParam(defaultValue = "1") int page,
+                                       Model model) {
+        return searchAllActiveBorrows(null, page, model);
+    }
+
+    @GetMapping("/active-borrows/search")
+    public String searchAllActiveBorrows(@RequestParam(required = false) String query,
+                                         @RequestParam(defaultValue = "1") int page,
+                                         Model model) {
         List<BorrowTransaction> activeBorrows = borrowService.getAllActiveBorrows();
 
-        // Chuẩn bị dữ liệu cho template (giống như cũ nhưng tách ra trang riêng)
-        List<Map<String, Object>> borrowData = activeBorrows.stream().map(borrow -> {
+        // Nhóm theo User và tính tổng số sách đang mượn
+        Map<User, Integer> userBorrowCount = new HashMap<>();
+        for (BorrowTransaction transaction : activeBorrows) {
+            User user = transaction.getUser();
+            if (user != null) {
+                int itemCount = transaction.getItems().size();
+                userBorrowCount.put(user, userBorrowCount.getOrDefault(user, 0) + itemCount);
+            }
+        }
+
+        // Chuyển sang dạng Map sạch để truyền cho template tránh lỗi tuần tự hóa thực thể
+        List<Map<String, Object>> memberBorrows = userBorrowCount.entrySet().stream()
+                .map(entry -> {
+                    User u = entry.getKey();
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("userId", u.getId());
+                    map.put("fullName", u.getFullName());
+                    map.put("userName", u.getUserName());
+                    map.put("email", u.getEmail());
+                    map.put("borrowCount", entry.getValue());
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        // Tìm kiếm
+        if (query != null && !query.trim().isEmpty()) {
+            String lowerQuery = query.toLowerCase();
+            memberBorrows = memberBorrows.stream()
+                .filter(m -> {
+                    String fullName = m.get("fullName") != null ? m.get("fullName").toString().toLowerCase() : "";
+                    String userName = m.get("userName") != null ? m.get("userName").toString().toLowerCase() : "";
+                    String email = m.get("email") != null ? m.get("email").toString().toLowerCase() : "";
+                    return fullName.contains(lowerQuery) || userName.contains(lowerQuery) || email.contains(lowerQuery);
+                })
+                .collect(Collectors.toList());
+        }
+
+        // Sắp xếp
+        memberBorrows.sort((m1, m2) -> Integer.compare((int) m2.get("borrowCount"), (int) m1.get("borrowCount")));
+
+        // Phân trang
+        int pageSize = 10;
+        int totalItems = memberBorrows.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages == 0) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, totalItems);
+        List<Map<String, Object>> pagedMembers = memberBorrows.subList(start, end);
+
+        model.addAttribute("memberBorrows", pagedMembers);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("searchQuery", query);
+
+        return "librarian/active-borrows";
+    }
+
+    @GetMapping("/active-borrows/user/{userId}")
+    public String viewUserActiveBorrows(@PathVariable Long userId, Model model) {
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Thành viên không tồn tại"));
+
+        List<BorrowTransaction> userActiveTransactions = borrowService.getAllActiveBorrows().stream()
+                .filter(t -> t.getUser() != null && t.getUser().getId().equals(userId))
+                .sorted((t1, t2) -> t2.getBorrowDate().compareTo(t1.getBorrowDate()))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> borrowData = userActiveTransactions.stream().map(borrow -> {
             Map<String, Object> data = new HashMap<>();
             data.put("borrow", borrow);
             data.put("isOverdue", borrowService.isOverdue(borrow.getId()));
@@ -83,8 +246,9 @@ public class LibrarianController {
             return data;
         }).collect(Collectors.toList());
 
+        model.addAttribute("user", user);
         model.addAttribute("borrowDataMap", borrowData);
-        return "librarian/active-borrows";
+        return "librarian/user-active-borrows";
     }
 
     @PostMapping("/returns/approve/{requestId}")
@@ -132,6 +296,7 @@ public class LibrarianController {
 
     @PostMapping("/returns/{transactionId}")
     public String returnBook(@PathVariable Long transactionId,
+                             @RequestParam(required = false) Long userId,
                              Authentication authentication,
                              RedirectAttributes redirectAttributes) {
         try {
@@ -154,6 +319,10 @@ public class LibrarianController {
             redirectAttributes.addFlashAttribute("message", message);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        
+        if (userId != null) {
+            return "redirect:/librarian/active-borrows/user/" + userId;
         }
         return "redirect:/librarian/active-borrows";
     }

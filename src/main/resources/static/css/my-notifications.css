@@ -1,0 +1,57 @@
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+.admin-header-waka {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #2d2d2d;
+}
+.noti-list-waka {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.noti-item-waka {
+    background: #1a1a1a;
+    border: 1px solid #2d2d2d;
+    border-radius: 12px;
+    padding: 20px;
+    color: #ccc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    text-decoration: none !important;
+}
+.noti-item-waka:hover {
+    border-color: var(--waka-green, #14b4a0);
+    background: #222;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(20, 180, 160, 0.15);
+}
+.noti-item-waka.unread {
+    border-left: 4px solid var(--waka-green, #14b4a0);
+    background: rgba(20, 180, 160, 0.04);
+}
+.unread-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--waka-green, #14b4a0);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    box-shadow: 0 0 8px var(--waka-green, #14b4a0);
+}
+.noti-time {
+    font-size: 0.8rem;
+    color: #777;
+}
+.btn-link:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+    transition: all 0.2s;
+}

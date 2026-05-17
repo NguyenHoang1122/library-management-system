@@ -4,82 +4,7 @@
     <title>Thông Tin Cá Nhân | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-        /* Đồng bộ Tabs với trang Active/Wishlist/Update */
-        .waka-tabs-main {
-            display: flex;
-            gap: 25px;
-            margin-bottom: 30px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-        }
-        .waka-tab-item {
-            color: #888;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 1rem;
-            transition: color 0.3s;
-        }
-        .waka-tab-item:hover, .waka-tab-item.active {
-            color: #16a085;
-        }
-        .waka-tab-item.active {
-            position: relative;
-        }
-        .waka-tab-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -11px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background-color: #16a085;
-        }
-
-        /* Profile Card Styling đồng bộ Dark Mode */
-        .profile-card-waka {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .avatar-preview-waka {
-            width: 160px;
-            height: 160px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 4px solid #16a085;
-            padding: 4px;
-            background: #222;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        .info-label {
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: #888;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            letter-spacing: 0.5px;
-        }
-        .info-value {
-            color: #fff;
-            font-size: 1rem;
-            margin-bottom: 20px;
-            padding: 8px 0;
-            border-bottom: 1px solid #252525;
-        }
-        .badge-status {
-            background: #16a085;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 50px;
-            font-size: 0.75rem;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/user-detail.css}">
 </head>
 <body>
 <!-- Nhúng CSS sidebar tương tự các trang khác -->
@@ -89,22 +14,45 @@
 
 <main class="container-fluid my-5 px-0">
     <div class="row g-0">
-        <!-- Sidebar - Cấu trúc chuẩn col-md-3 -->
+        <!-- Sidebar -->
         <div class="col-md-3 col-lg-2">
             <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='profile')}"></div>
         </div>
 
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 px-5">
-            <!-- Tabs Menu đồng bộ -->
-            <div class="waka-tabs-main">
+            <!-- Tabs Menu for USER -->
+            <div sec:authorize="hasRole('USER')" class="waka-tabs-main">
                 <a href="#" class="waka-tab-item active">Hồ sơ cá nhân</a>
                 <a th:href="@{/borrow/active}" class="waka-tab-item">Truyện của tôi</a>
             </div>
 
+            <!-- Page Header for ADMIN and LIBRARIAN (styled like "Quản lý truyện") -->
+            <div sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')" class="admin-header-waka">
+                <h3 class="mb-0"><i class="bi bi-person-gear me-2 text-warning"></i> Thông tin cá nhân</h3>
+            </div>
+
+            <!-- Alerts -->
+            <div th:if="${message != null}" class="alert alert-success alert-dismissible fade show bg-success bg-opacity-20 border-success border-opacity-30 text-success rounded-pill px-4 mb-4" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${message}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${error != null}" class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-20 border-danger border-opacity-30 text-danger rounded-pill px-4 mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
             <div class="profile-card-waka shadow-lg">
-                <div class="p-4 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                <!-- Card Header for USER (Blue theme) -->
+                <div sec:authorize="hasRole('USER')" class="p-4 border-bottom border-secondary d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-light"><i class="bi bi-person-badge me-2 text-info"></i>Thông tin chi tiết</h5>
+                    <span class="badge-status" th:text="${user.userStatus}">Active</span>
+                </div>
+                <!-- Card Header for ADMIN and LIBRARIAN (Yellow theme) -->
+                <div sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')" class="p-4 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-light"><i class="bi bi-shield-check me-2 text-warning"></i>Chi tiết tài khoản</h5>
                     <span class="badge-status" th:text="${user.userStatus}">Active</span>
                 </div>
 
@@ -112,7 +60,7 @@
                     <div class="row">
                         <!-- Left: Avatar -->
                         <div class="col-md-4 text-center border-end border-secondary pe-md-5 mb-4 mb-md-0">
-                            <img th:src="${user.image != null ? user.image : '/images/default-avatar.png'}"
+                            <img th:src="${user.image != null ? user.image : 'https://ui-avatars.com/api/?name=' + user.fullName + '&background=16a085&color=fff'}"
                                  alt="Avatar" class="avatar-preview-waka mb-4" />
                             <h5 class="text-white mb-1" th:text="${user.fullName}">Full Name</h5>
                             <p class="text-secondary small" th:text="${user.role != null ? user.role.roleDescription : 'Thành viên'}"></p>
@@ -158,9 +106,9 @@
                                 <a th:href="@{/}" class="btn btn-outline-secondary rounded-pill px-4">
                                     Quay lại
                                 </a>
-                                <a th:href="@{/user/profile/edit}" class="btn btn-info rounded-pill px-5 fw-bold">
+                                <button type="button" class="btn btn-info rounded-pill px-5 fw-bold" data-bs-toggle="modal" data-bs-target="#editProfileModal">
                                     <i class="bi bi-pencil-square me-1"></i> CHỈNH SỬA
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -170,7 +118,94 @@
     </div>
 </main>
 
+<!-- Modal Cập nhật thông tin cá nhân -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-secondary border-opacity-25" style="background: #1a1a1a; border-radius: 16px;">
+            <div class="modal-header border-secondary border-opacity-25 py-3">
+                <h5 class="modal-title text-light fw-bold" id="editProfileModalLabel">
+                    <i class="bi bi-person-gear text-info me-2"></i>Cập nhật thông tin cá nhân
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:action="@{/user/profile/update}" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="userName" th:value="${user.userName}"/>
+                
+                <div class="modal-body p-4 p-md-5">
+                    <div class="row">
+                        <!-- Left: Avatar Section -->
+                        <div class="col-md-4 text-center border-end border-secondary border-opacity-25 pe-md-4 mb-4 mb-md-0">
+                            <div class="mb-4">
+                                <img id="previewImage" th:src="${user.image != null ? user.image : 'https://ui-avatars.com/api/?name=' + user.fullName + '&background=16a085&color=fff'}" alt="Avatar" class="avatar-preview-waka mb-4 shadow" style="width: 140px; height: 140px; object-fit: cover; border-radius: 50%; border: 4px solid var(--waka-green, #14b4a0); padding: 4px; background: #222;" />
+                                <div class="px-2">
+                                    <!-- Ẩn input file mặc định của trình duyệt -->
+                                    <input type="file" name="imageFile" id="imageFile" class="d-none" accept="image/*" />
+                                    <!-- Hiển thị nút tải ảnh thiết kế nét đứt cao cấp -->
+                                    <button type="button" class="btn btn-waka-upload mb-2" onclick="document.getElementById('imageFile').click()">
+                                        <i class="bi bi-cloud-arrow-up-fill me-2"></i>Chọn ảnh đại diện
+                                    </button>
+                                    <p id="fileName" class="text-info small fw-bold mb-2"></p>
+                                    <p class="text-secondary small mt-2"><i class="bi bi-info-circle me-1"></i>Định dạng: JPG, PNG. Tối đa 10MB.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Form Info Section -->
+                        <div class="col-md-8 ps-md-4">
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary fw-bold">TÊN ĐĂNG NHẬP</label>
+                                <input type="text" class="form-control form-control-waka" th:value="${user.userName}" disabled />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary fw-bold">HỌ VÀ TÊN</label>
+                                <div class="input-group">
+                                    <span class="input-group-text input-group-text-waka"><i class="bi bi-person"></i></span>
+                                    <input type="text" name="fullName" th:value="${user.fullName}" class="form-control form-control-waka" style="border-radius: 0 10px 10px 0;" required placeholder="Nhập họ và tên..." />
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-secondary fw-bold">EMAIL</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-waka"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" name="email" th:value="${user.email}" class="form-control form-control-waka" style="border-radius: 0 10px 10px 0;" required placeholder="example@mail.com" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label small text-secondary fw-bold">SỐ ĐIỆN THOẠI</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-waka"><i class="bi bi-telephone"></i></span>
+                                        <input type="text" name="phoneNumber" th:value="${user.phoneNumber}" class="form-control form-control-waka" style="border-radius: 0 10px 10px 0;" placeholder="0xxx xxx xxx" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary fw-bold">ĐỊA CHỈ</label>
+                                <div class="input-group">
+                                    <span class="input-group-text input-group-text-waka"><i class="bi bi-geo-alt"></i></span>
+                                    <input type="text" name="address" th:value="${user.address}" class="form-control form-control-waka" style="border-radius: 0 10px 10px 0;" placeholder="Nhập địa chỉ của bạn..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-secondary border-opacity-25 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-info rounded-pill px-5 fw-bold">
+                        <i class="bi bi-check2-circle me-1"></i> LƯU THAY ĐỔI
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/user-detail.js}"></script>
 </body>
 </html>

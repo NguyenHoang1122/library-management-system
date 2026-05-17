@@ -1,0 +1,79 @@
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+.admin-header-waka {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+.search-box-waka {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 25px;
+    padding: 5px 20px;
+    display: flex;
+    align-items: center;
+}
+.search-box-waka input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    box-shadow: none;
+}
+.table-waka {
+    color: #ccc;
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.table-waka thead {
+    background: #252525;
+    color: #16a085;
+}
+.table-waka th, .table-waka td {
+    padding: 15px;
+    border-color: #333;
+}
+.table-waka tbody tr:hover {
+    background: rgba(22, 160, 133, 0.05);
+}
+.btn-add-waka {
+    background: #16a085;
+    color: #fff;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: 0.3s;
+}
+.btn-add-waka:hover {
+    background: #1abc9c;
+    color: #fff;
+}
+.form-control, .form-select {
+    background-color: #252525 !important;
+    border: 1px solid #3d3d3d !important;
+    color: #fff !important;
+}
+.form-control::placeholder {
+    color: #777 !important;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #16a085 !important;
+    box-shadow: 0 0 0 0.25rem rgba(22, 160, 133, 0.25) !important;
+}
+.category-checkbox-list::-webkit-scrollbar {
+    width: 6px;
+}
+.category-checkbox-list::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 10px;
+}
+.form-check-input:checked {
+    background-color: #16a085 !important;
+    border-color: #16a085 !important;
+}

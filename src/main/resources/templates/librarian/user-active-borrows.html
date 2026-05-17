@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Chi tiết truyện đang mượn | Truyện 360</title>
+    <div th:replace="~{layout :: header_head}"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/user-active-borrows.css}">
+</head>
+<body>
+<div th:replace="~{layout :: header}"></div>
+
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='activeborrows')}"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <div>
+                <a th:href="@{/librarian/active-borrows}" class="btn btn-outline-secondary rounded-pill mb-4 px-4">
+                    <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+                </a>
+            </div>
+
+            <div class="admin-header-waka">
+                <h3 class="mb-0"><i class="bi bi-journal-check me-2 text-warning"></i> Chi tiết truyện thành viên đang mượn</h3>
+            </div>
+
+            <!-- Alerts for messages -->
+            <div th:if="${message}" class="alert alert-success alert-dismissible fade show bg-success bg-opacity-10 text-success border-success border-opacity-25" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${message}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-10 text-danger border-danger border-opacity-25" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Member Info Card -->
+            <div class="member-info-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-waka me-3 bg-secondary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="bi bi-person-fill text-info" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1 text-light fw-bold" th:text="${user.fullName}"></h4>
+                                <p class="mb-0 text-secondary">
+                                    <span class="me-3" th:text="'Tên đăng nhập: ' + ${user.userName}"></span>
+                                    <span class="me-3" th:text="'Email: ' + ${user.email}"></span>
+                                    <span th:if="${user.phoneNumber}" th:text="'SĐT: ' + ${user.phoneNumber}"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <span class="badge bg-dark border border-secondary text-info px-4 py-3 fs-6">
+                            Đang mượn: <span class="fw-bold" th:text="${#lists.size(borrowDataMap)}"></span> cuốn
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Borrowed Items Table -->
+            <div class="table-responsive">
+                <table class="table table-waka align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">STT</th>
+                            <th>Truyện</th>
+                            <th>Ngày mượn</th>
+                            <th>Hạn trả</th>
+                            <th class="text-end">Tiền phạt</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="data, iterStat : ${borrowDataMap}" th:classappend="${data.get('isOverdue') ? 'row-overdue' : ''}">
+                            <td th:text="${iterStat.count}" class="text-secondary"></td>
+                            <td>
+                                <div th:each="item : ${data.get('borrow').items}" class="d-flex align-items-center mb-1">
+                                    <img th:if="${item.book.image != null}" th:src="${item.book.image}" class="rounded me-3" style="width: 45px; height: 65px; object-fit: cover;" />
+                                    <div th:unless="${item.book.image != null}" class="bg-secondary bg-opacity-25 rounded me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 65px;">
+                                        <i class="bi bi-book text-muted"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-light" th:text="${item.book.title}"></div>
+                                        <small class="text-secondary" th:text="'ISBN: ' + ${item.book.isbn ?: 'N/A'}"></small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td th:text="${#temporals.format(data.get('borrow').borrowDate, 'dd/MM/yyyy')}"></td>
+                            <td th:text="${#temporals.format(data.get('borrow').dueDate, 'dd/MM/yyyy')}" th:classappend="${data.get('isOverdue') ? 'text-danger fw-bold' : ''}"></td>
+                            <td class="text-end" th:classappend="${data.get('isOverdue') ? 'text-danger fw-bold' : 'text-secondary'}">
+                                <span th:text="${data.get('isOverdue') ? #numbers.formatInteger(data.get('lateFine'), 0, 'POINT') + ' VND' : '0 VND'}"></span>
+                            </td>
+                            <td>
+                                <span th:if="${data.get('borrow').status.name() == 'PENDING'}" class="badge bg-warning text-dark">Chờ xác nhận trả</span>
+                                <span th:if="${data.get('borrow').status.name() == 'BORROWED' && !data.get('isOverdue')}" class="badge bg-success">Đang mượn</span>
+                                <span th:if="${data.get('isOverdue')}" class="badge bg-danger">Quá hạn</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(borrowDataMap)}">
+                            <td colspan="7" class="text-center py-5 text-secondary">
+                                <i class="bi bi-journal-check display-4 text-secondary mb-3 d-block"></i>
+                                Thành viên này không có truyện nào đang được mượn.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{layout :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

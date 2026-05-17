@@ -13,8 +13,8 @@ import java.util.List;
 
 @Repository
 public interface BorrowTransactionRepository extends JpaRepository<BorrowTransaction, Long> {
-    // Lấy danh sách giao dịch mượn của user
-    List<BorrowTransaction> findByUser(User user);
+    // Lấy danh sách giao dịch mượn của user, sắp xếp từ gần nhất
+    List<BorrowTransaction> findByUserOrderByBorrowDateDesc(User user);
 
     // Lấy danh sách giao dịch mượn theo trạng thái
     List<BorrowTransaction> findByStatus(TransactionStatus status);
@@ -28,7 +28,8 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
     // Lấy giao dịch mượn đang hoạt động
     List<BorrowTransaction> findByUserAndStatus(User user, TransactionStatus status);
 
-    List<BorrowTransaction> findByUserAndStatusIn(User user, List<TransactionStatus> statuses);
+    // Lấy giao dịch mượn đang hoạt động của user, sắp xếp từ gần nhất
+    List<BorrowTransaction> findByUserAndStatusInOrderByBorrowDateDesc(User user, List<TransactionStatus> statuses);
 
 
 

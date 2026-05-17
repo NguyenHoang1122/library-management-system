@@ -79,7 +79,7 @@ public class BorrowServiceImpl implements BorrowService {
     public List<BorrowRequest> getUserBorrowRequests(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
-        return borrowRequestRepository.findByUser(user);
+        return borrowRequestRepository.findByUserOrderByRequestDateDesc(user);
     }
 
     @Override
@@ -183,7 +183,7 @@ public class BorrowServiceImpl implements BorrowService {
     public List<BorrowHistoryDTO> getUserBorrowHistory(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
-        List<BorrowTransaction> transactions = borrowTransactionRepository.findByUser(user);
+        List<BorrowTransaction> transactions = borrowTransactionRepository.findByUserOrderByBorrowDateDesc(user);
         return transactions.stream().map(this::mapToBorrowHistoryDTO).collect(Collectors.toList());
     }
 
@@ -276,7 +276,7 @@ public class BorrowServiceImpl implements BorrowService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
         List<TransactionStatus> activeStatuses = List.of(TransactionStatus.BORROWED, TransactionStatus.OVERDUE, TransactionStatus.PENDING);
-        List<BorrowTransaction> transactions = borrowTransactionRepository.findByUserAndStatusIn(user, activeStatuses);
+        List<BorrowTransaction> transactions = borrowTransactionRepository.findByUserAndStatusInOrderByBorrowDateDesc(user, activeStatuses);
         return transactions.stream().map(this::mapToBorrowHistoryDTO).collect(Collectors.toList());
     }
 
@@ -340,7 +340,7 @@ public class BorrowServiceImpl implements BorrowService {
 
     @Override
     public List<ReturnRequest> getAllPendingReturnRequests() {
-        return returnRequestRepository.findByRequestStatusIn(List.of(RequestStatus.PENDING, RequestStatus.APPROVED));
+        return returnRequestRepository.findByRequestStatusInOrderByRequestDateDesc(List.of(RequestStatus.PENDING, RequestStatus.APPROVED));
     }
 
     @Override

@@ -4,50 +4,7 @@
     <title>Quản lý danh mục truyện | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-        .admin-header-waka {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #333;
-        }
-        .table-waka {
-            color: #ccc;
-            background: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .table-waka thead {
-            background: #252525;
-            color: #16a085;
-        }
-        .table-waka th, .table-waka td {
-            padding: 15px;
-            border-color: #333;
-        }
-        .table-waka tbody tr:hover {
-            background: rgba(22, 160, 133, 0.05);
-        }
-        .btn-add-waka {
-            background: #16a085;
-            color: #fff;
-            border-radius: 20px;
-            padding: 8px 20px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-        .btn-add-waka:hover {
-            background: #1abc9c;
-            color: #fff;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/category-list.css}">
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
@@ -61,14 +18,35 @@
 
         <!-- Main Content -->
         <div th:class="${#authorization.expression('hasAnyRole(''ADMIN'',''LIBRARIAN'')')} ? 'col-md-9 col-lg-10 px-5' : 'col-md-8 mx-auto px-5'">
+            <!-- Alerts -->
+            <div th:if="${message != null}" class="alert alert-success alert-dismissible fade show bg-success bg-opacity-20 border-success border-opacity-30 text-success rounded-pill px-4 mb-4" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${message}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${error != null}" class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-20 border-danger border-opacity-30 text-danger rounded-pill px-4 mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
             <div class="admin-header-waka">
-                <h3 class="mb-0">Quản lý danh mục truyện</h3>
+                <h3 class="mb-0"><i class="bi bi-collection me-2 text-warning"></i> Quản lý danh mục truyện</h3>
                 <div sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')">
-                    <a th:href="@{/categories/add}" class="btn-add-waka">
+                    <button type="button" class="btn-add-waka border-0" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
                         <i class="bi bi-plus-circle me-2"></i>Thêm danh mục
-                    </a>
+                    </button>
                 </div>
             </div>
+
+            <!-- Search Area -->
+            <form th:action="@{/categories/search}" method="get" class="mb-4">
+                <div class="search-box-waka">
+                    <i class="bi bi-search text-secondary me-2"></i>
+                    <input type="text" name="query" class="form-control" placeholder="Tìm kiếm theo tên danh mục..." th:value="${searchQuery}">
+                    <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold">TÌM</button>
+                </div>
+            </form>
 
             <!-- Table Area -->
             <div class="table-responsive">
@@ -90,9 +68,11 @@
                             </td>
                             <td class="text-end">
                                 <div class="btn-group">
-                                    <a sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')"
-                                       th:href="@{/categories/edit/{id}(id=${category.id})}"
-                                       class="btn btn-outline-warning btn-sm rounded-pill px-3 me-2">Sửa</a>
+                                    <button sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')"
+                                       type="button"
+                                       class="btn btn-outline-warning btn-sm rounded-pill px-3 me-2 btn-edit-category"
+                                       th:data-id="${category.id}"
+                                       th:data-name="${category.categoryName}">Sửa</button>
                                     <a sec:authorize="hasRole('ADMIN')"
                                        th:href="@{/categories/delete/{id}(id=${category.id})}"
                                        class="btn btn-outline-danger btn-sm rounded-pill px-3"
@@ -102,17 +82,98 @@
                         </tr>
                         <tr th:if="${#lists.isEmpty(categories)}">
                             <td colspan="4" class="text-center py-5 text-secondary">
-                                Không có danh mục nào. <a th:href="@{/categories/add}" class="text-info">Tạo danh mục mới</a>
+                                Không có danh mục nào. <a href="#" data-bs-toggle="modal" data-bs-target="#addCategoryModal" class="text-info">Tạo danh mục mới</a>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/categories/search' : '/categories'}(query=${searchQuery}, page=${currentPage - 1})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{${searchQuery != null ? '/categories/search' : '/categories'}(query=${searchQuery}, page=${i})}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/categories/search' : '/categories'}(query=${searchQuery}, page=${currentPage + 1})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </main>
 
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #181818; border: 1px solid #2d2d2d; border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid #2d2d2d; background-color: #202020; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                <h5 class="modal-title text-white" id="addCategoryModalLabel">
+                    <i class="bi bi-collection me-2 text-info"></i>Thêm Danh Mục Mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:action="@{/categories/save}" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small mb-2">TÊN DANH MỤC <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-light"><i class="bi bi-collection"></i></span>
+                            <input type="text" name="categoryName" class="form-control bg-dark border-secondary text-light" placeholder="Nhập tên danh mục (VD: Xuyên không, Tu tiên...)" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #2d2d2d;">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4 py-2 fw-bold" style="background-color: #16a085; border-color: #16a085; border-radius: 50px;">Lưu danh mục</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #181818; border: 1px solid #2d2d2d; border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid #2d2d2d; background-color: #202020; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                <h5 class="modal-title text-white" id="editCategoryModalLabel">
+                    <i class="bi bi-collection me-2 text-warning"></i>Sửa Danh Mục
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editCategoryForm" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary small mb-2">TÊN DANH MỤC <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-light"><i class="bi bi-collection"></i></span>
+                            <input type="text" id="editCategoryName" name="categoryName" class="form-control bg-dark border-secondary text-light" placeholder="Nhập tên danh mục..." required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #2d2d2d;">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-warning px-4 py-2 fw-bold text-dark rounded-pill">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/category-list.js}"></script>
 </body>
 </html>

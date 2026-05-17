@@ -4,69 +4,7 @@
     <title>Lịch sử mượn truyện | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #121212;
-            color: #e0e0e0;
-        }
-        .waka-tabs-main {
-            display: flex;
-            gap: 25px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-        }
-        .waka-tab-item {
-            color: #888;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 1rem;
-            transition: color 0.3s;
-        }
-        .waka-tab-item:hover, .waka-tab-item.active {
-            color: #16a085;
-        }
-        .waka-tab-item.active {
-            position: relative;
-        }
-        .waka-tab-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -11px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background-color: #16a085;
-        }
-        .stat-card-waka {
-            background: linear-gradient(145deg, #1e1e1e, #121212);
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 20px;
-            transition: transform 0.3s;
-        }
-        .stat-card-waka:hover {
-            transform: translateY(-5px);
-            border-color: #16a085;
-        }
-        .table-waka {
-            color: #ccc;
-            background: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .table-waka thead {
-            background: #252525;
-            color: #16a085;
-        }
-        .table-waka th, .table-waka td {
-            padding: 15px;
-            border-color: #333;
-        }
-        .table-waka tbody tr:hover {
-            background: rgba(22, 160, 133, 0.05);
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/borrow-history.css}">
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
@@ -128,7 +66,7 @@
                             <td th:text="${borrow.borrowDate}">Ngày mượn</td>
                             <td th:text="${borrow.dueDate}">Ngày phải trả</td>
                             <td class="text-end">
-                                <a th:href="@{/borrow/${borrow.id}}" class="btn btn-outline-light btn-sm rounded-pill px-3">Chi tiết</a>
+                                <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="btn btn-outline-info btn-sm rounded-pill px-3">Chi tiết</a>
                             </td>
                         </tr>
                     </tbody>

@@ -14,8 +14,8 @@ import java.util.List;
 @Repository
 public interface BorrowRequestRepository extends JpaRepository<BorrowRequest, Long> {
 
-    // Lấy danh sách yêu cầu mượn của user
-    List<BorrowRequest> findByUser(User user);
+    // Lấy danh sách yêu cầu mượn của user, sắp xếp từ gần nhất
+    List<BorrowRequest> findByUserOrderByRequestDateDesc(User user);
 
     // Lấy danh sách yêu cầu mượn chưa duyệt
     @Query("SELECT br FROM BorrowRequest br WHERE br.requestStatus = 'PENDING' ORDER BY br.requestDate DESC")

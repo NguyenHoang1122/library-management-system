@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 public interface ReturnRequestRepository extends JpaRepository<ReturnRequest, Long> {
     List<ReturnRequest> findByRequestStatus(RequestStatus status);
-    List<ReturnRequest> findByRequestStatusIn(List<RequestStatus> statuses);
+    List<ReturnRequest> findByRequestStatusInOrderByRequestDateDesc(List<RequestStatus> statuses);
     List<ReturnRequest> findByBorrowTransactionOrderByRequestDateDesc(com.librarymanagementsystem.model.borrow.BorrowTransaction transaction);
 }

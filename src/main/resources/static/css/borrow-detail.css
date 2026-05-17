@@ -1,0 +1,40 @@
+.info-box {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-left: 4px solid #0d6efd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+.info-label {
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 5px;
+}
+.info-value {
+    color: #212529;
+    font-size: 1.1rem;
+}
+.status-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+.status-borrowed {
+    background-color: #0dcaf0;
+    color: white;
+}
+.status-returned {
+    background-color: #198754;
+    color: white;
+}
+.status-overdue {
+    background-color: #dc3545;
+    color: white;
+}
+.fine-alert {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    border-radius: 4px;
+}
