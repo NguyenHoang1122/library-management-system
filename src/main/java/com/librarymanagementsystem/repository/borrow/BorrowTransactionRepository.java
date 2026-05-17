@@ -46,4 +46,10 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
             "WHERE bt.user.id = :userId " +
             "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
     List<Long> findBorrowedBookIdsByUser(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(bi) > 0 FROM BorrowTransaction bt " +
+            "JOIN bt.items bi " +
+            "WHERE bt.user.id = :userId " +
+            "AND bi.book.id = :bookId")
+    boolean hasUserRentedBook(@Param("userId") Long userId, @Param("bookId") Long bookId);
 }

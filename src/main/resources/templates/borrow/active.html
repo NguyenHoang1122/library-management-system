@@ -37,15 +37,17 @@
 
             <div th:if="${!activeBorrows.isEmpty()}" class="book-grid">
                 <div th:each="borrow : ${activeBorrows}" class="waka-card">
-                    <div class="waka-img-container">
-                        <!-- Giả định DTO có image, nếu không dùng placeholder -->
-                        <img th:src="${borrow.bookImage != null ? borrow.bookImage : 'https://via.placeholder.com/200x300?text=No+Image'}"
-                             class="waka-img" th:alt="${borrow.bookName}">
-                        <div class="due-date-badge">
-                            <i class="bi bi-clock"></i> Hạn: <span th:text="${borrow.dueDate}"></span>
+                    <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="text-decoration-none text-white">
+                        <div class="waka-img-container">
+                            <!-- Giả định DTO có image, nếu không dùng placeholder -->
+                            <img th:src="${borrow.bookImage != null ? borrow.bookImage : 'https://via.placeholder.com/200x300?text=No+Image'}"
+                                 class="waka-img" th:alt="${borrow.bookName}">
+                            <div class="due-date-badge">
+                                <i class="bi bi-clock"></i> Hạn: <span th:text="${borrow.dueDate}"></span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="waka-card-title" th:text="${borrow.bookName}"></div>
+                        <div class="waka-card-title text-center mt-2 fw-bold text-light" th:text="${borrow.bookName}"></div>
+                    </a>
                     <div class="waka-card-actions">
                         <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="btn btn-outline-light btn-action-sm">Chi tiết</a>
                         

@@ -326,13 +326,4 @@ public class LibrarianController {
         }
         return "redirect:/librarian/active-borrows";
     }
-
-    @GetMapping("/members")
-    public String listMembers(Model model) {
-        List<User> members = userService.getAllActiveUsers().stream()
-                .filter(user -> user.getRole().getRoleName() == RoleStatus.ROLE_USER)
-                .toList();
-        model.addAttribute("members", members);
-        return "librarian/members";
-    }
 }

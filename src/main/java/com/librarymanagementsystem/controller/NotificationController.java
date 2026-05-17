@@ -66,6 +66,20 @@ public class NotificationController {
         return "redirect:/my-notifications";
     }
 
+    @PostMapping("/{notificationId}/mark-read-ajax")
+    @ResponseBody
+    public java.util.Map<String, Object> markAsReadAjax(@PathVariable Long notificationId) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        try {
+            notificationService.markAsRead(notificationId);
+            response.put("success", true);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
     @PostMapping("/mark-all-read")
     public String markAllAsRead(Authentication authentication,
                                 RedirectAttributes redirectAttributes) {

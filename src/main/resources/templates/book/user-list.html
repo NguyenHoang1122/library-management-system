@@ -39,35 +39,20 @@
                     <div class="search-box-waka">
                         <i class="bi bi-search text-secondary me-2"></i>
                         <input type="text" name="query" class="form-control" placeholder="Tìm kiếm truyện hoặc tác giả mà bạn muốn mượn..." th:value="${searchQuery ?: param.query}">
-                        <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold" style="color: #14b4a0 !important;">TÌM KIẾM</button>
+                        <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold" style="color: #14b4a0 !important;">TÌM</button>
                     </div>
                 </form>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="text-secondary small fw-bold text-nowrap">Sắp xếp:</span>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary btn-sm rounded-pill dropdown-toggle px-3 text-light border-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span th:if="${sortBy == 'author'}"><i class="bi bi-person me-1"></i> Tác giả</span>
-                            <span th:if="${sortBy == 'category'}"><i class="bi bi-tags me-1"></i> Danh mục</span>
-                            <span th:if="${sortBy == 'quantity'}"><i class="bi bi-box me-1"></i> Số lượng</span>
-                            <span th:if="${sortBy == null or sortBy == ''}"><i class="bi bi-funnel me-1"></i> Mặc định</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-dark">
-                            <li><a class="dropdown-item" th:href="@{${searchQuery != null ? '/books/search' : '/books'}(query=${searchQuery}, sortBy='', category=${category})}">Mặc định</a></li>
-                            <li><a class="dropdown-item" th:href="@{${searchQuery != null ? '/books/search' : '/books'}(query=${searchQuery}, sortBy='author', category=${category})}">Tác giả</a></li>
-                            <li><a class="dropdown-item" th:href="@{${searchQuery != null ? '/books/search' : '/books'}(query=${searchQuery}, sortBy='category', category=${category})}">Danh mục</a></li>
-                            <li><a class="dropdown-item" th:href="@{${searchQuery != null ? '/books/search' : '/books'}(query=${searchQuery}, sortBy='quantity', category=${category})}">Số lượng</a></li>
-                        </ul>
-                    </div>
-                </div>
             </div>
 
             <!-- Book Grid -->
             <div th:if="${!books.isEmpty()}" class="book-grid">
                 <div th:each="book : ${books}" class="waka-card">
-                    <div class="waka-img-container">
-                        <img th:src="${book.image != null ? book.image : 'https://via.placeholder.com/200x300?text=No+Cover'}"
-                             class="waka-img" th:alt="${book.title}">
-                    </div>
+                    <a th:href="@{/books/{id}(id=${book.id})}" class="text-decoration-none">
+                        <div class="waka-img-container">
+                            <img th:src="${book.image != null ? book.image : 'https://via.placeholder.com/200x300?text=No+Cover'}"
+                                 class="waka-img" th:alt="${book.title}">
+                        </div>
+                    </a>
                     
                     <!-- Content -->
                     <a th:href="@{/books/{id}(id=${book.id})}" class="waka-card-title" th:text="${book.title}">Tiêu đề truyện</a>
