@@ -1,114 +1,166 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <title>Thông Tin Cá Nhân</title>
+    <title>Thông Tin Cá Nhân | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        .avatar-preview {
-            width: 150px;
-            height: 150px;
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        /* Đồng bộ Tabs với trang Active/Wishlist/Update */
+        .waka-tabs-main {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        .waka-tab-item {
+            color: #888;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: color 0.3s;
+        }
+        .waka-tab-item:hover, .waka-tab-item.active {
+            color: #16a085;
+        }
+        .waka-tab-item.active {
+            position: relative;
+        }
+        .waka-tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #16a085;
+        }
+
+        /* Profile Card Styling đồng bộ Dark Mode */
+        .profile-card-waka {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .avatar-preview-waka {
+            width: 160px;
+            height: 160px;
             object-fit: cover;
             border-radius: 50%;
-            border: 3px solid #0d6efd;
-            padding: 3px;
-        }
-        .profile-card {
-            border: none;
-            border-radius: 15px;
+            border: 4px solid #16a085;
+            padding: 4px;
+            background: #222;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         .info-label {
+            font-size: 0.75rem;
             font-weight: bold;
-            color: #495057;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
         }
         .info-value {
-            color: #212529;
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            padding: 8px 0;
+            border-bottom: 1px solid #252525;
+        }
+        .badge-status {
+            background: #16a085;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
         }
     </style>
 </head>
 <body>
+<!-- Nhúng CSS sidebar tương tự các trang khác -->
+<style th:replace="~{fragments/sidebar :: sidebar_styles}"></style>
+
 <div th:replace="~{layout :: header}"></div>
 
-<main class="container-fluid my-5 px-4">
-    <div class="row">
-        <div class="col-md-3 col-lg-2 mb-4">
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar - Cấu trúc chuẩn col-md-3 -->
+        <div class="col-md-3 col-lg-2">
             <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='profile')}"></div>
         </div>
-        <!-- Nội dung chính -->
-        <div class="col-md-9 col-lg-10">
-            <div class="card shadow profile-card">
-                <div class="card-header bg-primary text-white py-3">
-                    <h4 class="mb-0"><i class="bi bi-person-bounding-box me-2"></i> Thông Tin Cá Nhân</h4>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <!-- Tabs Menu đồng bộ -->
+            <div class="waka-tabs-main">
+                <a href="#" class="waka-tab-item active">Hồ sơ cá nhân</a>
+                <a th:href="@{/borrow/active}" class="waka-tab-item">Truyện của tôi</a>
+            </div>
+
+            <div class="profile-card-waka shadow-lg">
+                <div class="p-4 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-light"><i class="bi bi-person-badge me-2 text-info"></i>Thông tin chi tiết</h5>
+                    <span class="badge-status" th:text="${user.userStatus}">Active</span>
                 </div>
 
-                <div class="card-body p-4">
+                <div class="p-4 p-md-5">
                     <div class="row">
-                        <!--Ảnh đại diện -->
-                        <div class="col-md-4 text-center border-end">
-                            <div class="mb-3">
-                                <img th:src="${user.image != null ? user.image : 'https://via.placeholder.com/150'}"
-                                     alt="Avatar" class="avatar-preview mb-3 shadow-sm" />
-                                <p class="text-muted small">Ảnh đại diện</p>
-                            </div>
+                        <!-- Left: Avatar -->
+                        <div class="col-md-4 text-center border-end border-secondary pe-md-5 mb-4 mb-md-0">
+                            <img th:src="${user.image != null ? user.image : '/images/default-avatar.png'}"
+                                 alt="Avatar" class="avatar-preview-waka mb-4" />
+                            <h5 class="text-white mb-1" th:text="${user.fullName}">Full Name</h5>
+                            <p class="text-secondary small" th:text="${user.role != null ? user.role.roleDescription : 'Thành viên'}"></p>
                         </div>
 
-                        <!--Thông tin chi tiết -->
-                        <div class="col-md-8 ps-md-4">
+                        <!-- Right: Detailed Info -->
+                        <div class="col-md-8 ps-md-5">
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <div class="info-label">Tên đăng nhập:</div>
-                                    <div class="info-value" th:text="${user.userName}"></div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Tên đăng nhập</div>
+                                    <div class="info-value" th:text="${user.userName}">username</div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <div class="info-label">Họ và Tên:</div>
-                                    <div class="info-value" th:text="${user.fullName}"></div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <div class="info-label">Email:</div>
-                                    <div class="info-value" th:text="${user.email}"></div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <div class="info-label">Số điện thoại:</div>
-                                    <div class="info-value" th:text="${user.phoneNumber ?: 'Chưa cập nhật'}"></div>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="info-label">Địa chỉ:</div>
-                                <div class="info-value" th:text="${user.address ?: 'Chưa cập nhật'}"></div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <div class="info-label">Vai trò:</div>
-                                    <div class="info-value" th:text="${user.role != null ? user.role.roleDescription : 'Chưa xác định'}"></div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <div class="info-label">Trạng thái:</div>
-                                    <div class="info-value" th:text="${user.userStatus}"></div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Email</div>
+                                    <div class="info-value" th:text="${user.email}">email@example.com</div>
                                 </div>
                             </div>
 
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <div class="info-label">Ngày tạo tài khoản:</div>
-                                    <div class="info-value" th:text="${#temporals.format(user.createDate, 'dd/MM/yyyy HH:mm')}"></div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Số điện thoại</div>
+                                    <div class="info-value" th:text="${user.phoneNumber ?: 'Chưa cập nhật'}">090xxxxxxx</div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <div class="info-label">Cập nhật lần cuối:</div>
-                                    <div class="info-value" th:text="${user.updateDate != null ? #temporals.format(user.updateDate, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}"></div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Địa chỉ</div>
+                                    <div class="info-value" th:text="${user.address ?: 'Chưa cập nhật'}">Địa chỉ</div>
                                 </div>
                             </div>
 
-                            <!-- Nút hành động -->
-                            <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-end">
-                                <a th:href="@{/user/profile/edit}" class="btn btn-primary px-4">
-                                    <i class="bi bi-pencil me-2"></i> Chỉnh sửa thông tin
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-label">Ngày tham gia</div>
+                                    <div class="info-value" th:text="${#temporals.format(user.createDate, 'dd/MM/yyyy')}">01/01/2023</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Cập nhật lần cuối</div>
+                                    <div class="info-value" th:text="${user.updateDate != null ? #temporals.format(user.updateDate, 'dd/MM/yyyy HH:mm') : 'Chưa có thay đổi'}">--/--/----</div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="mt-4 d-flex gap-3 justify-content-end">
+                                <a th:href="@{/}" class="btn btn-outline-secondary rounded-pill px-4">
+                                    Quay lại
                                 </a>
-                                <a th:href="@{/}" class="btn btn-outline-secondary px-4">Quay lại</a>
+                                <a th:href="@{/user/profile/edit}" class="btn btn-info rounded-pill px-5 fw-bold">
+                                    <i class="bi bi-pencil-square me-1"></i> CHỈNH SỬA
+                                </a>
                             </div>
                         </div>
                     </div>

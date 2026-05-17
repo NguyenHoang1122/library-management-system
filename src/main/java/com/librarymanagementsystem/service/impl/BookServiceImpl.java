@@ -1,6 +1,7 @@
 package com.librarymanagementsystem.service.impl;
 
 import com.librarymanagementsystem.model.book.Book;
+import org.springframework.data.domain.PageRequest;
 import com.librarymanagementsystem.model.book.Category;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
 import com.librarymanagementsystem.model.user.Author;
@@ -96,7 +97,6 @@ public class BookServiceImpl implements BookService {
             }
         }
         // Nếu không chọn ảnh mới, ảnh cũ sẽ được giữ lại (không thay đổi)
-
         // Cập nhật Category
         if (bookDTO.getCategoryIds() != null && !bookDTO.getCategoryIds().isEmpty()) {
             Set<Category> categories = new HashSet<>();
@@ -141,8 +141,8 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public List<Book> searchBooks(String title) {
-        return bookRepository.findByTitleContainingIgnoreCase(title);
+    public List<Book> searchBooks(String query) {
+        return bookRepository.findByTitleContainingIgnoreCaseOrAuthorNameContainingIgnoreCase(query, query);
     }
 
     @Override
@@ -204,5 +204,20 @@ public class BookServiceImpl implements BookService {
     @Override
     public boolean isBookBorrowedByUser(Long bookId, Long userId) {
         return borrowTransactionRepository.isBookBorrowedByUser(userId, bookId);
+    }
+
+    @Override
+    public List<Book> getNewestBooks() {
+        return bookRepository.findTop5ByOrderByCreatedDateDesc();
+    }
+
+    @Override
+    public List<Book> getHotBooks() {
+        return bookRepository.findTop5HotBooks(PageRequest.of(0, 5));
+    }
+
+    @Override
+    public List<Book> getBooksByCategoryName(String categoryName) {
+        return bookRepository.findTop5ByCategoryName(categoryName, PageRequest.of(0, 5));
     }
 }

@@ -1,104 +1,138 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <title>Lịch sử mượn truyện</title>
+    <title>Lịch sử mượn truyện | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        .status-badge {
-            display: inline-block;
-            padding: 0.35rem 0.65rem;
-            border-radius: 0.25rem;
-            font-size: 0.85rem;
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .waka-tabs-main {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        .waka-tab-item {
+            color: #888;
+            text-decoration: none;
             font-weight: 500;
+            font-size: 1rem;
+            transition: color 0.3s;
         }
-        .status-borrowed {
-            background-color: #0dcaf0;
-            color: white;
+        .waka-tab-item:hover, .waka-tab-item.active {
+            color: #16a085;
         }
-        .status-returned {
-            background-color: #198754;
-            color: white;
+        .waka-tab-item.active {
+            position: relative;
         }
-        .status-overdue {
-            background-color: #dc3545;
-            color: white;
+        .waka-tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #16a085;
+        }
+        .stat-card-waka {
+            background: linear-gradient(145deg, #1e1e1e, #121212);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.3s;
+        }
+        .stat-card-waka:hover {
+            transform: translateY(-5px);
+            border-color: #16a085;
+        }
+        .table-waka {
+            color: #ccc;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .table-waka thead {
+            background: #252525;
+            color: #16a085;
+        }
+        .table-waka th, .table-waka td {
+            padding: 15px;
+            border-color: #333;
+        }
+        .table-waka tbody tr:hover {
+            background: rgba(22, 160, 133, 0.05);
         }
     </style>
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
 
-<main class="container-fluid my-5 px-4">
-    <div class="row">
-        <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 mb-4">
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
             <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='myborrows')}"></div>
         </div>
 
-        <!-- HISTORY CONTENT -->
-        <div class="col-md-9 col-lg-10">
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <!-- Main Tabs -->
+            <div class="waka-tabs-main">
+                <a th:href="@{/borrow/active}" class="waka-tab-item">Đang mượn</a>
+                <a th:href="@{/wishlist}" class="waka-tab-item">Yêu thích</a>
+                <a href="#" class="waka-tab-item active">Lịch sử</a>
+            </div>
+
             <!-- Stats Cards -->
-            <div class="row mb-4">
-                <div class="col-md-6 mb-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Đang mượn</h5>
-                            <h2 th:text="${totalActive}"></h2>
-                        </div>
+            <div class="row mb-5">
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card-waka">
+                        <div class="small text-secondary mb-1">Đang mượn</div>
+                        <h2 class="mb-0" th:text="${totalActive}">0</h2>
                     </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Tổng lịch sử mượn truyện</h5>
-                            <h2 th:text="${totalBorrows}"></h2>
-                        </div>
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card-waka">
+                        <div class="small text-secondary mb-1">Tổng lịch sử mượn</div>
+                        <h2 class="mb-0" th:text="${totalBorrows}">0</h2>
                     </div>
                 </div>
             </div>
 
-            <!-- Borrow History -->
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h4 class="mb-0 text-primary">
-                        <i class="bi bi-clock-history"></i> Lịch sử mượn
-                    </h4>
-                </div>
-                <div class="card-body p-4">
-                    <div th:if="${borrowHistory.isEmpty()}" class="text-center py-4 text-muted">
-                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                        <p class="mt-2">Bạn chưa có lịch sử mượn truyện</p>
-                    </div>
-                    <div th:if="${!borrowHistory.isEmpty()}">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light">
-                                <tr>
-                                    <th>STT</th>
-                                    <th>Tên truyện</th>
-                                    <th>Ngày mượn</th>
-                                    <th>Ngày phải trả</th>
-                                    <th>Hành động</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr th:each="borrow, borrowStat : ${borrowHistory}">
-                                    <td th:text="${borrowStat.index + 1}"></td>
-                                    <td th:text="${borrow.bookName}"></td>
-                                    <td th:text="${borrow.borrowDate}"></td>
-                                    <td th:text="${borrow.dueDate}"></td>
-                                    <td>
-                                        <a th:href="@{/borrow/{id}(id=${borrow.id})}" class="btn btn-outline-info btn-sm">
-                                            <i class="bi bi-eye"></i> Xem
-                                        </a>
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+            <!-- Content Area -->
+            <div th:if="${borrowHistory.isEmpty()}" class="text-center py-5">
+                <i class="bi bi-clock-history" style="font-size: 4rem; color: #333;"></i>
+                <p class="mt-3 text-secondary">Bạn chưa có lịch sử mượn truyện nào.</p>
+                <a th:href="@{/books}" class="btn btn-outline-info btn-sm rounded-pill px-4">Khám phá truyện</a>
+            </div>
+
+            <div th:if="${!borrowHistory.isEmpty()}" class="table-responsive">
+                <table class="table table-waka">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên truyện</th>
+                            <th>Ngày mượn</th>
+                            <th>Ngày phải trả</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="borrow, borrowStat : ${borrowHistory}">
+                            <td th:text="${borrowStat.index + 1}">1</td>
+                            <td class="fw-bold" th:text="${borrow.bookName}">Tên truyện</td>
+                            <td th:text="${borrow.borrowDate}">Ngày mượn</td>
+                            <td th:text="${borrow.dueDate}">Ngày phải trả</td>
+                            <td class="text-end">
+                                <a th:href="@{/borrow/${borrow.id}}" class="btn btn-outline-light btn-sm rounded-pill px-3">Chi tiết</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

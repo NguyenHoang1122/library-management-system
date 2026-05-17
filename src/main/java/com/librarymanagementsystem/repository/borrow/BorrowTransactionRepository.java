@@ -19,9 +19,7 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
     // Lấy danh sách giao dịch mượn theo trạng thái
     List<BorrowTransaction> findByStatus(TransactionStatus status);
 
-    // Lấy danh sách giao dịch mượn quá hạn
-    @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
-    List<BorrowTransaction> findOverdueTransactions();
+    List<BorrowTransaction> findByStatusIn(List<TransactionStatus> statuses);
 
     // Lấy danh sách giao dịch mượn quá hạn của user
     @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
@@ -30,18 +28,8 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
     // Lấy giao dịch mượn đang hoạt động
     List<BorrowTransaction> findByUserAndStatus(User user, TransactionStatus status);
 
-    // Lấy giao dịch theo ngày mượn
-    @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.borrowDate BETWEEN :startDate AND :endDate ORDER BY bt.borrowDate DESC")
-    List<BorrowTransaction> findByUserAndDateRange(@Param("userId") Long userId,
-                                                   @Param("startDate") LocalDateTime startDate,
-                                                   @Param("endDate") LocalDateTime endDate);
+    List<BorrowTransaction> findByUserAndStatusIn(User user, List<TransactionStatus> statuses);
 
-    // Count giao dịch đang mượn
-    long countByStatus(TransactionStatus status);
-
-    // Count giao dịch quá hạn
-    @Query("SELECT COUNT(bt) FROM BorrowTransaction bt WHERE bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
-    long countOverdueTransactions();
 
 
     // Kiểm tra xem user có đang mượn sách này hay không (chỉ trạng thái BORROWED)
@@ -49,18 +37,12 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
             "AND bi.book.id = :bookId " +
-            "AND bt.status = 'BORROWED'")
+            "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
     boolean isBookBorrowedByUser(@Param("userId") Long userId, @Param("bookId") Long bookId);
-
-    // Kiểm tra xem user có bất kỳ sách nào đang mượn hay không
-    @Query("SELECT COUNT(bt) > 0 FROM BorrowTransaction bt " +
-            "WHERE bt.user.id = :userId " +
-            "AND bt.status = 'BORROWED'")
-    boolean hasAnyBorrowedBooks(@Param("userId") Long userId);
 
     @Query("SELECT DISTINCT bi.book.id FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
-            "AND bt.status = 'BORROWED'")
+            "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
     List<Long> findBorrowedBookIdsByUser(@Param("userId") Long userId);
 }

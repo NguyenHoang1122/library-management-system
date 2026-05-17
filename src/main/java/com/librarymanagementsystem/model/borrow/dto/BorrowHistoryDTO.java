@@ -11,9 +11,12 @@ import lombok.Setter;
 @AllArgsConstructor
 public class BorrowHistoryDTO {
    private Long id;
+   private Long bookId;
    private String bookName;
+   private String bookImage;
    private String borrowDate;
    private String dueDate;
    private String returnDate;
    private String status;
+   private String returnRequestStatus;
 }

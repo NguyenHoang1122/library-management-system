@@ -58,6 +58,26 @@ public class BorrowController {
         return "redirect:/borrow";
     }
 
+    @PostMapping("/quick-request/{bookId}")
+    @ResponseBody
+    public java.util.Map<String, Object> quickBorrowRequest(@PathVariable Long bookId,
+                                                           @RequestParam(required = false) String note,
+                                                           Authentication authentication) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        try {
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+
+            borrowService.createBorrowRequest(user.getId(), bookId, note);
+            response.put("success", true);
+            response.put("message", "Đã gửi yêu cầu mượn truyện thành công! Số lượng trong kho đã được cập nhật.");
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
     /**     * Xem danh sách yêu cầu mượn sách     */
     @GetMapping
     public String listBorrowRequests(Authentication authentication, Model model) {
@@ -124,19 +144,29 @@ public class BorrowController {
     }
 
     @PostMapping("/{transactionId}/return")
-    public String returnBorrow(@PathVariable Long transactionId, Authentication authentication, RedirectAttributes redirectAttributes) {
+    public String requestReturn(@PathVariable Long transactionId,
+                                @RequestParam String returnDateTime,
+                                @RequestParam(required = false) String note,
+                                Authentication authentication,
+                                RedirectAttributes redirectAttributes) {
         try {
-            User user = userService.findByUserName(authentication.getName()).orElseThrow();
-            BorrowTransaction transaction = borrowService.getBorrowTransactionDetail(transactionId).orElseThrow();
-            if (!transaction.getUser().getId().equals(user.getId())) {
-                throw new RuntimeException("Không có quyền");
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+            
+            // Chuyển đổi String sang LocalDateTime
+            java.time.LocalDateTime returnTime;
+            try {
+                returnTime = java.time.LocalDateTime.parse(returnDateTime);
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new RuntimeException("Định dạng ngày giờ không hợp lệ. Vui lòng thử lại.");
             }
-            borrowService.returnBorrowItems(transactionId, null);  // Giả sử sửa service để cho phép null librarian
-            redirectAttributes.addFlashAttribute("message", "Đã trả truyện thành công");
+            
+            borrowService.createReturnRequest(user.getId(), transactionId, returnTime, note);
+            redirectAttributes.addFlashAttribute("message", "Đã gửi yêu cầu trả truyện thành công. Vui lòng chờ thủ thư xác nhận.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/borrow/active";  // Redirect về trang active sau khi trả
+        return "redirect:/borrow/active";
     }
 
     /**     * Hủy yêu cầu mượn     */

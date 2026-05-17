@@ -64,21 +64,70 @@ public class LibrarianController {
     }
 
     @GetMapping("/returns")
-    public String listActiveBorrows(Model model) {
+    public String listPendingReturnRequests(Model model) {
+        model.addAttribute("pendingReturnRequests", borrowService.getAllPendingReturnRequests());
+        return "librarian/returns";
+    }
+
+    @GetMapping("/active-borrows")
+    public String listAllActiveBorrows(Model model) {
         List<BorrowTransaction> activeBorrows = borrowService.getAllActiveBorrows();
 
-        // Chuẩn bị dữ liệu cho template
+        // Chuẩn bị dữ liệu cho template (giống như cũ nhưng tách ra trang riêng)
         List<Map<String, Object>> borrowData = activeBorrows.stream().map(borrow -> {
             Map<String, Object> data = new HashMap<>();
             data.put("borrow", borrow);
             data.put("isOverdue", borrowService.isOverdue(borrow.getId()));
             data.put("lateFine", borrowService.calculateLateFine(borrow.getId()));
+            data.put("itemCount", borrow.getItems().size());
             return data;
         }).collect(Collectors.toList());
 
-        model.addAttribute("activeBorrows", activeBorrows);
         model.addAttribute("borrowDataMap", borrowData);
-        return "librarian/returns";
+        return "librarian/active-borrows";
+    }
+
+    @PostMapping("/returns/approve/{requestId}")
+    public String approveReturn(@PathVariable Long requestId,
+                                Authentication authentication,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            User librarian = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("Librarian not found"));
+            borrowService.approveReturnRequest(requestId, librarian.getId());
+            redirectAttributes.addFlashAttribute("message", "Đã duyệt yêu cầu trả truyện thành công");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/librarian/returns";
+    }
+
+    @PostMapping("/returns/complete/{requestId}")
+    public String completeReturn(@PathVariable Long requestId,
+                                 Authentication authentication,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            User librarian = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("Librarian not found"));
+            borrowService.completeReturnRequest(requestId, librarian.getId());
+            redirectAttributes.addFlashAttribute("message", "Đã xác nhận trả truyện thành công");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/librarian/returns";
+    }
+
+    @PostMapping("/returns/reject/{requestId}")
+    public String rejectReturn(@PathVariable Long requestId,
+                               @RequestParam String reason,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            borrowService.rejectReturnRequest(requestId, reason);
+            redirectAttributes.addFlashAttribute("message", "Đã từ chối yêu cầu trả truyện");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/librarian/returns";
     }
 
     @PostMapping("/returns/{transactionId}")
@@ -106,7 +155,7 @@ public class LibrarianController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/librarian/returns";
+        return "redirect:/librarian/active-borrows";
     }
 
     @GetMapping("/members")

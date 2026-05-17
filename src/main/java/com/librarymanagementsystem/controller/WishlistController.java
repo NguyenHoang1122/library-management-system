@@ -23,7 +23,7 @@ import java.util.Map;
 @Controller
 @RequestMapping("/wishlist")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('USER')")
+@PreAuthorize("isAuthenticated()")
 public class WishlistController {
     private final WishlistService wishlistService;
     private final UserService userService;

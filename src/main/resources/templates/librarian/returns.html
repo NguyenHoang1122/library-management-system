@@ -1,105 +1,165 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-  <title>Quản lý trả truyện</title>
-  <div th:replace="~{layout :: header_head}"></div>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <title>Quản lý trả truyện | Truyện 360</title>
+    <div th:replace="~{layout :: header_head}"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .admin-header-waka {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        .table-waka {
+            color: #ccc;
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .table-waka thead {
+            background: #252525;
+            color: #16a085;
+        }
+        .table-waka th, .table-waka td {
+            padding: 15px;
+            border-color: #333;
+        }
+        .table-waka tbody tr:hover {
+            background: rgba(22, 160, 133, 0.05);
+        }
+        .row-overdue {
+            background: rgba(231, 76, 60, 0.05) !important;
+        }
+        .badge-overdue { background: #e74c3c; color: #fff; }
+        .badge-normal { background: #16a085; color: #fff; }
+    </style>
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
 
-<main class="container-fluid my-5 px-4">
-  <div class="row">
-    <!-- SIDEBAR -->
-    <div class="col-md-3 col-lg-2 mb-4">
-      <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='returns')}"></div>
-    </div>
-
-    <!-- CONTENT -->
-    <div class="col-md-9 col-lg-10">
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-          <h3 class="mb-0 text-primary">
-            <i class="bi bi-arrow-return-left"></i> Quản lý trả truyện
-          </h3>
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='returns')}"></div>
         </div>
-        <div class="card-body p-4">
-          <!-- Thông báo thành công/lỗi -->
-          <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle"></i> <span th:text="${message}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-          <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-circle"></i> <span th:text="${error}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
 
-          <table class="table table-striped">
-            <thead>
-            <tr>
-              <th>ID</th>
-              <th>Người dùng</th>
-              <th>Danh sách truyện</th>
-              <th>Ngày mượn</th>
-              <th>Ngày trả dự kiến</th>
-              <th>Trạng thái</th>
-              <th>Tiền phạt</th>
-              <th>Hành động</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="data : ${borrowDataMap}"
-                th:classappend="${data.get('isOverdue') ? 'table-danger' : ''}">
-              <td th:text="${data.get('borrow').id}"></td>
-              <td th:text="${data.get('borrow').user.fullName}"></td>
-              <td>
-                <span th:if="${data.get('borrow').borrowItems != null && !data.get('borrow').borrowItems.isEmpty()}">
-                  <span th:each="item : ${data.get('borrow').borrowItems}"
-                        th:text="${item.book.title}" class="badge bg-info me-1"></span>
-                </span>
-                <span th:if="${data.get('borrow').borrowItems == null || data.get('borrow').borrowItems.isEmpty()}">N/A</span>
-              </td>
-              <td th:text="${#temporals.format(data.get('borrow').borrowDate, 'dd/MM/yyyy')}"></td>
-              <td th:text="${#temporals.format(data.get('borrow').dueDate, 'dd/MM/yyyy')}"></td>
-              <td>
-                <span th:if="${data.get('isOverdue')}" class="badge bg-danger">
-                  <i class="bi bi-exclamation-triangle"></i> Quá hạn
-                </span>
-                <span th:unless="${data.get('isOverdue')}" class="badge bg-success">
-                  <i class="bi bi-check-circle"></i> Bình thường
-                </span>
-              </td>
-              <td>
-                <span th:if="${data.get('isOverdue')}" th:text="${#numbers.formatCurrency(data.get('lateFine'))}"></span>
-                <span th:unless="${data.get('isOverdue')}">0 VND</span>
-              </td>
-              <td>
-                <form th:action="@{/librarian/returns/{id}(id=${data.get('borrow').id})}" method="post" style="display:inline;">
-                  <button type="submit" class="btn btn-primary btn-sm" onclick="return confirmReturn(this);">
-                    Xử lý trả
-                  </button>
-                </form>
-              </td>
-            </tr>
-            </tbody>
-          </table>
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <div class="admin-header-waka">
+                <h3 class="mb-0">Yêu cầu trả truyện chờ duyệt</h3>
+            </div>
+
+            <!-- Pending Return Requests Table -->
+            <div class="table-responsive mb-5">
+                <table class="table table-waka align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Người dùng</th>
+                            <th>Ngày yêu cầu</th>
+                            <th>Ngày trả dự kiến</th>
+                            <th>Ghi chú</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="request : ${pendingReturnRequests}">
+                            <td th:text="${request.id}" class="text-secondary"></td>
+                            <td class="fw-bold text-light" th:text="${request.user != null ? request.user.fullName : 'N/A'}"></td>
+                            <td th:text="${#temporals.format(request.requestDate, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${#temporals.format(request.returnDateTime, 'dd/MM/yyyy HH:mm')}" class="text-info"></td>
+                            <td th:text="${request.note != null ? request.note : '-'}" class="small"></td>
+                            <td>
+                                <span th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).PENDING}" 
+                                      class="badge bg-warning text-dark">Chờ duyệt</span>
+                                <span th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).APPROVED}" 
+                                      class="badge bg-info">Đã duyệt - Chờ trả</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <!-- Bước 1: Duyệt yêu cầu -->
+                                    <form th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).PENDING}" 
+                                          th:action="@{/librarian/returns/approve/{id}(id=${request.id})}" method="post">
+                                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                        <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 fw-bold">DUYỆT</button>
+                                    </form>
+                                    <button th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).APPROVED}" 
+                                            class="btn btn-secondary btn-sm rounded-pill px-3 fw-bold disabled" disabled>ĐÃ DUYỆT</button>
+
+                                    <!-- Bước 2: Xác nhận đã trả -->
+                                    <form th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).APPROVED}" 
+                                          th:action="@{/librarian/returns/complete/{id}(id=${request.id})}" method="post">
+                                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">XÁC NHẬN TRẢ</button>
+                                    </form>
+
+                                    <button type="button" th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).PENDING}"
+                                            class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold"
+                                            th:onclick="'openRejectModal(' + ${request.id} + ')'">TỪ CHỐI</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pendingReturnRequests)}">
+                            <td colspan="6" class="text-center py-4 text-secondary">Không có yêu cầu trả truyện nào đang chờ duyệt.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
         </div>
-      </div>
     </div>
-  </div>
 </main>
+
+<!-- Reject Return Modal -->
+<div class="modal fade" id="rejectReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Từ chối yêu cầu trả truyện</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="rejectReturnForm" method="post">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reason" class="form-label text-secondary small fw-bold">LÝ DO TỪ CHỐI</label>
+                        <textarea class="form-control bg-black border-secondary text-light" 
+                                  id="reason" name="reason" rows="3" required placeholder="Nhập lý do từ chối..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-5 fw-bold">XÁC NHẬN TỪ CHỐI</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  function confirmReturn(button) {
-    const row = button.closest('tr');
-    const isOverdue = row.classList.contains('table-danger');
-    const message = isOverdue
-            ? 'Sách quá hạn! Xác nhận trả và tính phí?'
-            : 'Xác nhận xử lý trả sách?';
-    return confirm(message);
-  }
+    function confirmReturn(button) {
+        const row = button.closest('tr');
+        const isOverdue = row.classList.contains('row-overdue');
+        const message = isOverdue ? 'Truyện đã QUÁ HẠN! Xác nhận trả và tính phí phạt?' : 'Xác nhận xử lý trả truyện trực tiếp (không qua yêu cầu)?';
+        return confirm(message);
+    }
+
+    function openRejectModal(requestId) {
+        const modal = new bootstrap.Modal(document.getElementById('rejectReturnModal'));
+        document.getElementById('rejectReturnForm').action = '/librarian/returns/reject/' + requestId;
+        modal.show();
+    }
 </script>
 </body>
 </html>

@@ -5,175 +5,176 @@
 </head>
 <body>
 
-<!-- SIDEBAR CHUNG - TỰ ĐỘNG HIỂN THỊ THEO ROLE ĐANG ĐĂNG NHẬP -->
-<div th:fragment="common_sidebar(activePage)" class="common-sidebar">
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0 text-primary">
-                <i class="bi bi-speedometer2"></i>
-                <span sec:authorize="hasRole('ADMIN')">Admin Panel</span>
-                <span sec:authorize="hasRole('LIBRARIAN')">Librarian Panel</span>
-                <span sec:authorize="hasRole('USER')">Menu Cá Nhân</span>
-            </h5>
-        </div>
-
-        <div class="list-group list-group-flush">
-
-            <!-- ========== MENU CHUNG CHO TẤT CẢ ROLE ========== -->
-<!--            <a th:href="@{/user/profile}"-->
-<!--               class="list-group-item list-group-item-action d-flex align-items-center"-->
-<!--               th:classappend="${activePage == 'profile' ? 'active' : ''}">-->
-<!--                <i class="bi bi-person me-3"></i>-->
-<!--                <span>Hồ sơ cá nhân</span>-->
-<!--            </a>-->
-
-            <!-- ========== MENU CHO ADMIN ========== -->
-            <div sec:authorize="hasRole('ADMIN')">
-                <a th:href="@{/user}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'users' ? 'active' : ''}">
-                    <i class="bi bi-people me-3"></i>
-                    <span>Quản lý người dùng</span>
-                </a>
-
-                <a th:href="@{/categories}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'categories' ? 'active' : ''}">
-                    <i class="bi bi-collection me-3"></i>
-                    <span>Danh mục truyện</span>
-                </a>
-
-                <a th:href="@{/books}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'books' ? 'active' : ''}">
-                    <i class="bi bi-book me-3"></i>
-                    <span>Quản lý truyện</span>
-                </a>
-
-                <a th:href="@{/user/trash}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'trash' ? 'active' : ''}">
-                    <i class="bi bi-trash me-3"></i>
-                    <span>Thùng rác</span>
-                </a>
-
-                <a th:href="@{/reports}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'reports' ? 'active' : ''}">
-                    <i class="bi bi-graph-up me-3"></i>
-                    <span>Báo cáo thống kê</span>
-                </a>
+<div th:fragment="common_sidebar(activePage)" class="waka-sidebar">
+    <!-- Profile Section -->
+    <div class="sidebar-profile mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="profile-name mb-0" th:text="${currentUser != null ? currentUser.fullName : 'Khách'}">Hoàng Nguyễn</h5>
+            <div class="avatar-container">
+                <img th:src="${currentUser != null and currentUser.image != null ? currentUser.image : 'https://ui-avatars.com/api/?name=User&background=16a085&color=fff'}" 
+                     class="rounded-circle profile-avatar" alt="Avatar">
             </div>
-
-            <!-- ========== MENU CHO LIBRARIAN ========== -->
-            <div sec:authorize="hasRole('LIBRARIAN')">
-                <a th:href="@{/librarian/borrows}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'borrows' ? 'active' : ''}">
-                    <i class="bi bi-arrow-left-right me-3"></i>
-                    <span>Yêu cầu mượn</span>
-                </a>
-
-                <a th:href="@{/books}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'books' ? 'active' : ''}">
-                    <i class="bi bi-book me-3"></i>
-                    <span>Quản lý truyện</span>
-                </a>
-
-                <a th:href="@{/returns}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'returns' ? 'active' : ''}">
-                    <i class="bi bi-arrow-counterclockwise me-3"></i>
-                    <span>Quản lý trả truyện</span>
-                </a>
-
-                <a th:href="@{/members}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'members' ? 'active' : ''}">
-                    <i class="bi bi-people-fill me-3"></i>
-                    <span>Danh sách thành viên</span>
-                </a>
-            </div>
-
-            <!-- ========== MENU CHO USER ========== -->
-            <div sec:authorize="hasRole('USER')">
-
-                <a th:href="@{/borrow/active}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'activeborrows' ? 'active' : ''}">
-                    <i class="fas fa-book-reader me-3"></i>
-                    <span>Truyện đang mượn</span>
-                </a>
-
-                <a th:href="@{/wishlist}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'wishlist' ? 'active' : ''}">
-                    <i class="bi bi-heart me-3"></i>
-                    <span>Danh sách yêu thích</span>
-                </a>
-
-                <a th:href="@{/borrow}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'borrow' ? 'active' : ''}">
-                    <i class="fa fa-book me-3"></i>
-                    <span>Yêu cầu mượn truyện</span>
-                </a>
-
-                <a th:href="@{/borrow/history}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'myborrows' ? 'active' : ''}">
-                    <i class="bi bi-bookmark me-3"></i>
-                    <span>Lịch sử mượn truyện</span>
-                </a>
-
-                <a th:href="@{/my-notifications}"
-                   class="list-group-item list-group-item-action d-flex align-items-center"
-                   th:classappend="${activePage == 'notifications' ? 'active' : ''}">
-                    <i class="bi bi-bell me-3"></i>
-                    <span>Thông báo</span>
-                </a>
-            </div>
-
-            <!-- ========== ĐĂNG XUẤT (CHUNG) ========== -->
-            <hr class="my-2">
-            <form th:action="@{/logout}" method="post" class="px-3">
-                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                    <i class="bi bi-box-arrow-right me-2"></i>
-                    Đăng xuất
-                </button>
-            </form>
-
         </div>
     </div>
+
+    <!-- Menu Section -->
+    <nav class="sidebar-nav">
+        <ul class="nav flex-column gap-1">
+            <!-- ========== MENU CHO ADMIN ========== -->
+            <th:block sec:authorize="hasRole('ADMIN')">
+                <li class="nav-item">
+                    <a th:href="@{/user}" class="nav-link-waka" th:classappend="${activePage == 'users' ? 'active' : ''}">
+                        <i class="bi bi-people me-3"></i> Quản lý người dùng
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/categories}" class="nav-link-waka" th:classappend="${activePage == 'categories' ? 'active' : ''}">
+                        <i class="bi bi-collection me-3"></i> Danh mục truyện
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/books}" class="nav-link-waka" th:classappend="${activePage == 'books' ? 'active' : ''}">
+                        <i class="bi bi-book me-3"></i> Quản lý truyện
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/user/trash}" class="nav-link-waka" th:classappend="${activePage == 'trash' ? 'active' : ''}">
+                        <i class="bi bi-trash me-3"></i> Thùng rác
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/reports}" class="nav-link-waka" th:classappend="${activePage == 'reports' ? 'active' : ''}">
+                        <i class="bi bi-graph-up me-3"></i> Báo cáo thống kê
+                    </a>
+                </li>
+            </th:block>
+
+            <!-- ========== MENU CHO LIBRARIAN ========== -->
+            <th:block sec:authorize="hasRole('LIBRARIAN')">
+                <li class="nav-item">
+                    <a th:href="@{/librarian/borrows}" class="nav-link-waka" th:classappend="${activePage == 'borrows' ? 'active' : ''}">
+                        <i class="bi bi-arrow-left-right me-3"></i> Yêu cầu mượn
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/books}" class="nav-link-waka" th:classappend="${activePage == 'books' ? 'active' : ''}">
+                        <i class="bi bi-book me-3"></i> Quản lý truyện
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/librarian/returns}" class="nav-link-waka" th:classappend="${activePage == 'returns' ? 'active' : ''}">
+                        <i class="bi bi-arrow-counterclockwise me-3"></i> Yêu cầu trả truyện
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/librarian/active-borrows}" class="nav-link-waka" th:classappend="${activePage == 'activeborrows' ? 'active' : ''}">
+                        <i class="bi bi-journal-check me-3"></i> Sách đang được mượn
+                    </a>
+                </li>
+            </th:block>
+
+            <!-- ========== MENU CHO USER ========== -->
+            <th:block sec:authorize="hasRole('USER')">
+                <li class="nav-item">
+                    <a th:href="@{/user/profile}" class="nav-link-waka" th:classappend="${activePage == 'profile' ? 'active' : ''}">
+                        <i class="far fa-user me-3"></i> Quản lý tài khoản
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/borrow/active}" class="nav-link-waka" th:classappend="${activePage == 'activeborrows' ? 'active' : ''}">
+                        <i class="bi bi-journal-bookmark me-3"></i> Truyện đang mượn
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/wishlist}" class="nav-link-waka" th:classappend="${activePage == 'wishlist' ? 'active' : ''}">
+                        <i class="bi bi-heart me-3"></i> Danh sách yêu thích
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/borrow}" class="nav-link-waka" th:classappend="${activePage == 'borrow' ? 'active' : ''}">
+                        <i class="fa fa-book me-3"></i> Yêu cầu mượn truyện
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/borrow/history}" class="nav-link-waka" th:classappend="${activePage == 'myborrows' ? 'active' : ''}">
+                        <i class="bi bi-bookmark me-3"></i> Lịch sử mượn truyện
+                    </a>
+                </li>
+            </th:block>
+
+            <!-- ========== ĐĂNG XUẤT (CHUNG) ========== -->
+            <hr class="my-2 border-secondary">
+            <li class="nav-item">
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="nav-link-waka text-danger border-0 bg-transparent w-100 text-start">
+                        <i class="bi bi-box-arrow-right me-3"></i> Đăng xuất
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </nav>
 </div>
 
-<!-- CSS cho Common Sidebar -->
+<!-- CSS cho Waka Sidebar -->
 <style th:fragment="sidebar_styles">
-    .common-sidebar .list-group-item {
+    .waka-sidebar {
+        background-color: #121212;
+        padding: 20px;
+        min-height: 100vh;
+    }
+    .profile-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #fff;
+    }
+    .profile-avatar {
+        width: 45px;
+        height: 45px;
+        border: 2px solid #16a085;
+    }
+    .profile-stats {
+        font-size: 0.85rem;
+        color: #888;
+    }
+    .btn-nap-soi {
+        background: #2c2c2c;
+        color: #f39c12;
         border: none;
-        border-bottom: 1px solid #f0f0f0;
-        padding: 12px 16px;
-        transition: all 0.3s ease;
+        border-radius: 20px;
+        padding: 5px 15px;
+        font-weight: 600;
+        font-size: 0.8rem;
     }
-
-    .common-sidebar .list-group-item:hover {
-        background-color: #f8f9fa;
-        transform: translateX(3px);
+    .btn-hoi-vien {
+        background: #16a085;
+        color: #fff;
+        border: none;
+        border-radius: 20px;
+        padding: 5px 15px;
+        font-weight: 600;
+        font-size: 0.8rem;
     }
-
-    .common-sidebar .list-group-item.active {
-        background-color: #0d6efd;
-        color: white;
-        border-color: #0d6efd;
+    .nav-link-waka {
+        color: #888;
+        padding: 10px 15px;
+        border-radius: 8px;
+        display: block;
+        text-decoration: none;
+        transition: all 0.3s;
+        font-size: 0.95rem;
     }
-
-    .common-sidebar .list-group-item.active i {
-        color: white;
+    .nav-link-waka:hover {
+        background: rgba(255,255,255,0.05);
+        color: #fff;
     }
-
-    .common-sidebar .list-group-item:last-child {
-        border-bottom: none;
+    .nav-link-waka.active {
+        background: rgba(255,255,255,0.1);
+        color: #16a085;
+        font-weight: 600;
+    }
+    .nav-link-waka i {
+        font-size: 1.1rem;
+        width: 20px;
     }
 </style>
 

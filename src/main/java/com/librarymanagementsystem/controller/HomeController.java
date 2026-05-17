@@ -1,6 +1,7 @@
 package com.librarymanagementsystem.controller;
 
 import com.librarymanagementsystem.model.user.User;
+import com.librarymanagementsystem.service.BookService;
 import com.librarymanagementsystem.service.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,9 @@ public class HomeController {
     @Autowired
     private UserServiceImpl userService;
 
+    @Autowired
+    private BookService bookService;
+
     @GetMapping("/")
     public String home(Authentication authentication, Model model) {
         if (authentication != null && authentication.isAuthenticated()) {
@@ -22,6 +26,12 @@ public class HomeController {
                 model.addAttribute("user", user);
             }
         }
+
+        model.addAttribute("newestBooks", bookService.getNewestBooks());
+        model.addAttribute("hotBooks", bookService.getHotBooks());
+        model.addAttribute("tuTienBooks", bookService.getBooksByCategoryName("Tu tiên"));
+        model.addAttribute("truyenTeenBooks", bookService.getBooksByCategoryName("Truyện teen"));
+
         return "home";
     }
 }

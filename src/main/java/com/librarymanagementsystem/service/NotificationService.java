@@ -3,6 +3,7 @@ package com.librarymanagementsystem.service;
 import com.librarymanagementsystem.model.Notification;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
+import com.librarymanagementsystem.model.borrow.ReturnRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,15 +24,25 @@ public interface NotificationService {
 
     void deleteAllNotifications(Long userId);
 
+    void deleteReadNotifications(Long userId);
+
     long countUnreadNotifications(Long userId);
 
+    // Thông báo cho thủ thư
     void notifyReviewBorrowRequest(BorrowRequest borrowRequest);
 
+    void notifyReviewReturnRequest(ReturnRequest returnRequest);
+
+    // Thông báo cho user
     void notifyBorrowApproved(BorrowTransaction transaction);
 
     void notifyBorrowRejected(BorrowRequest borrowRequest);
 
     void notifyBorrowReturned(BorrowTransaction transaction);
+
+    void notifyReturnApproved(ReturnRequest returnRequest);
+
+    void notifyReturnRejected(ReturnRequest returnRequest);
 
     void notifyBorrowRequestCancelled(BorrowRequest borrowRequest);
 

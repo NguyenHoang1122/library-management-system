@@ -31,15 +31,32 @@ public class BookController {
 
     @GetMapping
     public String listBooks(@RequestParam(required = false) String title,
+                            @RequestParam(required = false) Long category,
                             Model model,
                             Authentication authentication) {
         if (title != null && !title.isEmpty()) {
             model.addAttribute("books", bookService.searchBooks(title));
+        } else if (category != null) {
+            model.addAttribute("books", bookService.getBooksByCategory(category));
         } else {
             model.addAttribute("books", bookService.getAllBooks());
         }
 
-        // Thêm thông tin mượn nếu user đã login
+        addUserDataToModel(model, authentication);
+        return "book/list";
+    }
+
+    @GetMapping("/search")
+    public String searchBooks(@RequestParam("query") String query,
+                             Model model,
+                             Authentication authentication) {
+        model.addAttribute("books", bookService.searchBooks(query));
+        model.addAttribute("searchQuery", query);
+        addUserDataToModel(model, authentication);
+        return "book/list";
+    }
+
+    private void addUserDataToModel(Model model, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             String userName = authentication.getName();
             User user = userService.findByUserName(userName).orElse(null);
@@ -47,7 +64,6 @@ public class BookController {
                 model.addAttribute("userId", user.getId());
             }
         }
-        return "book/list";
     }
 
 

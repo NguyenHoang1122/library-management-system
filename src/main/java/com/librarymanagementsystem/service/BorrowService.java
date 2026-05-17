@@ -40,4 +40,13 @@ public interface BorrowService {
     List<BorrowRequest> getAllPendingRequests();
 
     List<BorrowTransaction> getAllActiveBorrows();
+
+    void createReturnRequest(Long userId, Long transactionId, LocalDateTime returnDateTime, String note);
+
+    List<ReturnRequest> getAllPendingReturnRequests();
+
+    void approveReturnRequest(Long requestId, Long librarianId);
+    void completeReturnRequest(Long requestId, Long librarianId);
+
+    void rejectReturnRequest(Long requestId, String reason);
 }
