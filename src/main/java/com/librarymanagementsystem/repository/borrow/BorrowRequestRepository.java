@@ -17,22 +17,7 @@ public interface BorrowRequestRepository extends JpaRepository<BorrowRequest, Lo
     // Lấy danh sách yêu cầu mượn của user
     List<BorrowRequest> findByUser(User user);
 
-    // Lấy danh sách yêu cầu mượn theo trạng thái
-    List<BorrowRequest> findByRequestStatus(RequestStatus requestStatus);
-
     // Lấy danh sách yêu cầu mượn chưa duyệt
     @Query("SELECT br FROM BorrowRequest br WHERE br.requestStatus = 'PENDING' ORDER BY br.requestDate DESC")
     List<BorrowRequest> findPendingRequests();
-
-    // Lấy danh sách yêu cầu mượn của user theo trạng thái
-    List<BorrowRequest> findByUserAndRequestStatus(User user, RequestStatus requestStatus);
-
-    // Lấy yêu cầu mượn (user cụ thể, trạng thái, ngày)
-    @Query("SELECT br FROM BorrowRequest br WHERE br.user.id = :userId AND br.requestDate BETWEEN :startDate AND :endDate ORDER BY br.requestDate DESC")
-    List<BorrowRequest> findByUserAndDateRange(@Param("userId") Long userId,
-                                               @Param("startDate") LocalDateTime startDate,
-                                               @Param("endDate") LocalDateTime endDate);
-
-    // Count yêu cầu chưa duyệt
-    long countByRequestStatus(RequestStatus requestStatus);
 }

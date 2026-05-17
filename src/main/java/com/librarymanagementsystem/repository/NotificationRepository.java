@@ -14,15 +14,6 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    // Lấy danh sách thông báo của user
-    List<Notification> findByUser(User user);
-
-    // Lấy danh sách thông báo chưa đọc
-    List<Notification> findByUserAndIsReadFalse(User user);
-
-    // Lấy danh sách thông báo đã đọc
-    List<Notification> findByUserAndIsReadTrue(User user);
-
     // Lấy thông báo theo user có sắp xếp
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId ORDER BY n.createdAt DESC")
     List<Notification> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
@@ -30,8 +21,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.user.id = :userId AND n.isRead = false")
     long countUnreadByUserId(@Param("userId") Long userId);
 
-    // Đếm thông báo chưa đọc
-    long countByUserAndIsReadFalse(User user);
 
     // Lấy thông báo chưa đọc theo ngày
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.isRead = false AND n.createdAt >= :date ORDER BY n.createdAt DESC")
@@ -47,9 +36,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.user.id = :userId")
     void markAllAsRead(@Param("userId") Long userId);
 
-    // Xóa thông báo cũ hơn thời gian chỉ định
     @Modifying
-    @Query("DELETE FROM Notification n WHERE n.user.id = :userId AND n.createdAt < :date")
-    void deleteOldNotifications(@Param("userId") Long userId, @Param("date") LocalDateTime date);
-
+    @Query("DELETE FROM Notification n WHERE n.user.id = :userId AND n.isRead = true")
+    void deleteReadNotifications(@Param("userId") Long userId);
 }

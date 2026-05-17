@@ -1,154 +1,124 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <title>Thông báo</title>
+    <title>Thông báo | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        .notification-item {
-            border-left: 4px solid #0d6efd;
-            transition: all 0.3s ease;
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
         }
-        .notification-item:hover {
-            background-color: #f8f9fa;
-            transform: translateX(3px);
+        .admin-header-waka {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
         }
-        .notification-item.unread {
-            background-color: #e7f3ff;
-            border-left-color: #0dcaf0;
+        .noti-list-waka {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
-        .notification-time {
-            font-size: 0.85rem;
-            color: #6c757d;
+        .noti-item-waka {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: 0.3s;
         }
-        .unread-badge {
-            display: inline-block;
+        .noti-item-waka:hover {
+            border-color: #16a085;
+            background: #222;
+        }
+        .noti-item-waka.unread {
+            border-left: 4px solid #16a085;
+            background: rgba(22, 160, 133, 0.05);
+        }
+        .unread-dot {
             width: 8px;
             height: 8px;
-            background-color: #0dcaf0;
+            background: #16a085;
             border-radius: 50%;
-            margin-right: 10px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .noti-time {
+            font-size: 0.8rem;
+            color: #666;
         }
     </style>
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
 
-<main class="container-fluid my-5 px-4">
-    <div class="row">
-        <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 mb-4">
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
             <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='notifications')}"></div>
         </div>
 
-        <!-- NOTIFICATIONS CONTENT -->
-        <div class="col-md-9 col-lg-10">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0 text-primary">
-                        <i class="bi bi-bell"></i> Thông báo
-                        <span class="badge bg-danger ms-2" th:text="${unreadCount}"></span>
-                    </h3>
-                    <div th:if="${unreadCount > 0}">
-                        <form th:action="@{/my-notifications/mark-all-read}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-primary me-2">
-                                <i class="bi bi-check-all"></i> Đánh dấu tất cả đã đọc
-                            </button>
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <div class="admin-header-waka">
+                <h3 class="mb-0">Thông báo <span class="badge bg-danger rounded-pill ms-2" style="font-size: 0.9rem;" th:text="${unreadCount}">0</span></h3>
+                <div th:if="${totalNotifications > 0}">
+                    <form th:action="@{/my-notifications/mark-all-read}" method="post" class="d-inline">
+                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button type="submit" class="btn btn-outline-info btn-sm rounded-pill px-3 me-2">Đọc tất cả</button>
+                    </form>
+                    <form th:action="@{/my-notifications/delete-read}" method="post" class="d-inline" onsubmit="return confirm('Xóa các thông báo đã đọc?')">
+                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Xóa đã đọc</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div th:if="${totalNotifications == 0}" class="text-center py-5">
+                <i class="bi bi-bell-slash" style="font-size: 4rem; color: #333;"></i>
+                <p class="mt-3 text-secondary">Bạn không có thông báo nào.</p>
+            </div>
+
+            <div class="noti-list-waka" th:if="${totalNotifications > 0}">
+                <!-- Unread -->
+                <div th:each="notification : ${unreadNotifications}" class="noti-item-waka unread">
+                    <div>
+                        <h6 class="mb-1 text-light"><span class="unread-dot"></span><span th:text="${notification.title}"></span></h6>
+                        <p class="mb-2 text-secondary small" th:text="${notification.content}"></p>
+                        <span class="noti-time" th:text="${#temporals.format(notification.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form th:action="@{/my-notifications/{id}/mark-read(id=${notification.id})}" method="post">
+                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="btn btn-link text-info p-0" title="Đánh dấu đã đọc"><i class="bi bi-check2-circle fs-5"></i></button>
                         </form>
-                        <form th:action="@{/my-notifications/delete-all}" method="post" class="d-inline"
-                              onsubmit="return confirm('Xóa tất cả thông báo?')">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i> Xóa tất cả
-                            </button>
+                        <form th:action="@{/my-notifications/{id}/delete(id=${notification.id})}" method="post">
+                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Xóa thông báo?')"><i class="bi bi-trash fs-5"></i></button>
                         </form>
                     </div>
                 </div>
 
-                <div class="card-body p-4">
-                    <!-- Thông báo -->
-                    <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle me-2"></i> <span th:text="${message}"></span>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <!-- Read -->
+                <div th:each="notification : ${notifications}" th:if="${notification.isRead()}" class="noti-item-waka">
+                    <div>
+                        <h6 class="mb-1 text-secondary" th:text="${notification.title}"></h6>
+                        <p class="mb-2 text-secondary small" th:text="${notification.content}"></p>
+                        <span class="noti-time" th:text="${#temporals.format(notification.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
                     </div>
-                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i> <span th:text="${error}"></span>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-
-                    <!-- Danh sách thông báo -->
-                    <div th:if="${totalNotifications > 0}">
-                        <!-- Chưa đọc -->
-                        <div th:if="${!unreadNotifications.isEmpty()}">
-                            <h5 class="mb-3 text-secondary">
-                                <i class="bi bi-dot"></i> Chưa đọc
-                            </h5>
-                            <div th:each="notification : ${unreadNotifications}" class="list-group mb-4">
-                                <a th:href="@{/my-notifications/{id}(id=${notification.id})}"
-                                   class="list-group-item notification-item unread d-flex justify-content-between align-items-start">
-                                    <div class="ms-2 me-auto">
-                                        <h6 class="mb-1">
-                                            <span class="unread-badge"></span>
-                                            <span th:text="${notification.title}"></span>
-                                        </h6>
-                                        <p class="mb-1 text-muted" th:text="${notification.content}"></p>
-                                        <span class="notification-time"
-                                              th:text="${#temporals.format(notification.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
-                                    </div>
-                                    <div class="btn-group" role="group">
-                                        <form th:action="@{/my-notifications/{id}/mark-read(id=${notification.id})}"
-                                              method="post" class="d-inline">
-                                            <button type="submit" class="btn btn-sm btn-outline-info"
-                                                    title="Đánh dấu đã đọc">
-                                                <i class="bi bi-check"></i>
-                                            </button>
-                                        </form>
-                                        <form th:action="@{/my-notifications/{id}/delete(id=${notification.id})}"
-                                              method="post" class="d-inline"
-                                              onsubmit="return confirm('Xóa thông báo này?')">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                    title="Xóa">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Đã đọc -->
-                        <div th:if="${notifications.size() > unreadNotifications.size()}">
-                            <h5 class="mb-3 text-secondary">
-                                <i class="bi bi-check2"></i> Đã đọc
-                            </h5>
-                            <div class="list-group">
-                                <a th:each="notification : ${notifications}"
-                                   th:if="${notification.isRead()}"
-                                   th:href="@{/my-notifications/{id}(id=${notification.id})}"
-                                   class="list-group-item notification-item d-flex justify-content-between align-items-start">
-                                    <div class="ms-2 me-auto">
-                                        <h6 class="mb-1" th:text="${notification.title}"></h6>
-                                        <p class="mb-1 text-muted" th:text="${notification.content}"></p>
-                                        <span class="notification-time"
-                                              th:text="${#temporals.format(notification.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
-                                    </div>
-                                    <form th:action="@{/my-notifications/{id}/delete(id=${notification.id})}"
-                                          method="post" class="d-inline"
-                                          onsubmit="return confirm('Xóa thông báo này?')">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                title="Xóa">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Danh sách trống -->
-                    <div th:if="${totalNotifications == 0}" class="text-center py-5">
-                        <i class="bi bi-bell-slash" style="font-size: 3rem; color: #adb5bd;"></i>
-                        <p class="text-muted mt-3">Bạn không có thông báo nào</p>
-                    </div>
+                    <form th:action="@{/my-notifications/{id}/delete(id=${notification.id})}" method="post">
+                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Xóa thông báo?')"><i class="bi bi-trash fs-5"></i></button>
+                    </form>
                 </div>
             </div>
         </div>

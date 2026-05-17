@@ -17,7 +17,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/my-notifications")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('USER')")
+@PreAuthorize("hasAnyRole('USER', 'LIBRARIAN', 'ADMIN')")
 public class NotificationController {
     private final NotificationService notificationService;
     private final UserService userService;
@@ -87,6 +87,36 @@ public class NotificationController {
         try {
             notificationService.deleteNotification(notificationId);
             redirectAttributes.addFlashAttribute("message", "Đã xóa thông báo");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/my-notifications";
+    }
+
+    @PostMapping("/delete-read")
+    public String deleteReadNotifications(Authentication authentication,
+                                         RedirectAttributes redirectAttributes) {
+        try {
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+            notificationService.deleteReadNotifications(user.getId());
+            redirectAttributes.addFlashAttribute("message", "Đã xóa các thông báo đã đọc");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
+        return "redirect:/my-notifications";
+    }
+
+    @PostMapping("/delete-all")
+    public String deleteAllNotifications(Authentication authentication,
+                                        RedirectAttributes redirectAttributes) {
+        try {
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+            notificationService.deleteAllNotifications(user.getId());
+            redirectAttributes.addFlashAttribute("message", "Đã xóa tất cả thông báo");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

@@ -14,10 +14,4 @@ public interface BorrowItemRepository extends JpaRepository<BorrowItem, Long> {
 
     // Lấy danh sách sách trong giao dịch mượn
     List<BorrowItem> findByTransaction(BorrowTransaction transaction);
-
-    // Kiểm tra sách có trong giao dịch mượn không
-    Optional<BorrowItem> findByTransactionAndBook(BorrowTransaction transaction, Book book);
-
-    // Count sách trong giao dịch mượn
-    long countByTransaction(BorrowTransaction transaction);
 }

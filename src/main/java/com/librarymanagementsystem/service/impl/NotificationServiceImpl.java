@@ -3,6 +3,7 @@ package com.librarymanagementsystem.service.impl;
 import com.librarymanagementsystem.model.Notification;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
+import com.librarymanagementsystem.model.borrow.ReturnRequest;
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.model.user.status.RoleStatus;
 import com.librarymanagementsystem.repository.NotificationRepository;
@@ -59,6 +60,11 @@ public class NotificationServiceImpl implements NotificationService {
         // Lấy tất cả thông báo của user rồi xóa
         List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
         notificationRepository.deleteAll(notifications);
+    }
+
+    @Override
+    public void deleteReadNotifications(Long userId) {
+        notificationRepository.deleteReadNotifications(userId);
     }
 
     @Override
@@ -150,6 +156,48 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setTitle("⚠️ Cảnh báo: Truyện quá hạn");
         notification.setContent("Truyện của bạn đã quá hạn trả từ ngày " + transaction.getDueDate().toLocalDate() +
                 ". Vui lòng trả truyện tại thư viện ngay lập tức");
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
+    @Override
+    public void notifyReviewReturnRequest(ReturnRequest returnRequest) {
+        List<User> librarians = userService.getAllActiveUsers().stream()
+                .filter(user -> user.getRole().getRoleName() == RoleStatus.ROLE_LIBRARIAN)
+                .toList();
+        for (User librarian : librarians) {
+            Notification notification = new Notification();
+            notification.setUser(librarian);
+            notification.setTitle("Yêu cầu trả truyện mới");
+            notification.setContent("Có một yêu cầu trả truyện mới từ user " + returnRequest.getUser().getFullName() +
+                    " vào ngày " + returnRequest.getRequestDate().toLocalDate() +
+                    ". Thời gian trả dự kiến: " + returnRequest.getReturnDateTime().toLocalDate() +
+                    ". Vui lòng kiểm tra và duyệt yêu cầu.");
+            notification.setRead(false);
+            notification.setCreatedAt(LocalDateTime.now());
+            notificationRepository.save(notification);
+        }
+    }
+
+    @Override
+    public void notifyReturnApproved(ReturnRequest returnRequest) {
+        Notification notification = new Notification();
+        notification.setUser(returnRequest.getUser());
+        notification.setTitle("Yêu cầu trả truyện đã được duyệt");
+        notification.setContent("Yêu cầu trả truyện của bạn cho giao dịch #" + returnRequest.getBorrowTransaction().getId() +
+                " đã được thủ thư duyệt thành công.");
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
+
+    @Override
+    public void notifyReturnRejected(ReturnRequest returnRequest) {
+        Notification notification = new Notification();
+        notification.setUser(returnRequest.getUser());
+        notification.setTitle("Yêu cầu trả truyện bị từ chối");
+        notification.setContent("Yêu cầu trả truyện của bạn cho giao dịch #" + returnRequest.getBorrowTransaction().getId() +
+                " đã bị từ chối. Lý do: " + returnRequest.getRejectionReason());
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);

@@ -1,124 +1,248 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <head th:fragment="header_head">
     <meta charset="UTF-8">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/layout.css}">
+    
+    <!-- CSRF Meta Tags for AJAX -->
+    <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
+    
+    <!-- Nhúng CSS sidebar toàn cục để hiển thị đúng trên tất cả các trang -->
+    <style th:replace="~{fragments/sidebar :: sidebar_styles}"></style>
+    
+    <style>
+        .notification-list {
+            max-height: 350px;
+            overflow-y: auto;
+            min-width: 300px;
+        }
+        .notification-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .notification-list::-webkit-scrollbar-thumb {
+            background-color: #444;
+            border-radius: 10px;
+        }
+        .notification-header {
+            padding: 8px 16px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
 </head>
+
 <body>
 
-<header th:fragment="header" class="header-waka sticky-top">
-    <div class="top-banner w-100">
-        <a href="#">
-            <img th:src="@{/image/anh-header1.png}" alt="Truyện 360 Banner" class="img-fluid w-100"
-                 style="display: block;">
-        </a>
-    </div>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-black">
-        <div class="container">
-            <a class="navbar-brand logo-waka" th:href="@{/}">Truyện 360</a>
-            <div class="collapse navbar-collapse" id="360Nav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="#">Tu Tiên</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Trùng sinh</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Tiểu thuyết</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Truyện tranh</a></li>
-                </ul>
-                <div class="d-flex align-items-center gap-3">
-                    <a href="#" class="text-white"><i class="fas fa-search"></i></a>
+    <header th:fragment="header" class="header-waka sticky-top">
+<!--        <div class="container mt-3" th:if="${message != null}">-->
+<!--            <div class="alert alert-success alert-dismissible fade show bg-success bg-opacity-25 border-success text-success" role="alert">-->
+<!--                <i class="fas fa-check-circle me-2"></i>-->
+<!--                <span th:text="${message}">Thông báo thành công</span>-->
+<!--                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--        <div class="container mt-3" th:if="${error != null}">-->
+<!--            <div class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-25 border-danger text-danger" role="alert">-->
+<!--                <i class="fas fa-exclamation-circle me-2"></i>-->
+<!--                <span th:text="${error}">Thông báo lỗi</span>-->
+<!--                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>-->
+<!--            </div>-->
+<!--        </div>-->
 
-                    <div sec:authorize="isAnonymous()" class="d-flex align-items-center gap-3">
-                        <a th:href="@{/register}" class="text-white text-decoration-none small">Đăng ký</a>
-                        <a th:href="@{/login}" class="btn btn-waka-green btn-sm rounded-pill px-4">Đăng nhập</a>
-                    </div>
+        <div class="top-banner w-100">
+            <a href="#">
+                <img th:src="@{/image/anh-header1.png}" alt="Truyện 360 Banner" class="img-fluid w-100"
+                    style="display: block;">
+            </a>
+        </div>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+            <div class="container">
+                <a class="navbar-brand logo-waka" th:href="@{/}">Truyện 360</a>
+                <div class="collapse navbar-collapse" id="360Nav">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <!-- Hiển thị 5 categories đầu tiên -->
+                        <li th:each="category, iterStat : ${categories}" th:if="${iterStat.index < 5}" class="nav-item">
+                            <a class="nav-link" th:href="@{/books(category=${category.id})}"
+                                th:text="${category.categoryName}">Category</a>
+                        </li>
+                        <!-- Nút "Khác" với dropdown cho categories còn lại -->
+                        <li class="nav-item dropdown" th:if="${categories != null and categories.size() > 5}">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategories" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                Khác
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategories">
+                                <li th:each="category, iterStat : ${categories}" th:if="${iterStat.index >= 5}">
+                                    <a class="dropdown-item" th:href="@{/books(category=${category.id})}"
+                                        th:text="${category.categoryName}">Category</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Form search -->
+                        <form th:action="@{/books/search}" method="get" class="d-flex align-items-center">
+                            <input type="text" name="query" class="form-control form-control-sm me-2"
+                                placeholder="Tìm kiếm truyện hoặc tác giả..." style="width: 200px;">
+                            <button type="submit" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
 
-                    <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
-                        <div class="dropdown">
-                            <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
-                                <div class="dropdown"><a
-                                        class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
-                                        role="button" data-bs-toggle="dropdown" style="text-decoration: none;"> <img
-                                        th:src="${currentUser != null and currentUser.image != null ? currentUser.image : 'https://ui-avatars.com/api/?name=' + #authentication.principal.username + '&background=random'}"
+                        <!-- Dropdown notifications -->
+                        <div class="dropdown" sec:authorize="isAuthenticated()">
+                            <a class="text-white dropdown-toggle" href="#" role="button" id="notificationDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell"></i>
+                                <span th:if="${notifications != null and !notifications.isEmpty()}"
+                                    class="badge bg-danger" th:text="${#lists.size(notifications)}">0</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end notification-list"
+                                aria-labelledby="notificationDropdown">
+                                <li th:if="${notifications != null and !notifications.isEmpty()}" class="notification-header">
+                                    <span class="small fw-bold">Thông báo</span>
+                                    <form th:action="@{/my-notifications/delete-read}" method="post" class="m-0">
+                                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                        <button type="submit" class="btn btn-link btn-sm text-info p-0 text-decoration-none small">
+                                            <i class="fas fa-trash-alt me-1"></i>Xóa đã đọc
+                                        </button>
+                                    </form>
+                                </li>
+                                <li th:if="${notifications == null or notifications.isEmpty()}"><a
+                                        class="dropdown-item">Không có thông báo</a></li>
+                                <li th:each="notification : ${notifications}">
+                                    <a class="dropdown-item py-2 border-bottom border-secondary border-opacity-25" th:href="@{/my-notifications/{id}(id=${notification.id})}" th:classappend="${!notification.read ? 'bg-dark bg-opacity-50' : ''}">
+                                        <div class="d-flex flex-column">
+                                            <span class="small fw-bold" th:text="${notification.title}">Tiêu đề</span>
+                                            <small class="text-secondary text-truncate" style="max-width: 250px;" th:text="${notification.content}">Nội dung</small>
+                                            <small class="text-muted mt-1" style="font-size: 0.7rem;" th:text="${#temporals.format(notification.createdAt, 'dd/MM/yyyy HH:mm')}">Thời gian</small>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li th:if="${notifications != null and !notifications.isEmpty()}">
+                                    <a class="dropdown-item text-center py-2 small text-info" th:href="@{/my-notifications}">Xem tất cả</a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Phần đăng ký/đăng nhập (giữ nguyên) -->
+                        <div sec:authorize="isAnonymous()" class="d-flex align-items-center gap-3">
+                            <a th:href="@{/register}" class="text-white text-decoration-none small">Đăng ký</a>
+                            <a th:href="@{/login}" class="btn btn-waka-green btn-sm rounded-pill px-4">Đăng nhập</a>
+                        </div>
+
+                        <!-- User dropdown -->
+                        <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
+                            <div class="dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
+                                    role="button" data-bs-toggle="dropdown" style="text-decoration: none;">
+                                    <img th:src="${currentUser != null and currentUser.image != null ? currentUser.image : 'https://ui-avatars.com/api/?name=' + #authentication.principal.username + '&background=random'}"
                                         alt="Avatar" class="rounded-circle me-2"
-                                        style="width:30px; height:30px; object-fit: cover;"> <span
-                                        th:text="${#authentication.principal.username ?: 'Thành viên'}"
+                                        style="width:30px; height:30px; object-fit: cover;">
+                                    <span th:text="${#authentication.principal.username ?: 'Thành viên'}"
                                         class="text-white">User</span>
                                 </a>
-                                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
-                                        <li><a class="dropdown-item" th:href="@{/user/profile}">Trang cá nhân</a></li>
-                                        <li>
-                                            <a class="dropdown-item" th:href="@{/books}">Dashboard</a>
-                                        </li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li>
-                                            <form th:action="@{/logout}" method="post" class="m-0">
-                                                <button type="submit" class="dropdown-item text-danger">Đăng xuất
-                                                </button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
+                                <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                                    <li><a class="dropdown-item" th:href="@{/user/profile}">Thông tin cá nhân</a></li>
+                                    
+                                    <!-- MENU DÀNH CHO ADMIN -->
+                                    <th:block sec:authorize="hasRole('ADMIN')">
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" th:href="@{/user}">Quản lý người dùng</a></li>
+                                        <li><a class="dropdown-item" th:href="@{/categories}">Danh mục truyện</a></li>
+                                        <li><a class="dropdown-item" th:href="@{/books}">Quản lý truyện</a></li>
+                                        <li><a class="dropdown-item" th:href="@{/reports}">Báo cáo thống kê</a></li>
+                                    </th:block>
+
+                                    <!-- MENU DÀNH CHO THỦ THƯ -->
+                                    <th:block sec:authorize="hasRole('LIBRARIAN')">
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" th:href="@{/librarian/borrows}">Yêu cầu mượn</a></li>
+                                        <li><a class="dropdown-item" th:href="@{/librarian/returns}">Yêu cầu trả truyện</a></li>
+                                        <li><a class="dropdown-item" th:href="@{/librarian/active-borrows}">Sách đang được mượn</a></li>
+                                    </th:block>
+
+                                    <!-- MENU DÀNH CHO NGƯỜI DÙNG -->
+                                    <th:block sec:authorize="hasRole('USER')">
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" th:href="@{/borrow/active}">Truyện đang mượn</a></li>
+                                        <li><a class="dropdown-item" th:href="@{/wishlist}">Danh sách yêu thích</a></li>
+                                        <li><a class="dropdown-item" th:href="@{/borrow/history}">Lịch sử mượn truyện</a></li>
+                                    </th:block>
+
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form th:action="@{/logout}" method="post" class="m-0">
+                                            <button type="submit" class="dropdown-item text-danger">Đăng xuất</button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </nav>
-</header>
+        </nav>
+    </header>
 
-<footer th:fragment="footer" class="footer-waka text-secondary pt-5 pb-4 bg-dark">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-3 col-md-6 mb-4">
-                <h2 class="logo-waka mb-3 text-info h4">Truyện 360</h2>
-                <p class="text-light small mb-2">Công ty cổ phần sách điện tử Truyện 360</p>
-                <div class="contact-info small">
-                    <p class="mb-1"><i class="fas fa-phone me-2"></i> 0999999999</p>
-                    <p><i class="fas fa-envelope me-2"></i> support@truyen360.vn</p>
+    <footer th:fragment="footer" class="footer-waka text-secondary pt-5 pb-4 bg-dark">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h2 class="logo-waka mb-3 text-info h4">Truyện 360</h2>
+                    <p class="text-light small mb-2">Công ty cổ phần sách điện tử Truyện 360</p>
+                    <div class="contact-info small">
+                        <p class="mb-1"><i class="fas fa-phone me-2"></i> 0999999999</p>
+                        <p><i class="fas fa-envelope me-2"></i> support@truyen360.vn</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="col-lg-2 col-md-3 mb-4">
-                <h6 class="text-white mb-3 fw-bold">Về chúng tôi</h6>
-                <ul class="list-unstyled footer-links small">
-                    <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Giới thiệu</a></li>
-                    <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Tuyển dụng</a></li>
-                </ul>
-            </div>
+                <div class="col-lg-2 col-md-3 mb-4">
+                    <h6 class="text-white mb-3 fw-bold">Về chúng tôi</h6>
+                    <ul class="list-unstyled footer-links small">
+                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Giới thiệu</a></li>
+                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Tuyển dụng</a></li>
+                    </ul>
+                </div>
 
-            <div class="col-lg-2 col-md-3 mb-4">
-                <h6 class="text-white mb-3 fw-bold">Thông tin hữu ích</h6>
-                <ul class="list-unstyled footer-links small">
-                    <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Thỏa thuận sử dụng</a></li>
-                    <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Quy định riêng tư</a></li>
-                </ul>
-            </div>
+                <div class="col-lg-2 col-md-3 mb-4">
+                    <h6 class="text-white mb-3 fw-bold">Thông tin hữu ích</h6>
+                    <ul class="list-unstyled footer-links small">
+                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Thỏa thuận sử dụng</a>
+                        </li>
+                        <li class="mb-2"><a href="#" class="text-decoration-none text-secondary">Quy định riêng tư</a>
+                        </li>
+                    </ul>
+                </div>
 
-            <div class="col-lg-3 col-md-6 mb-4">
-                <h6 class="text-white mb-3 fw-bold">Tải ứng dụng</h6>
-                <div class="d-flex gap-3">
-                    <img th:src="@{/image/code-bank.jpg}" alt="QR" class="p-1 bg-white" width="80" height="80">
-                    <div class="d-flex flex-column gap-2">
-                        <img th:src="@{/image/app-store.png}" width="100" alt="App Store">
-                        <img th:src="@{/image/google-play.png}" width="100" alt="Google Play">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h6 class="text-white mb-3 fw-bold">Tải ứng dụng</h6>
+                    <div class="d-flex gap-3">
+                        <img th:src="@{/image/code-bank.jpg}" alt="QR" class="p-1 bg-white" width="80" height="80">
+                        <div class="d-flex flex-column gap-2">
+                            <img th:src="@{/image/app-store.png}" width="100" alt="App Store">
+                            <img th:src="@{/image/google-play.png}" width="100" alt="Google Play">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4 text-lg-end">
+                    <h6 class="text-white mb-3 fw-bold opacity-0 d-none d-lg-block">Chứng nhận</h6>
+                    <div class="d-flex flex-column align-items-lg-end gap-2">
+                        <img th:src="@{/image/bo-cong-thuong-shop.png}" width="120" alt="Bộ Công Thương">
+                        <img th:src="@{/image/bo-cong-thuong.png}" width="120" alt="Bộ Công Thương">
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-2 col-md-6 mb-4 text-lg-end">
-                <h6 class="text-white mb-3 fw-bold opacity-0 d-none d-lg-block">Chứng nhận</h6>
-                <div class="d-flex flex-column align-items-lg-end gap-2">
-                    <img th:src="@{/image/bo-cong-thuong-shop.png}" width="120" alt="Bộ Công Thương">
-                    <img th:src="@{/image/bo-cong-thuong.png}" width="120" alt="Bộ Công Thương">
-                </div>
-            </div>
         </div>
-    </div>
-</footer>
+    </footer>
 
 </body>
+
 </html>

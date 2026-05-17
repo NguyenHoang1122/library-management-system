@@ -15,9 +15,4 @@ public interface BorrowRequestItemRepository extends JpaRepository<BorrowRequest
     // Lấy danh sách sách trong yêu cầu mượn
     List<BorrowRequestItem> findByBorrowRequest(BorrowRequest borrowRequest);
 
-    // Kiểm tra sách có trong yêu cầu mượn không
-    Optional<BorrowRequestItem> findByBorrowRequestAndBook(BorrowRequest borrowRequest, Book book);
-
-    // Count sách trong yêu cầu mượn
-    long countByBorrowRequest(BorrowRequest borrowRequest);
 }

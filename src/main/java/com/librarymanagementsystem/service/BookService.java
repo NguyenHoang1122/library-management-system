@@ -12,8 +12,11 @@ public interface BookService {
     Book saveBook(BookDTO bookDTO);
     Book updateBook(Long id, BookDTO bookDTO);
     void deleteBook(Long id);
-    List<Book> searchBooks(String title);
+    List<Book> searchBooks(String query);
     List<Book> getBooksByCategory(Long categoryId);
     List<Book> getBooksByAuthor(Long authorId);
+    List<Book> getNewestBooks();
+    List<Book> getHotBooks();
+    List<Book> getBooksByCategoryName(String categoryName);
     boolean isBookBorrowedByUser(Long bookId, Long userId);
 }
