@@ -1,4 +1,4 @@
-package com.librarymanagementsystem.service.impl;
+package com.librarymanagementsystem.service.book.impl;
 
 import com.librarymanagementsystem.model.book.Book;
 import org.springframework.data.domain.PageRequest;
@@ -9,7 +9,7 @@ import com.librarymanagementsystem.repository.AuthorRepository;
 import com.librarymanagementsystem.repository.BookRepository;
 import com.librarymanagementsystem.repository.CategoryRepository;
 import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
-import com.librarymanagementsystem.service.BookService;
+import com.librarymanagementsystem.service.book.BookService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -219,5 +218,10 @@ public class BookServiceImpl implements BookService {
     @Override
     public List<Book> getBooksByCategoryName(String categoryName) {
         return bookRepository.findTop5ByCategoryName(categoryName, PageRequest.of(0, 5));
+    }
+
+    @Override
+    public boolean existsByIsbn(String isbn) {
+        return bookRepository.existsByIsbn(isbn);
     }
 }

@@ -1,4 +1,4 @@
-package com.librarymanagementsystem.service;
+package com.librarymanagementsystem.service.book;
 
 import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
@@ -19,4 +19,5 @@ public interface BookService {
     List<Book> getHotBooks();
     List<Book> getBooksByCategoryName(String categoryName);
     boolean isBookBorrowedByUser(Long bookId, Long userId);
+    boolean existsByIsbn(String isbn);
 }

@@ -1,4 +1,4 @@
-package com.librarymanagementsystem.service.impl;
+package com.librarymanagementsystem.service.book.impl;
 
 import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.book.BookReview;
@@ -7,7 +7,7 @@ import com.librarymanagementsystem.repository.BookRepository;
 import com.librarymanagementsystem.repository.BookReviewRepository;
 import com.librarymanagementsystem.repository.UserRepository;
 import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
-import com.librarymanagementsystem.service.BookReviewService;
+import com.librarymanagementsystem.service.book.BookReviewService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

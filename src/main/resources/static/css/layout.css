@@ -281,3 +281,76 @@ main, .content-wrapper {
 .hover-scale:hover {
     transform: scale(1.2) !important;
 }
+
+/* Multi-column categories dropdown styles */
+.dropdown-menu-categories-multi {
+    display: none !important; /* Hide by default */
+    grid-auto-flow: column !important; /* Flow items vertically then wrap horizontally */
+    grid-template-rows: repeat(10, minmax(0, auto)) !important; /* Limit to 10 rows per column */
+    grid-gap: 4px !important;
+    min-width: 180px !important;
+    width: max-content !important; /* Automatically expand width of container */
+    padding: 16px !important;
+    background: linear-gradient(135deg, #1f1f1f 0%, #121212 100%) !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6) !important;
+    margin-top: 12px !important;
+}
+.dropdown-menu-categories-multi.show {
+    display: grid !important; /* Show when Bootstrap active class is present */
+}
+.dropdown-menu-categories-multi li {
+    display: block !important;
+    width: 170px !important; /* Uniform width for each column */
+}
+.dropdown-menu-categories-multi .dropdown-item {
+    color: #ccc !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    transition: 0.2s ease-in-out !important;
+    background: transparent !important;
+}
+.dropdown-menu-categories-multi .dropdown-item:hover {
+    color: #16a085 !important;
+    background: rgba(22, 160, 133, 0.08) !important;
+    transform: translateX(4px) !important;
+}
+
+/* Open navbar dropdowns on hover on larger screens */
+@media (min-width: 992px) {
+    .navbar-nav .nav-item.dropdown:hover .dropdown-menu {
+        display: block !important;
+        margin-top: 0 !important;
+    }
+    .navbar-nav .nav-item.dropdown:hover .dropdown-menu-categories-multi {
+        display: grid !important;
+    }
+}
+
+/* Active Category Highlight Styles */
+.nav-link.active {
+    color: var(--waka-green) !important;
+    font-weight: 700 !important;
+    position: relative;
+}
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 8px;
+    right: 8px;
+    height: 3px;
+    background-color: var(--waka-green);
+    border-radius: 2px;
+}
+
+.dropdown-menu-categories-multi .dropdown-item.active-category {
+    color: #16a085 !important;
+    background: rgba(22, 160, 133, 0.12) !important;
+    font-weight: 700 !important;
+    border-left: 3px solid #16a085 !important;
+    padding-left: 13px !important; /* Adjust padding due to border */
+}

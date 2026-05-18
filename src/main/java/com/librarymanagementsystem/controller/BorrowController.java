@@ -5,7 +5,7 @@ import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
 import com.librarymanagementsystem.model.borrow.dto.BorrowHistoryDTO;
 import com.librarymanagementsystem.model.user.User;
-import com.librarymanagementsystem.service.BookService;
+import com.librarymanagementsystem.service.book.BookService;
 import com.librarymanagementsystem.service.BorrowService;
 import com.librarymanagementsystem.service.UserService;
 import lombok.RequiredArgsConstructor;
