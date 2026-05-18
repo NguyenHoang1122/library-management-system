@@ -49,14 +49,16 @@
                             <td>
                                 <span class="badge rounded-pill px-3 py-2" 
                                       th:classappend="${request.requestStatus.name() == 'PENDING' ? 'badge-pending' : (request.requestStatus.name() == 'APPROVED' ? 'badge-approved' : 'badge-rejected')}"
-                                      th:text="${request.requestStatus}">Trạng thái</span>
+                                      th:text="${request.requestStatus.name() == 'PENDING' ? 'Chờ duyệt' : (request.requestStatus.name() == 'APPROVED' ? 'Đã duyệt' : 'Từ chối')}">Trạng thái</span>
                             </td>
                             <td th:text="${request.note != null ? request.note : 'Không có'}"></td>
-                            <td class="text-end">
+                             <td class="text-end">
                                 <form th:if="${request.requestStatus.name() == 'PENDING'}"
                                       th:action="@{/borrow/{requestId}/cancel(requestId=${request.id})}"
-                                      method="post">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="return confirm('Hủy yêu cầu này?')">Hủy</button>
+                                      method="post"
+                                      class="d-inline">
+                                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-cancel-request">Hủy</button>
                                 </form>
                             </td>
                         </tr>
@@ -69,5 +71,6 @@
 
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/borrow-requests.js}"></script>
 </body>
 </html>

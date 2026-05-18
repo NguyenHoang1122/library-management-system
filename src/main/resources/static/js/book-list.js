@@ -15,12 +15,16 @@ document.querySelectorAll('.btn-edit-book').forEach(button => {
         document.getElementById('editBookForm').action = '/books/update/' + id;
 
         // Set inputs
+        document.getElementById('editBookCurrentId').value = id;
         document.getElementById('editBookTitle').value = title;
         document.getElementById('editBookIsbn').value = isbn;
         document.getElementById('editBookDescription').value = description || '';
         document.getElementById('editBookPublishYear').value = publishyear || '';
         document.getElementById('editBookQuantity').value = quantity;
         document.getElementById('editBookAuthor').value = author || '';
+        
+        // Reset validation state
+        document.getElementById('editBookIsbn').classList.remove('is-invalid');
 
         // Set categories checkboxes
         document.querySelectorAll('.edit-category-checkbox').forEach(checkbox => {
@@ -31,4 +35,32 @@ document.querySelectorAll('.btn-edit-book').forEach(button => {
         const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
         editModal.show();
     });
+});
+
+// Reset Add form validation state when opened
+document.getElementById('addBookModal')?.addEventListener('show.bs.modal', function () {
+    const form = document.getElementById('addBookForm');
+    if (form) {
+        form.reset();
+        // Clear is-invalid styling
+        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    }
+});
+
+// Auto-open modals on validation failures
+window.addEventListener('DOMContentLoaded', () => {
+    const showAddModal = document.getElementById('showAddModalFlag') !== null;
+    const showEditModalFlag = document.getElementById('showEditModalFlag');
+    
+    if (showAddModal) {
+        const addModal = new bootstrap.Modal(document.getElementById('addBookModal'));
+        addModal.show();
+    } else if (showEditModalFlag !== null) {
+        const editBookId = showEditModalFlag.getAttribute('data-id');
+        document.getElementById('editBookForm').action = '/books/update/' + editBookId;
+        document.getElementById('editBookCurrentId').value = editBookId;
+        
+        const editModal = new bootstrap.Modal(document.getElementById('editBookModal'));
+        editModal.show();
+    }
 });

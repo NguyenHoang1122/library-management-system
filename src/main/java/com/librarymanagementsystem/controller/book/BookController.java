@@ -1,30 +1,31 @@
 package com.librarymanagementsystem.controller.book;
 
 import com.librarymanagementsystem.model.book.Book;
-import com.librarymanagementsystem.model.book.Category;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.service.AuthorService;
-import com.librarymanagementsystem.service.BookService;
+import com.librarymanagementsystem.service.book.BookService;
 import com.librarymanagementsystem.service.CategoryService;
 import com.librarymanagementsystem.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import com.librarymanagementsystem.service.BookReviewService;
+import com.librarymanagementsystem.service.book.BookReviewService;
 import com.librarymanagementsystem.service.BorrowService;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
+
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/books")
@@ -38,13 +39,7 @@ public class BookController {
     private final BorrowService borrowService;
 
 
-    @GetMapping
-    public String listBooks(@RequestParam(required = false) String title,
-                            @RequestParam(required = false) Long category,
-                            @RequestParam(defaultValue = "1") int page,
-                            @RequestParam(required = false) String sortBy,
-                            Model model,
-                            Authentication authentication) {
+    private void populateListModel(Model model, String title, Long category, int page, String sortBy, Authentication authentication) {
         List<Book> books;
         if (title != null && !title.isEmpty()) {
             books = new ArrayList<>(bookService.searchBooks(title));
@@ -91,6 +86,23 @@ public class BookController {
         model.addAttribute("category", category);
 
         addUserDataToModel(model, authentication);
+    }
+
+    @GetMapping
+    public String listBooks(@RequestParam(required = false) String title,
+                            @RequestParam(required = false) Long category,
+                            @RequestParam(defaultValue = "1") int page,
+                            @RequestParam(required = false) String sortBy,
+                            Model model,
+                            Authentication authentication) {
+        populateListModel(model, title, category, page, sortBy, authentication);
+        
+        if (!model.containsAttribute("bookDTO")) {
+            model.addAttribute("bookDTO", new BookDTO());
+        }
+        if (!model.containsAttribute("editBookDTO")) {
+            model.addAttribute("editBookDTO", new BookDTO());
+        }
 
         boolean isAdminOrLibrarian = false;
         if (authentication != null && authentication.isAuthenticated()) {
@@ -241,33 +253,59 @@ public class BookController {
     public String showAddForm(Model model) {
         return "redirect:/books";
     }
+
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/save")
-    public String saveBook(@ModelAttribute BookDTO bookDTO, RedirectAttributes redirectAttributes) {
+    public String saveBook(@Valid @ModelAttribute("bookDTO") BookDTO bookDTO, BindingResult bindingResult, Model model, Authentication authentication, RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            populateListModel(model, null, null, 1, null, authentication);
+            model.addAttribute("editBookDTO", new BookDTO());
+            model.addAttribute("showAddModal", true);
+            return "book/list";
+        }
         try {
             bookService.saveBook(bookDTO);
             redirectAttributes.addFlashAttribute("message", "Thêm sách thành công");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            populateListModel(model, null, null, 1, null, authentication);
+            model.addAttribute("editBookDTO", new BookDTO());
+            model.addAttribute("showAddModal", true);
+            bindingResult.rejectValue("isbn", "error.bookDTO", e.getMessage());
+            return "book/list";
         }
         return "redirect:/books";
     }
+
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
         return "redirect:/books";
     }
+
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/update/{id}")
-    public String updateBook(@PathVariable Long id, @ModelAttribute BookDTO bookDTO, RedirectAttributes redirectAttributes) {
+    public String updateBook(@PathVariable Long id, @Valid @ModelAttribute("editBookDTO") BookDTO bookDTO, BindingResult bindingResult, Model model, Authentication authentication, RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            populateListModel(model, null, null, 1, null, authentication);
+            model.addAttribute("bookDTO", new BookDTO());
+            model.addAttribute("showEditModal", true);
+            model.addAttribute("editBookId", id);
+            return "book/list";
+        }
         try {
             bookService.updateBook(id, bookDTO);
             redirectAttributes.addFlashAttribute("message", "Cập nhật sách thành công");
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            populateListModel(model, null, null, 1, null, authentication);
+            model.addAttribute("bookDTO", new BookDTO());
+            model.addAttribute("showEditModal", true);
+            model.addAttribute("editBookId", id);
+            bindingResult.rejectValue("isbn", "error.editBookDTO", e.getMessage());
+            return "book/list";
         }
         return "redirect:/books";
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/delete/{id}")
     public String deleteBook(@PathVariable Long id, RedirectAttributes redirectAttributes) {
@@ -278,5 +316,18 @@ public class BookController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/books";
+    }
+
+    @GetMapping("/api/check-isbn")
+    @ResponseBody
+    public ResponseEntity<Boolean> checkIsbn(@RequestParam String isbn, @RequestParam(required = false) Long currentId) {
+        boolean exists = bookService.existsByIsbn(isbn);
+        if (exists && currentId != null) {
+            Optional<Book> book = bookService.getBookById(currentId);
+            if (book.isPresent() && book.get().getIsbn().equals(isbn)) {
+                return ResponseEntity.ok(false); // Not duplicated (it's the same book)
+            }
+        }
+        return ResponseEntity.ok(exists);
     }
 }

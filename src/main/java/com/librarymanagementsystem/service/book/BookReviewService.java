@@ -1,4 +1,4 @@
-package com.librarymanagementsystem.service;
+package com.librarymanagementsystem.service.book;
 
 import com.librarymanagementsystem.model.book.BookReview;
 

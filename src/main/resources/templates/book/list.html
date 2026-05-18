@@ -5,6 +5,26 @@
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/book-list.css}">
+    <style>
+        .file-input-dark {
+            background-color: #252525 !important;
+            border: 1px solid #3d3d3d !important;
+            color: #e0e0e0 !important;
+        }
+        .file-input-dark::file-selector-button {
+            background-color: #1c1c1c !important;
+            color: #00b074 !important;
+            border: 1px dashed #00b074 !important;
+            border-radius: 4px !important;
+            margin-right: 10px;
+            padding: 4px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .file-input-dark::file-selector-button:hover {
+            background-color: #2a2a2a !important;
+        }
+    </style>
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
@@ -18,18 +38,6 @@
 
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 px-5">
-            <!-- Alerts -->
-            <div th:if="${message != null}" class="alert alert-success alert-dismissible fade show bg-success bg-opacity-20 border-success border-opacity-30 text-success rounded-pill px-4 mb-4" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>
-                <span th:text="${message}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <div th:if="${error != null}" class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-20 border-danger border-opacity-30 text-danger rounded-pill px-4 mb-4" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                <span th:text="${error}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-
             <div class="admin-header-waka">
                 <h3 class="mb-0"><i class="bi bi-book me-2 text-warning"></i> Quản lý truyện</h3>
                 <div sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')">
@@ -41,15 +49,7 @@
 
             <!-- Search & Sort Area -->
             <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between mb-4">
-                <form th:action="@{/books/search}" method="get" class="flex-grow-1 mb-0">
-                    <div class="search-box-waka">
-                        <i class="bi bi-search text-secondary me-2"></i>
-                        <input type="text" name="query" class="form-control" placeholder="Tìm kiếm theo tên truyện hoặc tác giả..." th:value="${searchQuery ?: param.query}">
-                        <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold">TÌM</button>
-                    </div>
-                </form>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="text-secondary small fw-bold text-nowrap">Sắp xếp:</span>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary btn-sm rounded-pill dropdown-toggle px-3 text-light border-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <span th:if="${sortBy == 'author'}"><i class="bi bi-person me-1"></i> Tác giả</span>
@@ -65,6 +65,13 @@
                         </ul>
                     </div>
                 </div>
+                <form th:action="@{/books/search}" method="get" class="flex-grow-1 mb-0">
+                    <div class="search-box-waka">
+                        <i class="bi bi-search text-secondary me-2"></i>
+                        <input type="text" name="query" class="form-control" placeholder="Tìm kiếm theo tên truyện hoặc tác giả..." th:value="${searchQuery ?: param.query}">
+                        <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold">TÌM</button>
+                    </div>
+                </form>
             </div>
 
             <!-- Table Area -->
@@ -94,11 +101,11 @@
                                 <span th:text="${book.quantity}" th:class="${book.quantity <= 0 ? 'text-danger fw-bold' : ''}"></span>
                             </td>
                             <td class="text-end">
-                                <div class="btn-group">
-                                    <a th:href="@{/books/{id}(id=${book.id})}" class="btn btn-outline-info btn-sm rounded-pill px-3 me-1">Chi tiết</a>
+                                <div class="d-flex justify-content-end align-items-center gap-1 text-nowrap">
+                                    <a th:href="@{/books/{id}(id=${book.id})}" class="btn btn-outline-info btn-sm rounded-pill px-3 text-nowrap">Chi tiết</a>
                                     <button sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')"
                                             type="button"
-                                            class="btn btn-outline-warning btn-sm rounded-pill px-3 me-1 btn-edit-book"
+                                            class="btn btn-outline-warning btn-sm rounded-pill px-3 btn-edit-book text-nowrap"
                                             th:data-id="${book.id}"
                                             th:data-title="${book.title}"
                                             th:data-isbn="${book.isbn}"
@@ -106,10 +113,10 @@
                                             th:data-publishyear="${book.publishYear}"
                                             th:data-quantity="${book.quantity}"
                                             th:data-author="${book.author?.name}"
-                                            th:data-categories="${book.categories.![id]}">Sửa</button>
+                                            th:data-categories="${book.categoryIds}">Sửa</button>
                                     <a sec:authorize="hasRole('ADMIN')"
                                        th:href="@{/books/delete/{id}(id=${book.id})}"
-                                       class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                       class="btn btn-outline-danger btn-sm rounded-pill px-3 text-nowrap"
                                        onclick="return confirm('Xóa truyện này?')">Xóa</a>
                                 </div>
                             </td>
@@ -153,49 +160,52 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form th:action="@{/books/save}" method="post" enctype="multipart/form-data">
+            <form id="addBookForm" th:action="@{/books/save}" method="post" enctype="multipart/form-data" th:object="${bookDTO}">
                 <div class="modal-body p-4">
                     <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="fw-bold text-secondary small mb-2">TIÊU ĐỀ <span class="text-danger">*</span></label>
-                            <input type="text" name="title" class="form-control" placeholder="Nhập tiêu đề truyện" required>
+                            <input type="text" id="addBookTitle" th:field="*{title}" class="form-control" th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'" placeholder="Nhập tiêu đề truyện">
+                            <div th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="text-danger small mt-1"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="fw-bold text-secondary small mb-2">MÃ TRUYỆN <span class="text-danger">*</span></label>
-                            <input type="text" name="isbn" class="form-control" placeholder="Nhập mã truyện (ISBN)" required>
+                            <input type="text" id="addBookIsbn" th:field="*{isbn}" class="form-control" th:classappend="${#fields.hasErrors('isbn')} ? 'is-invalid'" placeholder="Nhập mã truyện (ISBN)">
+                            <div th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}" class="text-danger small mt-1"></div>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="fw-bold text-secondary small mb-2">MÔ TẢ</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="Nhập mô tả chi tiết nội dung truyện..."></textarea>
+                        <textarea id="addBookDescription" th:field="*{description}" class="form-control" rows="3" placeholder="Nhập mô tả chi tiết nội dung truyện..."></textarea>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="fw-bold text-secondary small mb-2">NĂM XUẤT BẢN</label>
-                            <input type="date" name="publishYear" class="form-control">
+                            <input type="date" id="addBookPublishYear" th:field="*{publishYear}" class="form-control">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="fw-bold text-secondary small mb-2">SỐ LƯỢNG <span class="text-danger">*</span></label>
-                            <input type="number" name="quantity" class="form-control" placeholder="Nhập số lượng sách" required min="1">
+                            <input type="number" id="addBookQuantity" th:field="*{quantity}" class="form-control" th:classappend="${#fields.hasErrors('quantity')} ? 'is-invalid'" placeholder="Nhập số lượng sách">
+                            <div th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}" class="text-danger small mt-1"></div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="fw-bold text-secondary small mb-2">ẢNH BÌA TRUYỆN</label>
-                            <input type="file" name="imageFile" class="form-control" accept="image/*">
+                            <input type="file" name="imageFile" id="addBookImage" class="form-control file-input-dark" accept="image/png, image/jpeg">
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="fw-bold text-secondary small mb-2">DANH MỤC</label>
-                            <div class="form-control category-checkbox-list" style="height: auto; min-height: 38px; overflow-y: auto; max-height: 120px; background-color: #252525 !important; border: 1px solid #3d3d3d !important;">
+                            <label class="fw-bold text-secondary small mb-2">DANH MỤC <span class="text-danger">*</span></label>
+                            <div id="addCategoryListContainer" class="form-control category-checkbox-list" th:classappend="${#fields.hasErrors('categoryIds')} ? 'is-invalid'" style="height: auto; min-height: 38px; overflow-y: auto; max-height: 120px; background-color: #252525 !important; border: 1px solid #3d3d3d !important;">
                                 <div class="row px-2">
                                     <div th:each="cat : ${categories}" class="form-check col-6 py-1">
-                                        <input class="form-check-input" type="checkbox"
-                                               name="categoryIds"
+                                        <input class="form-check-input add-category-checkbox" type="checkbox"
+                                               th:field="*{categoryIds}"
                                                th:value="${cat.id}"
                                                th:id="'modal-cat-' + ${cat.id}">
                                         <label class="form-check-label small text-light" th:for="'modal-cat-' + ${cat.id}" th:text="${cat.categoryName}"></label>
@@ -203,10 +213,12 @@
                                 </div>
                                 <div th:if="${#lists.isEmpty(categories)}" class="text-muted small">Không có danh mục</div>
                             </div>
+                            <div th:if="${#fields.hasErrors('categoryIds')}" th:errors="*{categoryIds}" class="text-danger small mt-1"></div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="fw-bold text-secondary small mb-2">TÁC GIẢ</label>
-                            <input type="text" name="authorName" class="form-control" placeholder="Nhập tên tác giả">
+                            <label class="fw-bold text-secondary small mb-2">TÁC GIẢ <span class="text-danger">*</span></label>
+                            <input type="text" id="addBookAuthor" th:field="*{authorName}" class="form-control" th:classappend="${#fields.hasErrors('authorName')} ? 'is-invalid'" placeholder="Nhập tên tác giả">
+                            <div th:if="${#fields.hasErrors('authorName')}" th:errors="*{authorName}" class="text-danger small mt-1"></div>
                         </div>
                     </div>
                 </div>
@@ -229,50 +241,54 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="editBookForm" method="post" enctype="multipart/form-data">
+            <form id="editBookForm" method="post" enctype="multipart/form-data" th:object="${editBookDTO}">
                 <div class="modal-body p-4">
                     <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="fw-bold text-secondary small mb-2">TIÊU ĐỀ <span class="text-danger">*</span></label>
-                            <input type="text" id="editBookTitle" name="title" class="form-control" placeholder="Nhập tiêu đề truyện" required>
+                            <input type="text" id="editBookTitle" th:field="*{title}" class="form-control" th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'" placeholder="Nhập tiêu đề truyện">
+                            <div th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="text-danger small mt-1"></div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="fw-bold text-secondary small mb-2">MÃ TRUYỆN <span class="text-danger">*</span></label>
-                            <input type="text" id="editBookIsbn" name="isbn" class="form-control" placeholder="Nhập mã truyện (ISBN)" required>
+                            <input type="text" id="editBookIsbn" th:field="*{isbn}" class="form-control" th:classappend="${#fields.hasErrors('isbn')} ? 'is-invalid'" placeholder="Nhập mã truyện (ISBN)">
+                            <div th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}" class="text-danger small mt-1"></div>
+                            <input type="hidden" id="editBookCurrentId">
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="fw-bold text-secondary small mb-2">MÔ TẢ</label>
-                        <textarea id="editBookDescription" name="description" class="form-control" rows="3" placeholder="Nhập mô tả chi tiết nội dung truyện..."></textarea>
+                        <textarea id="editBookDescription" th:field="*{description}" class="form-control" rows="3" placeholder="Nhập mô tả chi tiết nội dung truyện..."></textarea>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="fw-bold text-secondary small mb-2">NĂM XUẤT BẢN</label>
-                            <input type="date" id="editBookPublishYear" name="publishYear" class="form-control">
+                            <input type="date" id="editBookPublishYear" th:field="*{publishYear}" class="form-control">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="fw-bold text-secondary small mb-2">SỐ LƯỢNG <span class="text-danger">*</span></label>
-                            <input type="number" id="editBookQuantity" name="quantity" class="form-control" placeholder="Nhập số lượng sách" required min="1">
+                            <input type="number" id="editBookQuantity" th:field="*{quantity}" class="form-control" th:classappend="${#fields.hasErrors('quantity')} ? 'is-invalid'" placeholder="Nhập số lượng sách">
+                            <div th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}" class="text-danger small mt-1"></div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="fw-bold text-secondary small mb-2">ẢNH BÌA TRUYỆN</label>
-                            <input type="file" name="imageFile" class="form-control" accept="image/*">
+                            <input type="file" name="imageFile" id="editBookImage" class="form-control file-input-dark" accept="image/png, image/jpeg">
                             <small class="text-secondary small d-block mt-1"><i class="bi bi-info-circle me-1"></i>Để trống nếu giữ nguyên ảnh.</small>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="fw-bold text-secondary small mb-2">DANH MỤC</label>
-                            <div class="form-control category-checkbox-list" style="height: auto; min-height: 38px; overflow-y: auto; max-height: 120px; background-color: #252525 !important; border: 1px solid #3d3d3d !important;">
+                            <label class="fw-bold text-secondary small mb-2">DANH MỤC <span class="text-danger">*</span></label>
+                            <div id="editCategoryListContainer" class="form-control category-checkbox-list" th:classappend="${#fields.hasErrors('categoryIds')} ? 'is-invalid'" style="height: auto; min-height: 38px; overflow-y: auto; max-height: 120px; background-color: #252525 !important; border: 1px solid #3d3d3d !important;">
                                 <div class="row px-2">
                                     <div th:each="cat : ${categories}" class="form-check col-6 py-1">
                                         <input class="form-check-input edit-category-checkbox" type="checkbox"
-                                               name="categoryIds"
+                                               th:field="*{categoryIds}"
                                                th:value="${cat.id}"
                                                th:id="'edit-modal-cat-' + ${cat.id}">
                                         <label class="form-check-label small text-light" th:for="'edit-modal-cat-' + ${cat.id}" th:text="${cat.categoryName}"></label>
@@ -280,10 +296,12 @@
                                 </div>
                                 <div th:if="${#lists.isEmpty(categories)}" class="text-muted small">Không có danh mục</div>
                             </div>
+                            <div th:if="${#fields.hasErrors('categoryIds')}" th:errors="*{categoryIds}" class="text-danger small mt-1"></div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="fw-bold text-secondary small mb-2">TÁC GIẢ</label>
-                            <input type="text" id="editBookAuthor" name="authorName" class="form-control" placeholder="Nhập tên tác giả">
+                            <label class="fw-bold text-secondary small mb-2">TÁC GIẢ <span class="text-danger">*</span></label>
+                            <input type="text" id="editBookAuthor" th:field="*{authorName}" class="form-control" th:classappend="${#fields.hasErrors('authorName')} ? 'is-invalid'" placeholder="Nhập tên tác giả">
+                            <div th:if="${#fields.hasErrors('authorName')}" th:errors="*{authorName}" class="text-danger small mt-1"></div>
                         </div>
                     </div>
                 </div>
@@ -295,6 +313,10 @@
         </div>
     </div>
 </div>
+
+<!-- Hidden flags to auto-open modals on validation error page reload -->
+<div th:if="${showAddModal}" id="showAddModalFlag" style="display:none;"></div>
+<div th:if="${showEditModal}" id="showEditModalFlag" th:data-id="${editBookId}" style="display:none;"></div>
 
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

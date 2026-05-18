@@ -26,6 +26,7 @@ public class BookDTO {
     private String description;
 
     @NotBlank(message = "ISBN không được để trống")
+
     private String isbn;
 
     private MultipartFile imageFile;

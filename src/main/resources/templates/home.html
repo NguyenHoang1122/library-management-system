@@ -84,6 +84,24 @@
             </div>
         </div>
     </section>
+
+    <!-- Thể loại Xuyên không -->
+    <section class="mb-5" th:if="${not #lists.isEmpty(xuyenKhongBooks)}">
+        <h2 class="section-title">Thể loại Xuyên không <span>- Hành trình vượt thời không</span></h2>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5 g-4">
+            <div th:each="book : ${xuyenKhongBooks}" class="col">
+                <a th:href="@{/books/{id}(id=${book.id})}" class="text-decoration-none text-white">
+                    <div class="book-card">
+                        <div class="book-img-container">
+                            <img th:src="${book.image}" class="book-img" th:alt="${book.title}">
+                            <span th:if="${book.quantity <= 0}" class="badge-waka bg-danger">Hết Hàng</span>
+                        </div>
+                        <div class="book-title" th:text="${book.title}"></div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
 </div>
 
 <div th:replace="~{layout :: footer}"></div>

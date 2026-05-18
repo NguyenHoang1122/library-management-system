@@ -123,6 +123,23 @@ public class NotificationController {
         return "redirect:/my-notifications";
     }
 
+    @PostMapping("/delete-read-ajax")
+    @ResponseBody
+    public java.util.Map<String, Object> deleteReadNotificationsAjax(Authentication authentication) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        try {
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+            notificationService.deleteReadNotifications(user.getId());
+            response.put("success", true);
+            response.put("message", "Đã xóa các thông báo đã đọc thành công");
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+        return response;
+    }
+
     @PostMapping("/delete-all")
     public String deleteAllNotifications(Authentication authentication,
                                         RedirectAttributes redirectAttributes) {

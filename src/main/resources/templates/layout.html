@@ -48,19 +48,24 @@
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <!-- Hiển thị 5 categories đầu tiên -->
                         <li th:each="category, iterStat : ${categories}" th:if="${iterStat.index < 5}" class="nav-item">
-                            <a class="nav-link" th:href="@{/books(category=${category.id})}"
-                                th:text="${category.categoryName}">Category</a>
+                            <a class="nav-link" 
+                               th:classappend="${param.category != null and param.category[0] == #strings.toString(category.id) ? 'active' : ''}" 
+                               th:href="@{/books(category=${category.id})}"
+                               th:text="${category.categoryName}">Category</a>
                         </li>
                         <!-- Nút "Khác" với dropdown cho categories còn lại -->
                         <li class="nav-item dropdown" th:if="${categories != null and categories.size() > 5}">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategories" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
+                                data-bs-toggle="dropdown" aria-expanded="false"
+                                th:classappend="${param.category != null and #lists.contains(categories.subList(5, categories.size()).![id.toString()], param.category[0]) ? 'active' : ''}">
                                 Khác
                             </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownCategories">
+                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-categories-multi" aria-labelledby="navbarDropdownCategories">
                                 <li th:each="category, iterStat : ${categories}" th:if="${iterStat.index >= 5}">
-                                    <a class="dropdown-item" th:href="@{/books(category=${category.id})}"
-                                        th:text="${category.categoryName}">Category</a>
+                                    <a class="dropdown-item" 
+                                       th:classappend="${param.category != null and param.category[0] == #strings.toString(category.id) ? 'active-category' : ''}" 
+                                       th:href="@{/books(category=${category.id})}"
+                                       th:text="${category.categoryName}">Category</a>
                                 </li>
                             </ul>
                         </li>
@@ -89,12 +94,11 @@
                                 aria-labelledby="notificationDropdown">
                                 <li th:if="${notifications != null and !notifications.isEmpty()}" class="notification-header">
                                     <span class="small fw-bold">Thông báo</span>
-                                    <form th:action="@{/my-notifications/delete-read}" method="post" class="m-0">
-                                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                        <button type="submit" class="btn btn-link btn-sm text-info p-0 text-decoration-none small">
+                                    <div class="m-0">
+                                        <button type="button" id="deleteReadNotificationsBtn" class="btn btn-link btn-sm text-info p-0 text-decoration-none small">
                                             <i class="fas fa-trash-alt me-1"></i>Xóa đã đọc
                                         </button>
-                                    </form>
+                                    </div>
                                 </li>
                                 <li th:if="${notifications == null or notifications.isEmpty()}"><a
                                         class="dropdown-item">Không có thông báo</a></li>
@@ -164,9 +168,6 @@
                                             <a class="waka-dropdown-item" th:href="@{/books}">
                                                 <i class="bi bi-book me-3 text-secondary"></i>Quản lý truyện
                                             </a>
-                                            <a class="waka-dropdown-item" th:href="@{/reports}">
-                                                <i class="bi bi-graph-up me-3 text-secondary"></i>Báo cáo thống kê
-                                            </a>
                                         </th:block>
 
                                         <!-- MENU DÀNH CHO THỦ THƯ -->
@@ -213,75 +214,6 @@
             </div>
         </nav>
         
-        <script sec:authorize="isAuthenticated()">
-            document.addEventListener('DOMContentLoaded', () => {
-                const markReadBtns = document.querySelectorAll('.mark-read-btn');
-                markReadBtns.forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        const notificationId = btn.getAttribute('data-id');
-                        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-                        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-                        
-                        btn.disabled = true;
-                        
-                        fetch(`/my-notifications/${notificationId}/mark-read-ajax`, {
-                            method: 'POST',
-                            headers: {
-                                [csrfHeader]: csrfToken
-                            }
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                // 1. Update the item appearance to "read" state
-                                const itemContainer = btn.closest('.dropdown-item');
-                                if (itemContainer) {
-                                    itemContainer.classList.remove('bg-dark', 'bg-opacity-50');
-                                    
-                                    const titleSpan = itemContainer.querySelector('.notification-title');
-                                    if (titleSpan) {
-                                        titleSpan.classList.remove('text-light');
-                                        titleSpan.classList.add('text-secondary', 'font-weight-normal');
-                                    }
-                                }
-                                
-                                // 2. Replace the mark as read button with double checkmark (already read icon)
-                                const parentDiv = btn.parentElement;
-                                if (parentDiv) {
-                                    parentDiv.innerHTML = `
-                                        <span class="text-muted text-opacity-50" title="Đã đọc">
-                                            <i class="bi bi-check2-all fs-5"></i>
-                                        </span>
-                                    `;
-                                }
-                                
-                                // 3. Decrement the badge count
-                                const badge = document.getElementById('notificationBadge');
-                                if (badge) {
-                                    const currentCount = parseInt(badge.innerText) || 0;
-                                    const newCount = currentCount - 1;
-                                    if (newCount > 0) {
-                                        badge.innerText = newCount;
-                                    } else {
-                                        badge.remove();
-                                    }
-                                }
-                            } else {
-                                console.error('Failed to mark read:', data.message);
-                                btn.disabled = false;
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            btn.disabled = false;
-                        });
-                    });
-                });
-            });
-        </script>
     </header>
 
     <footer th:fragment="footer" class="footer-waka text-secondary pt-5 pb-4 bg-dark">
@@ -334,6 +266,14 @@
                 </div>
             </div>
         </div>
+        <!-- Global SweetAlert2 CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        
+        <!-- Element to pass flash attributes to static JS -->
+        <div id="flash-alerts" th:data-message="${message}" th:data-error="${error}" style="display: none;"></div>
+        
+        <!-- Global Layout Script -->
+        <script th:src="@{/js/layout.js}"></script>
     </footer>
 
 </body>
