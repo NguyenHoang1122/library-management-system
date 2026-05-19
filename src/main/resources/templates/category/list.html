@@ -64,8 +64,7 @@
                                        th:data-name="${category.categoryName}">Sửa</button>
                                     <a sec:authorize="hasRole('ADMIN')"
                                        th:href="@{/categories/delete/{id}(id=${category.id})}"
-                                       class="btn btn-outline-danger btn-sm rounded-pill px-3"
-                                       onclick="return confirm('Xóa danh mục này?')">Xóa</a>
+                                       class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-delete-category">Xóa</a>
                                 </div>
                             </td>
                         </tr>

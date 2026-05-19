@@ -108,8 +108,13 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = new Notification();
         notification.setUser(borrowRequest.getUser());
         notification.setTitle("Yêu cầu mượn truyện bị từ chối");
-        notification.setContent("Yêu cầu mượn truyện của bạn đã bị từ chối. " +
-                "Vui lòng liên hệ thủ thư để biết thêm chi tiết.");
+        String content = "Yêu cầu mượn truyện của bạn đã bị từ chối.";
+        if (borrowRequest.getRejectionReason() != null && !borrowRequest.getRejectionReason().trim().isEmpty()) {
+            content += " Lý do: " + borrowRequest.getRejectionReason();
+        } else {
+            content += " Vui lòng liên hệ thủ thư để biết thêm chi tiết.";
+        }
+        notification.setContent(content);
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);

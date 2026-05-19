@@ -31,6 +31,8 @@ public class BorrowRequest {
 
     private String note;
 
+    private String rejectionReason;
+
     @OneToMany(mappedBy = "borrowRequest", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<BorrowRequestItem> borrowRequestItems;
 }

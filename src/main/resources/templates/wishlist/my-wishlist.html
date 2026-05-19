@@ -30,8 +30,8 @@
             <!-- Action Bar -->
             <div class="filter-btns">
                 <span class="text-secondary small">Bạn có <span class="text-light fw-bold" th:text="${totalWishlists}">0</span> truyện trong danh sách</span>
-                <form th:if="${totalWishlists > 0}" th:action="@{/wishlist/clear-all}" method="post" onsubmit="return confirm('Xóa tất cả khỏi danh sách yêu thích?')">
-                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" style="font-size: 0.75rem;">
+                <form th:if="${totalWishlists > 0}" th:action="@{/wishlist/clear-all}" method="post">
+                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-clear-all" style="font-size: 0.75rem;">
                         <i class="bi bi-trash3"></i> Xóa tất cả
                     </button>
                 </form>
@@ -55,19 +55,28 @@
                     </a>
 
                     <div class="waka-card-actions">
-                        <!-- Nút Mượn/Đang mượn -->
+                        <!-- Nút Mượn/Đang mượn/Đang chờ duyệt -->
                         <th:block th:if="${borrowedBookIds != null and #lists.contains(borrowedBookIds, wishlist.book.id)}">
                             <button class="btn btn-secondary btn-action-sm disabled" style="flex: 2;">Đang mượn</button>
                         </th:block>
-                        <th:block th:unless="${borrowedBookIds != null and #lists.contains(borrowedBookIds, wishlist.book.id)}">
-                            <a th:href="@{/borrow/request/${wishlist.book.id}}" class="btn btn-warning btn-action-sm" style="flex: 2;">
+                        <th:block th:if="${!(borrowedBookIds != null and #lists.contains(borrowedBookIds, wishlist.book.id)) and pendingBookIds != null and #lists.contains(pendingBookIds, wishlist.book.id)}">
+                            <button class="btn btn-secondary btn-action-sm disabled" style="flex: 2;">Đang chờ duyệt</button>
+                        </th:block>
+                        <th:block th:unless="${(borrowedBookIds != null and #lists.contains(borrowedBookIds, wishlist.book.id)) or (pendingBookIds != null and #lists.contains(pendingBookIds, wishlist.book.id))}">
+                            <button type="button" class="btn btn-info btn-action-sm w-100 btn-borrow" 
+                                    style="flex: 2;"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#borrowModal"
+                                    th:data-id="${wishlist.book.id}"
+                                    th:data-name="${wishlist.book.title}"
+                                    onclick="prepareBorrowModal(this)">
                                 <i class="bi bi-book"></i> Mượn
-                            </a>
+                            </button>
                         </th:block>
 
                         <!-- Nút Xóa -->
                         <form th:action="@{/wishlist/remove/${wishlist.id}}" method="post" style="flex: 1;">
-                            <button type="submit" class="btn btn-outline-danger btn-action-sm w-100" onclick="return confirm('Xóa khỏi yêu thích?')">
+                            <button type="submit" class="btn btn-outline-danger btn-action-sm w-100 btn-delete-wishlist">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>
@@ -78,7 +87,34 @@
     </div>
 </main>
 
+<!-- Modal mượn truyện -->
+<div class="modal fade" id="borrowModal" tabindex="-1" aria-labelledby="borrowModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="borrowModalLabel">Yêu cầu mượn truyện</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 text-center">
+                    <h6 class="text-info" id="modalBorrowBookName"></h6>
+                    <p class="small text-secondary">Bạn đang gửi yêu cầu mượn cuốn truyện này.</p>
+                </div>
+                <div class="mb-3">
+                    <label for="borrowNote" class="form-label">Ghi chú (tùy chọn)</label>
+                    <textarea class="form-control bg-black text-light border-secondary" id="borrowNote" rows="3" placeholder="Nhập lời nhắn cho thủ thư..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-waka-primary" id="confirmBorrowBtn">Xác nhận mượn</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/my-wishlist.js}"></script>
 </body>
 </html>

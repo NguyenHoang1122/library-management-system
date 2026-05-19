@@ -33,7 +33,7 @@
                 <table class="table table-waka">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>STT</th>
                             <th>Sách</th>
                             <th>Ngày yêu cầu</th>
                             <th>Trạng thái</th>
@@ -42,8 +42,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="request : ${borrowRequests}">
-                            <td th:text="${request.id}" class="text-secondary"></td>
+                        <tr th:each="request, iterStat : ${borrowRequests}">
+                            <td th:text="${iterStat.count}" class="text-secondary"></td>
                             <td class="fw-bold text-light" th:text="${request.borrowRequestItems[0].book.title}"></td>
                             <td th:text="${#temporals.format(request.requestDate, 'dd/MM/yyyy HH:mm')}"></td>
                             <td>
@@ -51,7 +51,17 @@
                                       th:classappend="${request.requestStatus.name() == 'PENDING' ? 'badge-pending' : (request.requestStatus.name() == 'APPROVED' ? 'badge-approved' : 'badge-rejected')}"
                                       th:text="${request.requestStatus.name() == 'PENDING' ? 'Chờ duyệt' : (request.requestStatus.name() == 'APPROVED' ? 'Đã duyệt' : 'Từ chối')}">Trạng thái</span>
                             </td>
-                            <td th:text="${request.note != null ? request.note : 'Không có'}"></td>
+                            <td>
+                                <div th:if="${request.note != null and !request.note.isEmpty()}">
+                                    <span class="text-secondary small">Bạn:</span> <span th:text="${request.note}"></span>
+                                </div>
+                                <div th:if="${request.requestStatus.name() == 'REJECTED' and request.rejectionReason != null and !request.rejectionReason.isEmpty()}">
+                                    <span class="text-danger small">Lý do từ chối:</span> <span class="text-danger fw-bold" th:text="${request.rejectionReason}"></span>
+                                </div>
+                                <div th:if="${(request.note == null or request.note.isEmpty()) and (request.rejectionReason == null or request.rejectionReason.isEmpty())}">
+                                    <span class="text-secondary">-</span>
+                                </div>
+                            </td>
                              <td class="text-end">
                                 <form th:if="${request.requestStatus.name() == 'PENDING'}"
                                       th:action="@{/borrow/{requestId}/cancel(requestId=${request.id})}"

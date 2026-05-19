@@ -98,9 +98,10 @@ public class LibrarianController {
 
     @PostMapping("/borrows/{requestId}/reject")
     public String rejectBorrow(@PathVariable Long requestId,
+                               @RequestParam(required = false) String reason,
                                RedirectAttributes redirectAttributes) {
         try {
-            borrowService.rejectBorrowRequest(requestId);
+            borrowService.rejectBorrowRequest(requestId, reason);
             redirectAttributes.addFlashAttribute("message", "Đã từ chối yêu cầu mượn truyện");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());

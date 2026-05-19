@@ -114,6 +114,12 @@ public class NotificationController {
         try {
             User user = userService.findByUserName(authentication.getName())
                     .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+            List<Notification> notifications = notificationService.getUserNotifications(user.getId());
+            long readCount = notifications.stream().filter(Notification::isRead).count();
+            if (readCount == 0) {
+                redirectAttributes.addFlashAttribute("error", "Không có thông báo nào đã đọc để xóa!");
+                return "redirect:/my-notifications";
+            }
             notificationService.deleteReadNotifications(user.getId());
             redirectAttributes.addFlashAttribute("message", "Đã xóa các thông báo đã đọc");
         } catch (Exception e) {
@@ -130,6 +136,13 @@ public class NotificationController {
         try {
             User user = userService.findByUserName(authentication.getName())
                     .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+            List<Notification> notifications = notificationService.getUserNotifications(user.getId());
+            long readCount = notifications.stream().filter(Notification::isRead).count();
+            if (readCount == 0) {
+                response.put("success", false);
+                response.put("message", "Không có thông báo nào đã đọc để xóa!");
+                return response;
+            }
             notificationService.deleteReadNotifications(user.getId());
             response.put("success", true);
             response.put("message", "Đã xóa các thông báo đã đọc thành công");
