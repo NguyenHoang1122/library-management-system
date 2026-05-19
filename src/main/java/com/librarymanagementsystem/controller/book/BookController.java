@@ -3,9 +3,7 @@ package com.librarymanagementsystem.controller.book;
 import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
 import com.librarymanagementsystem.model.user.User;
-import com.librarymanagementsystem.service.AuthorService;
 import com.librarymanagementsystem.service.book.BookService;
-import com.librarymanagementsystem.service.CategoryService;
 import com.librarymanagementsystem.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,8 +30,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class BookController {
     private final BookService bookService;
-    private final CategoryService categoryService;
-    private final AuthorService authorService;
     private final UserService userService;
     private final BookReviewService bookReviewService;
     private final BorrowService borrowService;
