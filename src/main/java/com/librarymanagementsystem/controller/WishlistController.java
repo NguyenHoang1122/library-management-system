@@ -5,6 +5,8 @@ import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
 import com.librarymanagementsystem.service.UserService;
 import com.librarymanagementsystem.service.WishlistService;
+import com.librarymanagementsystem.service.BorrowService;
+import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 @Controller
 @RequestMapping("/wishlist")
@@ -28,6 +31,7 @@ public class WishlistController {
     private final WishlistService wishlistService;
     private final UserService userService;
     private final BorrowTransactionRepository borrowTransactionRepository;
+    private final BorrowService borrowService;
 
     /**     * Xem danh sách yêu thích của user     */
     @GetMapping
@@ -44,6 +48,20 @@ public class WishlistController {
         List<Long> borrowedBookIds = borrowTransactionRepository
                 .findBorrowedBookIdsByUser(userId);
         model.addAttribute("borrowedBookIds", borrowedBookIds);
+
+        // Lấy danh sách sách đang chờ duyệt mượn
+        List<Long> pendingBookIds = new ArrayList<>();
+        List<BorrowRequest> userRequests = borrowService.getUserBorrowRequests(userId);
+        if (userRequests != null) {
+            for (BorrowRequest req : userRequests) {
+                if (req.getRequestStatus() == com.librarymanagementsystem.model.borrow.status.RequestStatus.PENDING) {
+                    for (com.librarymanagementsystem.model.borrow.BorrowRequestItem item : req.getBorrowRequestItems()) {
+                        pendingBookIds.add(item.getBook().getId());
+                    }
+                }
+            }
+        }
+        model.addAttribute("pendingBookIds", pendingBookIds);
 
         return "wishlist/my-wishlist";
     }

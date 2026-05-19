@@ -21,7 +21,7 @@ public interface BorrowService {
 
     BorrowTransaction approveBorrowRequest(Long requestId, Long librarianId, Integer borrowDays);
 
-    void rejectBorrowRequest(Long requestId);
+    void rejectBorrowRequest(Long requestId, String reason);
 
     List<BorrowHistoryDTO> getUserBorrowHistory(Long userId);
 

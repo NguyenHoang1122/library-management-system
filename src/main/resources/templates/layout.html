@@ -20,20 +20,6 @@
 <body>
 
     <header th:fragment="header" class="header-waka sticky-top">
-<!--        <div class="container mt-3" th:if="${message != null}">-->
-<!--            <div class="alert alert-success alert-dismissible fade show bg-success bg-opacity-25 border-success text-success" role="alert">-->
-<!--                <i class="fas fa-check-circle me-2"></i>-->
-<!--                <span th:text="${message}">Thông báo thành công</span>-->
-<!--                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--        <div class="container mt-3" th:if="${error != null}">-->
-<!--            <div class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-25 border-danger text-danger" role="alert">-->
-<!--                <i class="fas fa-exclamation-circle me-2"></i>-->
-<!--                <span th:text="${error}">Thông báo lỗi</span>-->
-<!--                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>-->
-<!--            </div>-->
-<!--        </div>-->
 
         <div class="top-banner w-100">
             <a th:href="@{/}">
@@ -57,7 +43,7 @@
                         <li class="nav-item dropdown" th:if="${categories != null and categories.size() > 5}">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategories" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false"
-                                th:classappend="${param.category != null and #lists.contains(categories.subList(5, categories.size()).![id.toString()], param.category[0]) ? 'active' : ''}">
+                                th:classappend="${param.category != null and #lists.contains(categories.subList(5, categories.size()).![#strings.toString(id)], param.category[0]) ? 'active' : ''}">
                                 Khác
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-categories-multi" aria-labelledby="navbarDropdownCategories">

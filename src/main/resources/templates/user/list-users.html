@@ -68,8 +68,8 @@
                                 </td>
                                 <td class="text-end">
                                     <div th:if="${user.role.roleName.name() != 'ROLE_ADMIN'}" class="btn-group">
-                                        <form th:action="@{/user/{id}/soft-delete(id=${user.id})}" method="post">
-                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="return confirm('Xóa người dùng này?')">Xóa</button>
+                                        <form th:action="@{/user/{id}/soft-delete(id=${user.id})}" method="post" class="d-inline delete-user-form">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-delete-user">Xóa</button>
                                         </form>
                                     </div>
                                 </td>

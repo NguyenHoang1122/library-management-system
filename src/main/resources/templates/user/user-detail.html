@@ -32,18 +32,6 @@
                 <h3 class="mb-0"><i class="bi bi-person-gear me-2 text-warning"></i> Thông tin cá nhân</h3>
             </div>
 
-            <!-- Alerts -->
-            <div th:if="${message != null}" class="alert alert-success alert-dismissible fade show bg-success bg-opacity-20 border-success border-opacity-30 text-success rounded-pill px-4 mb-4" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>
-                <span th:text="${message}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <div th:if="${error != null}" class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-20 border-danger border-opacity-30 text-danger rounded-pill px-4 mb-4" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                <span th:text="${error}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-
             <div class="profile-card-waka shadow-lg">
                 <!-- Card Header for USER (Blue theme) -->
                 <div sec:authorize="hasRole('USER')" class="p-4 border-bottom border-secondary d-flex justify-content-between align-items-center">

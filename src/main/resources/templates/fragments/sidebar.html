@@ -6,16 +6,6 @@
 <body>
 
 <div th:fragment="common_sidebar(activePage)" class="waka-sidebar">
-    <!-- Profile Section -->
-    <div class="sidebar-profile mb-4">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="profile-name mb-0" th:text="${currentUser != null ? currentUser.fullName : 'Khách'}">Hoàng Nguyễn</h5>
-            <div class="avatar-container">
-                <img th:src="${currentUser != null and currentUser.image != null ? currentUser.image : 'https://ui-avatars.com/api/?name=User&background=16a085&color=fff'}" 
-                     class="rounded-circle profile-avatar" alt="Avatar">
-            </div>
-        </div>
-    </div>
 
     <!-- Menu Section -->
     <nav class="sidebar-nav">
@@ -111,16 +101,6 @@
                     </a>
                 </li>
             </th:block>
-
-            <!-- ========== ĐĂNG XUẤT (CHUNG) ========== -->
-            <hr class="my-2 border-secondary">
-            <li class="nav-item">
-                <form th:action="@{/logout}" method="post">
-                    <button type="submit" class="nav-link-waka text-danger border-0 bg-transparent w-100 text-start">
-                        <i class="bi bi-box-arrow-right me-3"></i> Đăng xuất
-                    </button>
-                </form>
-            </li>
         </ul>
     </nav>
 </div>

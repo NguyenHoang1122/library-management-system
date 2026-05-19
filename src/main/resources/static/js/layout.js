@@ -136,21 +136,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (badge) badge.remove();
                         }
                     }
+                    deleteReadBtn.disabled = false;
                 } else {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            icon: 'error',
-                            title: 'Thất bại',
+                            icon: 'info',
+                            title: 'Thông báo',
                             html: data.message,
-                            confirmButtonColor: '#dc3545',
+                            confirmButtonColor: '#00b074',
                             background: '#181818',
                             color: '#e0e0e0',
                             customClass: {
-                                popup: 'border border-danger border-opacity-25 rounded-3'
+                                popup: 'border border-info border-opacity-25 rounded-3'
                             }
                         });
                     } else {
-                        alert('Xóa thông báo đã đọc thất bại: ' + data.message);
+                        alert(data.message);
                     }
                     deleteReadBtn.disabled = false;
                 }

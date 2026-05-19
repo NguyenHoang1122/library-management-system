@@ -25,9 +25,9 @@
                         <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                         <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 me-2"><i class="bi bi-check-all me-1"></i>Đọc tất cả</button>
                     </form>
-                    <form th:action="@{/my-notifications/delete-read}" method="post" class="d-inline" onsubmit="return confirm('Xóa các thông báo đã đọc?')">
+                    <form th:action="@{/my-notifications/delete-read}" method="post" class="d-inline delete-read-form">
                         <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="bi bi-trash-fill me-1"></i>Xóa đã đọc</button>
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-delete-read-page"><i class="bi bi-trash-fill me-1"></i>Xóa đã đọc</button>
                     </form>
                 </div>
             </div>
@@ -59,9 +59,9 @@
                             <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                             <button type="submit" class="btn btn-link text-success p-0" title="Đánh dấu đã đọc"><i class="bi bi-check2-circle fs-4"></i></button>
                         </form>
-                        <form th:action="@{/my-notifications/{id}/delete(id=${notification.id})}" method="post" class="m-0">
+                        <form th:action="@{/my-notifications/{id}/delete(id=${notification.id})}" method="post" class="m-0 delete-single-form">
                             <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Xóa thông báo?')"><i class="bi bi-trash fs-4"></i></button>
+                            <button type="submit" class="btn btn-link text-danger p-0 btn-delete-single" title="Xóa thông báo"><i class="bi bi-trash fs-4"></i></button>
                         </form>
                     </div>
                 </div>
@@ -72,5 +72,6 @@
 
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/my-notifications.js}"></script>
 </body>
 </html>

@@ -65,12 +65,13 @@
                             </button>
                         </th:block>
                         <th:block th:if="${borrow.status != 'PENDING'}">
-                            <button type="button" class="btn btn-warning btn-action-sm w-100" 
+                            <button type="button" class="btn btn-info btn-action-sm w-100" 
                                     style="flex: 2;"
                                     data-bs-toggle="modal" 
                                     data-bs-target="#returnModal"
                                     th:data-id="${borrow.id}"
                                     th:data-name="${borrow.bookName}"
+                                    th:data-due-date="${borrow.dueDate}"
                                     onclick="prepareReturnModal(this)">
                                 <i class="bi bi-arrow-return-left"></i> Trả truyện
                             </button>
@@ -96,9 +97,28 @@
                     <p>Bạn đang yêu cầu trả truyện: <strong id="modalBookName" class="text-info"></strong></p>
                     
                     <div class="mb-3">
-                        <label for="returnDateTime" class="form-label text-secondary small fw-bold">THỜI GIAN TRẢ DỰ KIẾN</label>
-                        <input type="datetime-local" class="form-control bg-black border-secondary text-light" 
-                               id="returnDateTime" name="returnDateTime" required>
+                        <label class="form-label text-secondary small fw-bold">THỜI GIAN TRẢ DỰ KIẾN</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="date" class="form-control" 
+                                       id="friendlyReturnDate" required>
+                            </div>
+                            <div class="col-3">
+                                <select class="form-select" id="friendlyReturnHour" required>
+                                    <option th:each="h : ${#numbers.sequence(0, 23)}" 
+                                            th:value="${h < 10 ? '0' + h : h}" 
+                                            th:text="${h < 10 ? '0' + h : h}"></option>
+                                </select>
+                            </div>
+                            <div class="col-3">
+                                <select class="form-select" id="friendlyReturnMinute" required>
+                                    <option th:each="m : ${#numbers.sequence(0, 59)}" 
+                                            th:value="${m < 10 ? '0' + m : m}" 
+                                            th:text="${m < 10 ? '0' + m : m}"></option>
+                                </select>
+                            </div>
+                        </div>
+                        <input type="hidden" id="returnDateTime" name="returnDateTime">
                     </div>
                     
                     <div class="mb-3">

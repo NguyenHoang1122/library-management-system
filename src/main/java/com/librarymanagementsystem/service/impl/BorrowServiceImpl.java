@@ -156,7 +156,7 @@ public class BorrowServiceImpl implements BorrowService {
     }
 
     @Override
-    public void rejectBorrowRequest(Long requestId) {
+    public void rejectBorrowRequest(Long requestId, String reason) {
         BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Yêu cầu mượn không tồn tại"));
 
@@ -165,6 +165,7 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         borrowRequest.setRequestStatus(RequestStatus.REJECTED);
+        borrowRequest.setRejectionReason(reason);
         borrowRequestRepository.save(borrowRequest);
 
         // HOÀN LẠI SỐ LƯỢNG KHI TỪ CHỐI
