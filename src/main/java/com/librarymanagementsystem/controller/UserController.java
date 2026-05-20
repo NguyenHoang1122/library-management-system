@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class UserController {
     private final UserService userService;
 
+    // Hiển thị thông tin hồ sơ chi tiết (Profile) của người dùng đang đăng nhập hiện tại
     @GetMapping("/profile")
     public String showUserDetail(Authentication authentication, Model model) {
         String userName = authentication.getName();
@@ -34,6 +35,7 @@ public class UserController {
         return "redirect:/user/profile";
     }
 
+    // Xử lý cập nhật thông tin cá nhân
     @PostMapping("/profile/update")
     public String updateProfile(Authentication authentication, @ModelAttribute UserDTO userDTO,
                                 RedirectAttributes redirectAttributes, BindingResult bindingResult) {
@@ -53,6 +55,7 @@ public class UserController {
         return "redirect:/user/profile";
     }
 
+    //danh sách user
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public String listActiveUsers(@RequestParam(defaultValue = "1") int page, Model model) {
@@ -94,12 +97,14 @@ public class UserController {
         return "user/list-users";
     }
 
+   // Các user bị xóa mềm
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/trash")
     public String listDeletedUsers(@RequestParam(defaultValue = "1") int page, Model model) {
         return searchDeletedUsers(null, page, model);
     }
 
+    // Tìm kiếm trong danh sách user bị xóa mềm
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/trash/search")
     public String searchDeletedUsers(@RequestParam(required = false) String query,
@@ -134,6 +139,8 @@ public class UserController {
         model.addAttribute("isTrash", true);
         return "user/trash";
     }
+
+    //Đổi vai trò
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/change-role")
     public String changeUserRole(@PathVariable Long id, @RequestParam String roleName,
@@ -146,6 +153,8 @@ public class UserController {
         }
         return "redirect:/user";
     }
+
+    // xóa mềm
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/soft-delete")
     public String softDeleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
@@ -157,6 +166,8 @@ public class UserController {
         }
         return "redirect:/user";
     }
+
+    // Khôi phục user
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/restore")
     public String restoreUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
@@ -168,6 +179,8 @@ public class UserController {
         }
         return "redirect:/user/trash";
     }
+
+    // Xóa vĩnh viễn user
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/permanently-delete")
     public String permanentlyDeleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {

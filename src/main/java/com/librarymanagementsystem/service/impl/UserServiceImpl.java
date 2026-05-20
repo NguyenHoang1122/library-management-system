@@ -125,22 +125,24 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    // danh sách người dùng đang hoạt động
     @Override
     public List<User> getAllActiveUsers() {
         return userRepository.findAllActiveUsers();
     }
 
+    // danh sách người bị xóa mềm
     @Override
     public List<User> getAllDeletedUsers() {
         return userRepository.findAllDeletedUsers();
     }
 
+    // Xóa mềm tài khoản
     @Override
     public void softDeleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        // Không cho phép xóa ADMIN
         if (user.getRole().getRoleName() == RoleStatus.ROLE_ADMIN) {
             throw new RuntimeException("Không thể xóa tài khoản Admin");
         }
@@ -149,6 +151,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    // Khôi phục tài khoản
     @Override
     public void restoreUser(Long userId) {
         User user = userRepository.findById(userId)
@@ -158,7 +161,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    @Override
+    // Xóa vĩnh viễn
     public void permanentlyDeleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
@@ -181,6 +184,7 @@ public class UserServiceImpl implements UserService {
         userRepository.hardDeleteById(userId);
     }
 
+    // Thay đổi vai trò
     @Override
     public void changeUserRole(Long userId, String roleName) {
         User user = userRepository.findById(userId)
@@ -204,8 +208,9 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    // check hàng ngày để xóa tài khoản bị xóa mềm
     @Override
-    @Scheduled(cron = "0 0 2 * * ?") // Chạy hàng ngày lúc 2:00 AM
+    @Scheduled(cron = "0 0 2 * * ?")
     public void permanentlyDeleteOldUsers() {
         LocalDateTime cutoffDate = LocalDateTime.now().minus(5, ChronoUnit.DAYS);
         List<User> usersToDelete = userRepository.findUsersToPermanentlyDelete(cutoffDate);

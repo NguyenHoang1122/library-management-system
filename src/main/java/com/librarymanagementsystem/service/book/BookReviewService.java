@@ -6,10 +6,21 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BookReviewService {
+    // Toàn bộ đánh giá của 1 cuốn truyện
     List<BookReview> getReviewsByBookId(Long bookId);
+
+    // đánh giá người dùng cho 1 cuốn truyện cụ thể
     Optional<BookReview> getReviewByBookAndUser(Long bookId, Long userId);
+
+    // Lưu mới hoặc cập nhật đánh giá
     BookReview saveReview(Long bookId, Long userId, Integer rating, String comment);
+
+    // check user đã  mượn cuốn sách này hay chưa
     boolean hasUserRentedBook(Long userId, Long bookId);
+
+    // Tính điểm TB
     Double getAverageRatingForBook(Long bookId);
+
+    // count đánh giá
     Long countReviewsForBook(Long bookId);
 }

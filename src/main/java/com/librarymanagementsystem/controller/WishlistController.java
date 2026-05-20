@@ -33,7 +33,6 @@ public class WishlistController {
     private final BorrowTransactionRepository borrowTransactionRepository;
     private final BorrowService borrowService;
 
-    /**     * Xem danh sách yêu thích của user     */
     @GetMapping
     public String getMyWishlist(Model model, Authentication authentication) {
         String userName = authentication.getName();
@@ -44,12 +43,12 @@ public class WishlistController {
         model.addAttribute("wishlists", wishlists);
         model.addAttribute("totalWishlists", wishlists.size());
 
-        // Lấy danh sách sách đang được mượn
+        // Lấy danh sách truyện đang được mượn
         List<Long> borrowedBookIds = borrowTransactionRepository
                 .findBorrowedBookIdsByUser(userId);
         model.addAttribute("borrowedBookIds", borrowedBookIds);
 
-        // Lấy danh sách sách đang chờ duyệt mượn
+        // Lấy danh sách truyện đang chờ duyệt mượn
         List<Long> pendingBookIds = new ArrayList<>();
         List<BorrowRequest> userRequests = borrowService.getUserBorrowRequests(userId);
         if (userRequests != null) {
@@ -66,7 +65,7 @@ public class WishlistController {
         return "wishlist/my-wishlist";
     }
 
-    /**     * Thêm hoặc xóa sách khỏi wishlist (AJAX)     */
+    //Thêm hoặc xóa nhanh một cuốn truyện khỏi danh sách yêu thích
     @PostMapping("/add/{bookId}")
     @ResponseBody
     public ResponseEntity<?> addToWishlist(@PathVariable Long bookId, Authentication authentication) {
@@ -90,7 +89,7 @@ public class WishlistController {
         }
     }
 
-    /**     * Kiểm tra sách có trong wishlist không (AJAX)     */
+    //Kiểm tra xem một cuốn truyện cụ thể đã có trong danh sách yêu thích của người dùng hay chưa
     @GetMapping("/check/{bookId}")
     @ResponseBody
     public ResponseEntity<?> checkWishlist(@PathVariable Long bookId, Authentication authentication) {
@@ -109,7 +108,7 @@ public class WishlistController {
         }
     }
 
-    /**     * Xóa sách khỏi wishlist     */
+    // Xóa một truyện khỏi danh sách yêu thích
     @PostMapping("/remove/{wishlistId}")
     public String removeFromWishlist(@PathVariable Long wishlistId,
                                      Authentication authentication,
@@ -136,7 +135,7 @@ public class WishlistController {
         return "redirect:/wishlist";
     }
 
-    /**     * Xóa tất cả wishlist của user     */
+    // Xóa toàn bộ danh sách truyện yêu thích
     @PostMapping("/clear-all")
     public String clearAllWishlist(Authentication authentication, RedirectAttributes redirectAttributes) {
         try {

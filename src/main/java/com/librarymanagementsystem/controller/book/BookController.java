@@ -34,8 +34,9 @@ public class BookController {
     private final BookReviewService bookReviewService;
     private final BorrowService borrowService;
 
-
-    private void populateListModel(Model model, String title, Long category, int page, String sortBy, Authentication authentication) {
+    // Hỗ trợ điền danh sách truyện
+    private void populateListModel(Model model, String title, Long category,
+                                   int page, String sortBy, Authentication authentication) {
         List<Book> books;
         if (title != null && !title.isEmpty()) {
             books = new ArrayList<>(bookService.searchBooks(title));
@@ -62,7 +63,7 @@ public class BookController {
             books.sort((b1, b2) -> Integer.compare(b2.getQuantity(), b1.getQuantity()));
         }
 
-        // Phân trang (10 phần tử mỗi trang)
+        // Phân trang
         int pageSize = 10;
         int totalItems = books.size();
         int totalPages = (int) Math.ceil((double) totalItems / pageSize);
@@ -84,6 +85,7 @@ public class BookController {
         addUserDataToModel(model, authentication);
     }
 
+    // Danh sách truyện
     @GetMapping
     public String listBooks(@RequestParam(required = false) String title,
                             @RequestParam(required = false) Long category,
@@ -109,6 +111,7 @@ public class BookController {
         return isAdminOrLibrarian ? "book/list" : "book/user-list";
     }
 
+    //tìm kiếm truyện tiêu đề hoặc tên tác giả
     @GetMapping("/search")
     public String searchBooks(@RequestParam("query") String query,
                               @RequestParam(defaultValue = "1") int page,
@@ -164,6 +167,7 @@ public class BookController {
         return isAdminOrLibrarian ? "book/list" : "book/user-list";
     }
 
+    // đưa tt user vào model
     private void addUserDataToModel(Model model, Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             String userName = authentication.getName();
@@ -175,6 +179,7 @@ public class BookController {
     }
 
 
+    //chi tiết sách
     @GetMapping("/{id}")
     public String viewBook(@PathVariable("id") Long id,
                            Model model,
@@ -183,7 +188,6 @@ public class BookController {
                 .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
         model.addAttribute("book", book);
 
-        // Load reviews & stats
         model.addAttribute("reviews", bookReviewService.getReviewsByBookId(id));
         model.addAttribute("averageRating", bookReviewService.getAverageRatingForBook(id));
         model.addAttribute("reviewCount", bookReviewService.countReviewsForBook(id));
@@ -191,7 +195,7 @@ public class BookController {
         boolean hasRented = false;
         boolean hasPendingRequest = false;
         com.librarymanagementsystem.model.book.BookReview existingReview = null;
-        // Kiểm tra xem user đã mượn truyện này chưa
+        // Check user đã mượn truyện này chưa
         if (authentication != null && authentication.isAuthenticated()) {
             String userName = authentication.getName();
             User user = userService.findByUserName(userName).orElse(null);
@@ -225,6 +229,7 @@ public class BookController {
         return "book/book-detail";
     }
 
+    // Xử lý gửi bình luận cho truyện thông qua gọi AJAX
     @PostMapping("/{id}/review")
     @ResponseBody
     public ResponseEntity<?> submitReview(@PathVariable("id") Long bookId,
@@ -250,6 +255,7 @@ public class BookController {
         return "redirect:/books";
     }
 
+    // thêm mới truyện
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/save")
     public String saveBook(@Valid @ModelAttribute("bookDTO") BookDTO bookDTO, BindingResult bindingResult, Model model, Authentication authentication, RedirectAttributes redirectAttributes) {
@@ -272,12 +278,14 @@ public class BookController {
         return "redirect:/books";
     }
 
+    // chỉnh sửa truyện
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
         return "redirect:/books";
     }
 
+    // cập nhật truyện
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/update/{id}")
     public String updateBook(@PathVariable Long id, @Valid @ModelAttribute("editBookDTO") BookDTO bookDTO, BindingResult bindingResult, Model model, Authentication authentication, RedirectAttributes redirectAttributes) {
@@ -302,6 +310,7 @@ public class BookController {
         return "redirect:/books";
     }
 
+    // Xóa truyện
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/delete/{id}")
     public String deleteBook(@PathVariable Long id, RedirectAttributes redirectAttributes) {
@@ -314,6 +323,7 @@ public class BookController {
         return "redirect:/books";
     }
 
+    // Check isbn
     @GetMapping("/api/check-isbn")
     @ResponseBody
     public ResponseEntity<Boolean> checkIsbn(@RequestParam String isbn, @RequestParam(required = false) Long currentId) {

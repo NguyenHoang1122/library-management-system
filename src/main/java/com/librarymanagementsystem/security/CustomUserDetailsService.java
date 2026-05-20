@@ -16,14 +16,14 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // 1. Tìm user trong DB
+        //Tìm user trong DB
         User user = userRepository.findByUserName(username).orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng!"));
 
-        // 2. Trả về đối tượng User của Spring Security
+        // Trả về đối tượng User của Spring Security
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUserName())
-                .password(user.getPassword()) // Password này PHẢI được mã hóa (BCrypt)
-                .authorities(user.getRole().getRoleName().name()) // Lấy role từ entity User
+                .password(user.getPassword())
+                .authorities(user.getRole().getRoleName().name())
                 .build();
     }
 }

@@ -36,9 +36,10 @@ public class BorrowServiceImpl implements BorrowService {
     private final NotificationService notificationService;
     private final ReturnRequestRepository returnRequestRepository;
 
-    private final Integer DEFAULT_BORROW_DAYS = 14; // Mặc định mượn 14 ngày
-    private final long DAILY_FINE = 5000; // 5000 VND per day
+    private final Integer DEFAULT_BORROW_DAYS = 14;
+    private final long DAILY_FINE = 5000; //phạt trả muộn
 
+    //yêu cầu mượn sách mới
     @Override
     public BorrowRequest createBorrowRequest(Long userId, Long bookId, String note) {
         User user = userRepository.findById(userId)
@@ -62,7 +63,7 @@ public class BorrowServiceImpl implements BorrowService {
         borrowRequest.setNote(note);
         borrowRequest = borrowRequestRepository.save(borrowRequest);
 
-        // Thêm sách vào yêu cầu
+        // Thêm truyện vào yêu cầu
         BorrowRequestItem borrowRequestItem = new BorrowRequestItem();
         borrowRequestItem.setBorrowRequest(borrowRequest);
         borrowRequestItem.setBook(book);
@@ -75,6 +76,7 @@ public class BorrowServiceImpl implements BorrowService {
         return borrowRequest;
     }
 
+    // Lấy danh sách các yêu cầu mượn truyện của user
     @Override
     public List<BorrowRequest> getUserBorrowRequests(Long userId) {
         User user = userRepository.findById(userId)
@@ -82,12 +84,13 @@ public class BorrowServiceImpl implements BorrowService {
         return borrowRequestRepository.findByUserOrderByRequestDateDesc(user);
     }
 
+    // thông tin của một yêu cầu mượn truyện cụ thể qua ID yêu cầu
     @Override
     public Optional<BorrowRequest> getBorrowRequestDetail(Long requestId) {
         return borrowRequestRepository.findById(requestId);
     }
 
-    @Override
+    // Hủy bỏ mượn truyện
     public void cancelBorrowRequest(Long requestId) {
         BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Yêu cầu mượn không tồn tại"));
@@ -107,10 +110,10 @@ public class BorrowServiceImpl implements BorrowService {
             bookRepository.save(book);
         }
 
-        // Thông báo
         notificationService.notifyBorrowRequestCancelled(borrowRequest);
     }
 
+    // Phê duyệt yêu cầu mượn truyện
     @Override
     public BorrowTransaction approveBorrowRequest(Long requestId, Long librarianId, Integer borrowDays) {
         BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId)
@@ -155,6 +158,7 @@ public class BorrowServiceImpl implements BorrowService {
         return transaction;
     }
 
+    // Từ chối yêu cầu mượn sách: cập nhật trạng thái yêu cầu sang REJECTED, đính kèm lý do từ chối, trả lại số lượng sách vào kho và gửi thông báo từ chối cho người dùng
     @Override
     public void rejectBorrowRequest(Long requestId, String reason) {
         BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId)
@@ -180,6 +184,7 @@ public class BorrowServiceImpl implements BorrowService {
         notificationService.notifyBorrowRejected(borrowRequest);
     }
 
+    // Lấy toàn bộ lịch sử giao dịch mượn truyện của một người dùng và trả về dưới dạng danh sách DTO
     @Override
     public List<BorrowHistoryDTO> getUserBorrowHistory(Long userId) {
         User user = userRepository.findById(userId)
@@ -188,6 +193,7 @@ public class BorrowServiceImpl implements BorrowService {
         return transactions.stream().map(this::mapToBorrowHistoryDTO).collect(Collectors.toList());
     }
 
+    // Chuyển đổi dữ liệu từ thực thể BorrowTransaction sang đối tượng trung chuyển BorrowHistoryDTO
     private BorrowHistoryDTO mapToBorrowHistoryDTO(BorrowTransaction transaction) {
         List<BorrowItem> items = borrowItemRepository.findByTransaction(transaction);
         Long bookId = items.isEmpty() ? null : items.get(0).getBook().getId();
@@ -215,11 +221,13 @@ public class BorrowServiceImpl implements BorrowService {
         );
     }
 
+    // Lấy thông tin chi tiết của một giao dịch mượn truyện theo ID giao dịch
     @Override
     public Optional<BorrowTransaction> getBorrowTransactionDetail(Long transactionId) {
         return borrowTransactionRepository.findById(transactionId);
     }
 
+    // Thủ thư xác nhận người dùng trả sách trực tiếp: Cập nhật ngày trả, đổi trạng thái sang RETURNED, hoàn trả lại số lượng sách vào kho lưu trữ và gửi thông báo trả thành công
     @Override
     public void returnBorrowItems(Long transactionId, Long librarianId) {
         BorrowTransaction transaction = borrowTransactionRepository.findById(transactionId)
@@ -252,7 +260,7 @@ public class BorrowServiceImpl implements BorrowService {
         notificationService.notifyBorrowReturned(transaction);
     }
 
-    @Override
+    // Tính tiền phạt
     public long calculateLateFine(Long transactionId) {
         BorrowTransaction transaction = borrowTransactionRepository.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException("Giao dịch mượn không tồn tại"));
@@ -272,7 +280,7 @@ public class BorrowServiceImpl implements BorrowService {
         return 0;
     }
 
-    @Override
+    // Lấy danh sách các giao dịch mượn sách chưa hoàn tất trả
     public List<BorrowHistoryDTO> getActiveBorrows(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
@@ -281,6 +289,7 @@ public class BorrowServiceImpl implements BorrowService {
         return transactions.stream().map(this::mapToBorrowHistoryDTO).collect(Collectors.toList());
     }
 
+    // Kiểm tra xem một giao dịch mượn truyện cụ thể có bị quá hạn trả sách hay không
     @Override
     public boolean isOverdue(Long transactionId) {
         BorrowTransaction transaction = borrowTransactionRepository.findById(transactionId)
@@ -293,6 +302,7 @@ public class BorrowServiceImpl implements BorrowService {
         return LocalDateTime.now().isAfter(transaction.getDueDate());
     }
 
+    //các giao dịch mượn truyện bị quá hạn của user
     @Override
     public List<BorrowTransaction> getOverdueBooks(Long userId) {
         User user = userRepository.findById(userId)
@@ -300,16 +310,19 @@ public class BorrowServiceImpl implements BorrowService {
         return borrowTransactionRepository.findUserOverdueTransactions(userId);
     }
 
+    // các yêu cầu mượn truyện của user đang chờ xét
     @Override
     public List<BorrowRequest> getAllPendingRequests() {
         return borrowRequestRepository.findPendingRequests();
     }
 
+    //các giao dịch mượn truyện đang hoạt động
     @Override
     public List<BorrowTransaction> getAllActiveBorrows() {
         return borrowTransactionRepository.findByStatusIn(List.of(TransactionStatus.BORROWED, TransactionStatus.OVERDUE, TransactionStatus.PENDING));
     }
 
+    //tạo yêu cầu trả truyện
     @Override
     public void createReturnRequest(Long userId, Long transactionId, LocalDateTime returnDateTime, String note) {
         User user = userRepository.findById(userId)
@@ -331,7 +344,7 @@ public class BorrowServiceImpl implements BorrowService {
 
         returnRequestRepository.save(request);
 
-        // Cập nhật trạng thái giao dịch sang PENDING
+        // Cập nhật trạng thái giao dịch
         transaction.setStatus(TransactionStatus.PENDING);
         borrowTransactionRepository.save(transaction);
 
@@ -339,12 +352,12 @@ public class BorrowServiceImpl implements BorrowService {
         notificationService.notifyReviewReturnRequest(request);
     }
 
-    @Override
+    // toàn bộ yêu cầu trả sách đang chờ phê duyệt or đã phê duyệt
     public List<ReturnRequest> getAllPendingReturnRequests() {
         return returnRequestRepository.findByRequestStatusInOrderByRequestDateDesc(List.of(RequestStatus.PENDING, RequestStatus.APPROVED));
     }
 
-    @Override
+    // Thủ thư phê duyệt yêu cầu trả truyện
     public void approveReturnRequest(Long requestId, Long librarianId) {
         ReturnRequest request = returnRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Yêu cầu trả không tồn tại"));
@@ -352,10 +365,11 @@ public class BorrowServiceImpl implements BorrowService {
         request.setRequestStatus(RequestStatus.APPROVED);
         returnRequestRepository.save(request);
 
-        // Thông báo cho user là yêu cầu ĐÃ ĐƯỢC DUYỆT
+        // Thông báo cho user
         notificationService.notifyReturnApproved(request);
     }
 
+    // Thủ thư hoàn tất yêu cầu trả truyện
     @Override
     @Transactional
     public void completeReturnRequest(Long requestId, Long librarianId) {
@@ -369,13 +383,12 @@ public class BorrowServiceImpl implements BorrowService {
         request.setRequestStatus(RequestStatus.COMPLETED);
         returnRequestRepository.save(request);
 
-        // Hoàn tất việc trả sách (Cập nhật giao dịch sang RETURNED)
+        // Hoàn tất việc trả truyện
         returnBorrowItems(request.getBorrowTransaction().getId(), librarianId);
-        
-        // notifyBorrowReturned đã được gọi trong returnBorrowItems
+
     }
 
-    @Override
+    // Thủ thư từ chối yêu cầu trả truyện
     public void rejectReturnRequest(Long requestId, String reason) {
         ReturnRequest request = returnRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Yêu cầu trả không tồn tại"));
@@ -384,7 +397,7 @@ public class BorrowServiceImpl implements BorrowService {
         request.setRejectionReason(reason);
         returnRequestRepository.save(request);
 
-        // Khôi phục trạng thái giao dịch (kiểm tra lại ngày hạn để đặt lại BORROWED hoặc OVERDUE)
+        // Khôi phục trạng thái giao dịch
         BorrowTransaction transaction = request.getBorrowTransaction();
         if (LocalDateTime.now().isAfter(transaction.getDueDate())) {
             transaction.setStatus(TransactionStatus.OVERDUE);

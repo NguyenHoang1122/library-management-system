@@ -65,14 +65,14 @@ public class BookServiceImpl implements BookService {
         }
 
 
-        // Cập nhật thông tin từ DTO
+        // Cập nhật từ DTO
         book.setTitle(bookDTO.getTitle());
         book.setDescription(bookDTO.getDescription());
         book.setIsbn(bookDTO.getIsbn());
         book.setPublishYear(bookDTO.getPublishYear());
         book.setQuantity(bookDTO.getQuantity());
 
-        // Xử lý ảnh: nếu có ảnh mới thì upload, nếu không thì giữ ảnh cũ
+        // Xử lý ảnh
         if (bookDTO.getImageFile() != null && !bookDTO.getImageFile().isEmpty()) {
             // Xóa ảnh cũ nếu có
             if (book.getImage() != null && !book.getImage().isEmpty()) {
@@ -90,13 +90,12 @@ public class BookServiceImpl implements BookService {
             try {
                 Files.createDirectories(path.getParent());
                 Files.write(path, bookDTO.getImageFile().getBytes());
-                book.setImage("/uploads/" + fileName); // Giữ ảnh mới
+                book.setImage("/uploads/" + fileName);
             } catch (IOException e) {
                 throw new RuntimeException("Lỗi upload ảnh: " + e.getMessage());
             }
         }
         // Nếu không chọn ảnh mới, ảnh cũ sẽ được giữ lại (không thay đổi)
-        // Cập nhật Category
         if (bookDTO.getCategoryIds() != null && !bookDTO.getCategoryIds().isEmpty()) {
             Set<Category> categories = new HashSet<>();
             for (Long categoryId : bookDTO.getCategoryIds()) {
@@ -154,6 +153,7 @@ public class BookServiceImpl implements BookService {
         return bookRepository.findByAuthorId(authorId);
     }
 
+    // Chuyển đổi dữ liệu từ BookDTO sang Book
     private Book mapDtoToEntity(BookDTO bookDTO) {
         Book book = new Book();
         book.setTitle(bookDTO.getTitle());
@@ -169,7 +169,7 @@ public class BookServiceImpl implements BookService {
             try {
                 Files.createDirectories(path.getParent());
                 Files.write(path, bookDTO.getImageFile().getBytes());
-                book.setImage("/uploads/" + fileName); // Đường dẫn tương đối
+                book.setImage("/uploads/" + fileName); //
             } catch (IOException e) {
                 throw new RuntimeException("Lỗi upload ảnh: " + e.getMessage());
             }
@@ -200,26 +200,31 @@ public class BookServiceImpl implements BookService {
         return book;
     }
 
+    // check có mượn truyện này k
     @Override
     public boolean isBookBorrowedByUser(Long bookId, Long userId) {
         return borrowTransactionRepository.isBookBorrowedByUser(userId, bookId);
     }
 
+    // Lấy 5 cuốn truyện mới nhật
     @Override
     public List<Book> getNewestBooks() {
         return bookRepository.findTop5ByOrderByCreatedDateDesc();
     }
 
+    // 5 cuốn hot nhất.
     @Override
     public List<Book> getHotBooks() {
         return bookRepository.findTop5HotBooks(PageRequest.of(0, 5));
     }
 
+    // 5 cuốn theo thể loại.
     @Override
     public List<Book> getBooksByCategoryName(String categoryName) {
         return bookRepository.findTop5ByCategoryName(categoryName, PageRequest.of(0, 5));
     }
 
+    // Check isbn
     @Override
     public boolean existsByIsbn(String isbn) {
         return bookRepository.existsByIsbn(isbn);
