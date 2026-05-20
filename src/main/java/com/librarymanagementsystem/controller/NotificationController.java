@@ -39,6 +39,7 @@ public class NotificationController {
         return "notification/my-notifications";
     }
 
+    // Xem chi tiết thông báo
     @GetMapping("/{notificationId}")
     public String viewNotificationDetail(@PathVariable Long notificationId, Model model) {
         Notification notification = notificationService.getNotificationDetail(notificationId)
@@ -53,6 +54,7 @@ public class NotificationController {
         return "notification/detail";
     }
 
+    // đánh dấu đã đọc
     @PostMapping("/{notificationId}/mark-read")
     public String markAsRead(@PathVariable Long notificationId,
                              RedirectAttributes redirectAttributes) {
@@ -66,6 +68,7 @@ public class NotificationController {
         return "redirect:/my-notifications";
     }
 
+    // AJAX API để đánh dấu đã đọc một thông báo một cách nhanh chóng mà không cần tải lại toàn bộ trang web
     @PostMapping("/{notificationId}/mark-read-ajax")
     @ResponseBody
     public java.util.Map<String, Object> markAsReadAjax(@PathVariable Long notificationId) {
@@ -80,6 +83,7 @@ public class NotificationController {
         return response;
     }
 
+    // Đánh dấu tất cả các thông báo hiện có của người dùng hiện tại
     @PostMapping("/mark-all-read")
     public String markAllAsRead(Authentication authentication,
                                 RedirectAttributes redirectAttributes) {
@@ -95,6 +99,7 @@ public class NotificationController {
         return "redirect:/my-notifications";
     }
 
+    // Xóa vĩnh viễn một thông báo
     @PostMapping("/{notificationId}/delete")
     public String deleteNotification(@PathVariable Long notificationId,
                                      RedirectAttributes redirectAttributes) {
@@ -108,6 +113,7 @@ public class NotificationController {
         return "redirect:/my-notifications";
     }
 
+    // Xóa toàn bộ các thông báo đã đọc của người dùng
     @PostMapping("/delete-read")
     public String deleteReadNotifications(Authentication authentication,
                                          RedirectAttributes redirectAttributes) {
@@ -129,6 +135,7 @@ public class NotificationController {
         return "redirect:/my-notifications";
     }
 
+    // AJAX API xóa toàn bộ các thông báo đã đọc giúp cập nhật nhanh giao diện mà không cần reload trang
     @PostMapping("/delete-read-ajax")
     @ResponseBody
     public java.util.Map<String, Object> deleteReadNotificationsAjax(Authentication authentication) {
@@ -153,6 +160,7 @@ public class NotificationController {
         return response;
     }
 
+    // Xóa sạch toàn bộ thông báo (bao gồm cả chưa đọc và đã đọc)
     @PostMapping("/delete-all")
     public String deleteAllNotifications(Authentication authentication,
                                         RedirectAttributes redirectAttributes) {
@@ -168,6 +176,7 @@ public class NotificationController {
         return "redirect:/my-notifications";
     }
 
+    // AJAX API lấy nhanh số lượng đếm các thông báo chưa đọc để cập nhật theo thời gian thực trên giao diện client
     @GetMapping("/unread-count")
     @ResponseBody
     public long getUnreadCount(Authentication authentication) {

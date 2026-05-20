@@ -8,32 +8,33 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface BorrowTransactionRepository extends JpaRepository<BorrowTransaction, Long> {
-    // Lấy danh sách giao dịch mượn của user, sắp xếp từ gần nhất
+
+    //giao dịch mượn theo user
     List<BorrowTransaction> findByUserOrderByBorrowDateDesc(User user);
 
-    // Lấy danh sách giao dịch mượn theo trạng thái
-    List<BorrowTransaction> findByStatus(TransactionStatus status);
+    // mượn theo trạng thái giao dịch
+//    List<BorrowTransaction> findByStatus(TransactionStatus status);
 
+    //giao dịch mượn có trạng thái nằm trong danh sách các trạng thái truyền vào
     List<BorrowTransaction> findByStatusIn(List<TransactionStatus> statuses);
 
-    // Lấy danh sách giao dịch mượn quá hạn của user
-    @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
+    // giao dịch mượn quá hạn của user
+   @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
     List<BorrowTransaction> findUserOverdueTransactions(@Param("userId") Long userId);
 
-    // Lấy giao dịch mượn đang hoạt động
-    List<BorrowTransaction> findByUserAndStatus(User user, TransactionStatus status);
+    //giao dịch mượn đang hoạt động của người dùng dựa trên đối tượng User và một trạng thái cụ thể
+//    List<BorrowTransaction> findByUserAndStatus(User user, TransactionStatus status);
 
-    // Lấy giao dịch mượn đang hoạt động của user, sắp xếp từ gần nhất
+    //giao dịch mượn đang hoạt động của user
     List<BorrowTransaction> findByUserAndStatusInOrderByBorrowDateDesc(User user, List<TransactionStatus> statuses);
 
 
 
-    // Kiểm tra xem user có đang mượn sách này hay không (chỉ trạng thái BORROWED)
+    // check user có đang mượn truyện or không
     @Query("SELECT COUNT(bi) > 0 FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
@@ -41,12 +42,14 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
             "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
     boolean isBookBorrowedByUser(@Param("userId") Long userId, @Param("bookId") Long bookId);
 
+    //các ID của sách đang được mượn or đang yêu cầu mượn bởi user
     @Query("SELECT DISTINCT bi.book.id FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
             "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
     List<Long> findBorrowedBookIdsByUser(@Param("userId") Long userId);
 
+    // Check user đã từng thuê/mượn truyện này hay chưa
     @Query("SELECT COUNT(bi) > 0 FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +

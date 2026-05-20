@@ -29,7 +29,6 @@ public class BorrowController {
     private final UserService userService;
     private final BookService bookService;
 
-    /**     * Gửi yêu cầu mượn sách     */
     @GetMapping("/request/{bookId}")
     public String showBorrowRequestForm(@PathVariable Long bookId, Model model) {
         Book book = bookService.getBookById(bookId)
@@ -39,7 +38,6 @@ public class BorrowController {
         return "borrow/request-form";
     }
 
-    /**     * Xử lý gửi yêu cầu mượn     */
     @PostMapping("/request/{bookId}")
     public String submitBorrowRequest(@PathVariable Long bookId,
                                       @RequestParam(required = false) String note,
@@ -50,7 +48,7 @@ public class BorrowController {
                     .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
             borrowService.createBorrowRequest(user.getId(), bookId, note);
-            redirectAttributes.addFlashAttribute("message", "Đã gửi yêu cầu mượn sách thành công");
+            redirectAttributes.addFlashAttribute("message", "Đã gửi yêu cầu mượn truyện thành công");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
         }
@@ -58,6 +56,7 @@ public class BorrowController {
         return "redirect:/borrow";
     }
 
+    // Xử lý nhanh yêu cầu mượn truyên
     @PostMapping("/quick-request/{bookId}")
     @ResponseBody
     public java.util.Map<String, Object> quickBorrowRequest(@PathVariable Long bookId,
@@ -78,7 +77,7 @@ public class BorrowController {
         return response;
     }
 
-    /**     * Xem danh sách yêu cầu mượn sách     */
+    // Hiển thị danh sách các yêu cầu mượn truyện chờ duyệt hoặc đã xử lý
     @GetMapping
     public String listBorrowRequests(Authentication authentication, Model model) {
         User user = userService.findByUserName(authentication.getName())
@@ -89,7 +88,7 @@ public class BorrowController {
         return "borrow/requests";
     }
 
-    /**     * Xem lịch sử mượn sách     */
+    //Lịch sử mượn trả truyện
     @GetMapping("/history")
     public String showBorrowHistory(Authentication authentication, Model model) {
         User user = userService.findByUserName(authentication.getName())
@@ -106,6 +105,7 @@ public class BorrowController {
         return "borrow/history";
     }
 
+    //danh sách các truyện người dùng đang mượn
     @GetMapping("/active")
     public String showActiveBorrows(Authentication authentication, Model model) {
         User user = userService.findByUserName(authentication.getName())
@@ -116,7 +116,7 @@ public class BorrowController {
         return "borrow/active";
     }
 
-    /**     * Xem chi tiết giao dịch mượn     */
+    // chi tiết của một giao dịch mượn trả
     @GetMapping("/{transactionId}")
     public String viewBorrowDetail(@PathVariable Long transactionId,
                                    Authentication authentication,
@@ -143,6 +143,7 @@ public class BorrowController {
         return "borrow/detail";
     }
 
+    //gửi yêu cầu trả truyện
     @PostMapping("/{transactionId}/return")
     public String requestReturn(@PathVariable Long transactionId,
                                 @RequestParam String returnDateTime,
@@ -169,7 +170,7 @@ public class BorrowController {
         return "redirect:/borrow/active";
     }
 
-    /**     * Hủy yêu cầu mượn     */
+    //người dùng tự hủy yêu cầu mượn
     @PostMapping("/{requestId}/cancel")
     public String cancelBorrowRequest(@PathVariable Long requestId,
                                       RedirectAttributes redirectAttributes) {

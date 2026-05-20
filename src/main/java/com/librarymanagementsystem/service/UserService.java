@@ -8,18 +8,35 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserService {
+
     User register(UserDTO userDTO);
+
     User login(String userName, String password);
+
     List<User> getAllUsers();
+
     Optional<User> findByUserName(String name);
+
     Optional<User> findById(Long id);
+
     User updateProfile(Long userId, UserDTO userDTO);
 
     List<User> getAllActiveUsers();
+
     List<User> getAllDeletedUsers();
+
+    // Xóa mềm
     void softDeleteUser(Long userId);
+
+    // Khôi phục tài khoản
     void restoreUser(Long userId);
+
+    // Xóa vĩnh viễn
     void permanentlyDeleteUser(Long userId);
+
+    // Thay đổi vai trò
     void changeUserRole(Long userId, String roleName);
+
+    // Tự động xóa vĩnh viễn các user
     void permanentlyDeleteOldUsers();
 }

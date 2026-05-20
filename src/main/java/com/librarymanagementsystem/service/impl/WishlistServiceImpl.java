@@ -23,6 +23,7 @@ public class WishlistServiceImpl implements WishlistService {
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
 
+    // Thêm hoặc xóa truyện khỏi wishlist
     @Override
     public boolean addToWishlist(Long userId, Long bookId) {
         User user = userRepository.findById(userId)
@@ -30,11 +31,11 @@ public class WishlistServiceImpl implements WishlistService {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
 
-        // Check if already in wishlist - if yes, remove it (toggle)
+        // Kiểm tra nếu truyện đã tồn tại trong wishlist, nếu có thì xóa đi
         Optional<Wishlist> existing = wishlistRepository.findByUserAndBook(user, book);
         if (existing.isPresent()) {
             wishlistRepository.delete(existing.get());
-            return false; // Removed
+            return false;
         }
 
         // Add to wishlist
@@ -42,9 +43,10 @@ public class WishlistServiceImpl implements WishlistService {
         wishlist.setUser(user);
         wishlist.setBook(book);
         wishlistRepository.save(wishlist);
-        return true; // Added
+        return true;
     }
 
+    // Xóa truyện khỏi wishlist của user
     @Override
     public void removeFromWishlist(Long userId, Long bookId) {
         User user = userRepository.findById(userId)
@@ -55,6 +57,7 @@ public class WishlistServiceImpl implements WishlistService {
         wishlistRepository.deleteByUserAndBook(user, book);
     }
 
+    // Check truyện có nằm trong wishlist của user không
     @Override
     public boolean isInWishlist(Long userId, Long bookId) {
         User user = userRepository.findById(userId)
@@ -65,6 +68,7 @@ public class WishlistServiceImpl implements WishlistService {
         return wishlistRepository.findByUserAndBook(user, book).isPresent();
     }
 
+    //danh sách wishlist của user
     @Override
     public List<Wishlist> getUserWishlist(Long userId) {
         userRepository.findById(userId)
@@ -73,20 +77,23 @@ public class WishlistServiceImpl implements WishlistService {
         return wishlistRepository.findAllByUserId(userId);
     }
 
+    // Lấy chi tiết thông tin của một bản ghi wishlist cụ thể qua ID
     @Override
     public Optional<Wishlist> getWishlistDetail(Long wishlistId) {
         return wishlistRepository.findById(wishlistId);
     }
 
+    // Xóa sạch toàn bộ các truyện trong wishlist của người dùng
     @Override
     public void clearUserWishlist(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
-        List<Wishlist> wishlists = wishlistRepository.findByUser(user);
+        List<Wishlist> wishlists = wishlistRepository.findAllByUserId(userId);
         wishlistRepository.deleteAll(wishlists);
     }
 
+    // Đếm tổng số lượng truyện mà người dùng đã đưa vào danh sách yêu thích
     @Override
     public long countUserWishlist(Long userId) {
         User user = userRepository.findById(userId)

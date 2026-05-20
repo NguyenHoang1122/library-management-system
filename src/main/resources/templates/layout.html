@@ -40,16 +40,16 @@
                                th:text="${category.categoryName}">Category</a>
                         </li>
                         <!-- Nút "Khác" với dropdown cho categories còn lại -->
-                        <li class="nav-item dropdown" th:if="${categories != null and categories.size() > 5}">
+                        <li class="nav-item dropdown" th:if="${categories != null and categories.size() > 5}"
+                            th:classappend="${isOtherCategoryActive} ? 'active' : ''">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCategories" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false"
-                                th:classappend="${param.category != null and #lists.contains(categories.subList(5, categories.size()).![#strings.toString(id)], param.category[0]) ? 'active' : ''}">
+                               data-bs-toggle="dropdown" aria-expanded="false">
                                 Khác
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-categories-multi" aria-labelledby="navbarDropdownCategories">
                                 <li th:each="category, iterStat : ${categories}" th:if="${iterStat.index >= 5}">
-                                    <a class="dropdown-item" 
-                                       th:classappend="${param.category != null and param.category[0] == #strings.toString(category.id) ? 'active-category' : ''}" 
+                                    <a class="dropdown-item"
+                                       th:classappend="${param.category != null and param.category[0] == #strings.toString(category.id) ? 'active-category' : ''}"
                                        th:href="@{/books(category=${category.id})}"
                                        th:text="${category.categoryName}">Category</a>
                                 </li>

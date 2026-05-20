@@ -14,19 +14,16 @@ import java.util.Optional;
 @Repository
 public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
 
-    // Kiểm tra sách có trong wishlist không
+    // check wishlist đã tồn tại chưa
     Optional<Wishlist> findByUserAndBook(User user, Book book);
 
-    // Lấy danh sách wishlist của user
-    List<Wishlist> findByUser(User user);
-
-    // Xóa sách khỏi wishlist
+    // Xóa wishlist theo user và book
     void deleteByUserAndBook(User user, Book book);
 
-    // Count wishlist items của user
+    // count wishlist theo user
     long countByUser(User user);
 
-    // Query tùy chỉnh
+    // danh sách wishlist theo userId
     @Query("SELECT w FROM Wishlist w WHERE w.user.id = :userId")
     List<Wishlist> findAllByUserId(@Param("userId") Long userId);
 }

@@ -29,12 +29,14 @@ public class LibrarianController {
     private final BorrowService borrowService;
     private final UserService userService;
 
+    //danh sách các yêu cầu mượn truyện đang chờ duyệt
     @GetMapping("/borrows")
     public String listPendingBorrows(@RequestParam(defaultValue = "1") int page,
                                      Model model) {
         return searchPendingBorrows(null, page, model);
     }
 
+    // Tìm kiếm các yêu cầu mượn truyện đang chờ phê duyệt
     @GetMapping("/borrows/search")
     public String searchPendingBorrows(@RequestParam(required = false) String query,
                                        @RequestParam(defaultValue = "1") int page,
@@ -80,6 +82,7 @@ public class LibrarianController {
         return "librarian/borrows";
     }
 
+    // Thủ thư duyệt yêu cầu mượn truyện
     @PostMapping("/borrows/{requestId}/approve")
     public String approveBorrow(@PathVariable Long requestId,
                                 @RequestParam(defaultValue = "14") Integer borrowDays,
@@ -96,6 +99,7 @@ public class LibrarianController {
         return "redirect:/librarian/borrows";
     }
 
+    // Thủ thư từ chối yêu cầu mượn truyện
     @PostMapping("/borrows/{requestId}/reject")
     public String rejectBorrow(@PathVariable Long requestId,
                                @RequestParam(required = false) String reason,
@@ -109,12 +113,14 @@ public class LibrarianController {
         return "redirect:/librarian/borrows";
     }
 
+    //các yêu cầu trả truyện đang chờ thủ thư xử lý
     @GetMapping("/returns")
     public String listPendingReturnRequests(@RequestParam(defaultValue = "1") int page,
                                             Model model) {
         return searchPendingReturnRequests(null, page, model);
     }
 
+    // Tìm kiếm các yêu cầu trả sách trực tuyến đang chờ xử lý dựa theo thông tin của người trả sách
     @GetMapping("/returns/search")
     public String searchPendingReturnRequests(@RequestParam(required = false) String query,
                                               @RequestParam(defaultValue = "1") int page,
@@ -155,12 +161,14 @@ public class LibrarianController {
         return "librarian/returns";
     }
 
+    // danh sách user đang mượn truyện
     @GetMapping("/active-borrows")
     public String listAllActiveBorrows(@RequestParam(defaultValue = "1") int page,
                                        Model model) {
         return searchAllActiveBorrows(null, page, model);
     }
 
+    // Thống kê và tìm kiếm danh sách độc giả đang mượn truyện, hiển thị tổng số cuốn đang giữ và hỗ trợ tìm theo từ khóa
     @GetMapping("/active-borrows/search")
     public String searchAllActiveBorrows(@RequestParam(required = false) String query,
                                          @RequestParam(defaultValue = "1") int page,
@@ -228,6 +236,7 @@ public class LibrarianController {
         return "librarian/active-borrows";
     }
 
+    // Xem chi tiết danh sách tất cả các cuốn truyện đang mượn của user
     @GetMapping("/active-borrows/user/{userId}")
     public String viewUserActiveBorrows(@PathVariable Long userId, Model model) {
         User user = userService.findById(userId)
@@ -252,6 +261,7 @@ public class LibrarianController {
         return "librarian/user-active-borrows";
     }
 
+    // Thủ thư phê duyệt yêu cầu trả truyện trực tuyến
     @PostMapping("/returns/approve/{requestId}")
     public String approveReturn(@PathVariable Long requestId,
                                 Authentication authentication,
@@ -267,6 +277,7 @@ public class LibrarianController {
         return "redirect:/librarian/returns";
     }
 
+    // Thủ thư xác nhận đã nhận đủ truyện từ người dùng và hoàn tất yêu cầu trả sách
     @PostMapping("/returns/complete/{requestId}")
     public String completeReturn(@PathVariable Long requestId,
                                  Authentication authentication,
@@ -282,6 +293,7 @@ public class LibrarianController {
         return "redirect:/librarian/returns";
     }
 
+    // Thủ thư từ chối yêu cầu trả truyện trực tuyến của user
     @PostMapping("/returns/reject/{requestId}")
     public String rejectReturn(@PathVariable Long requestId,
                                @RequestParam String reason,
@@ -295,7 +307,7 @@ public class LibrarianController {
         return "redirect:/librarian/returns";
     }
 
-    @PostMapping("/returns/{transactionId}")
+    // Thủ thư thực hiện xác nhận trả truyện trực tiếp
     public String returnBook(@PathVariable Long transactionId,
                              @RequestParam(required = false) Long userId,
                              Authentication authentication,

@@ -26,16 +26,19 @@ public class BookReviewServiceImpl implements BookReviewService {
     private final UserRepository userRepository;
     private final BorrowTransactionRepository borrowTransactionRepository;
 
+    // Lấy danh sách đánh giá của một cuốn sách cụ thể
     @Override
     public List<BookReview> getReviewsByBookId(Long bookId) {
         return bookReviewRepository.findByBookIdOrderByCreatedDateDesc(bookId);
     }
 
+    // Lấy thông tin đánh giá của một cuốn sách bởi một người dùng
     @Override
     public Optional<BookReview> getReviewByBookAndUser(Long bookId, Long userId) {
         return bookReviewRepository.findByBookIdAndUserId(bookId, userId);
     }
 
+    // Lưu hoặc cập nhật một đánh giá.
     @Override
     public BookReview saveReview(Long bookId, Long userId, Integer rating, String comment) {
         if (!hasUserRentedBook(userId, bookId)) {
@@ -62,17 +65,20 @@ public class BookReviewServiceImpl implements BookReviewService {
         return bookReviewRepository.save(review);
     }
 
+    // Check user từng mượn truyện này hay chưa
     @Override
     public boolean hasUserRentedBook(Long userId, Long bookId) {
         return borrowTransactionRepository.hasUserRentedBook(userId, bookId);
     }
 
+    //điểm đánh giá trung bình
     @Override
     public Double getAverageRatingForBook(Long bookId) {
         Double avg = bookReviewRepository.getAverageRatingForBook(bookId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
+    // Đếm tổng số lượng đánh giá của truyện
     @Override
     public Long countReviewsForBook(Long bookId) {
         return bookReviewRepository.countReviewsForBook(bookId);
