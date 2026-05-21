@@ -2,9 +2,13 @@ package com.librarymanagementsystem.controller.book;
 
 import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.service.book.BookService;
-import com.librarymanagementsystem.service.UserService;
+import com.librarymanagementsystem.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -13,7 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.librarymanagementsystem.service.book.BookReviewService;
-import com.librarymanagementsystem.service.BorrowService;
+import com.librarymanagementsystem.service.borrow.BorrowService;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,48 +41,31 @@ public class BookController {
     // Hỗ trợ điền danh sách truyện
     private void populateListModel(Model model, String title, Long category,
                                    int page, String sortBy, Authentication authentication) {
-        List<Book> books;
-        if (title != null && !title.isEmpty()) {
-            books = new ArrayList<>(bookService.searchBooks(title));
-        } else if (category != null) {
-            books = new ArrayList<>(bookService.getBooksByCategory(category));
-        } else {
-            books = new ArrayList<>(bookService.getAllBooks());
-        }
-
-        // Sắp xếp
+        Sort sort = Sort.unsorted();
         if ("author".equals(sortBy)) {
-            books.sort((b1, b2) -> {
-                String a1 = b1.getAuthor() != null ? b1.getAuthor().getName() : "";
-                String a2 = b2.getAuthor() != null ? b2.getAuthor().getName() : "";
-                return a1.compareToIgnoreCase(a2);
-            });
+            sort = Sort.by(Sort.Direction.ASC, "author.name");
         } else if ("category".equals(sortBy)) {
-            books.sort((b1, b2) -> {
-                String c1 = b1.getCategories().isEmpty() ? "" : b1.getCategories().iterator().next().getCategoryName();
-                String c2 = b2.getCategories().isEmpty() ? "" : b2.getCategories().iterator().next().getCategoryName();
-                return c1.compareToIgnoreCase(c2);
-            });
+            sort = Sort.by(Sort.Direction.ASC, "categories.categoryName");
         } else if ("quantity".equals(sortBy)) {
-            books.sort((b1, b2) -> Integer.compare(b2.getQuantity(), b1.getQuantity()));
+            sort = Sort.by(Sort.Direction.DESC, "quantity");
         }
 
-        // Phân trang
-        int pageSize = 10;
-        int totalItems = books.size();
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-        if (totalPages == 0) totalPages = 1;
         if (page < 1) page = 1;
-        if (page > totalPages) page = totalPages;
+        Pageable pageable = PageRequest.of(page - 1, 10, sort);
 
-        int start = (page - 1) * pageSize;
-        int end = Math.min(start + pageSize, totalItems);
-        List<Book> pagedBooks = books.subList(start, end);
+        Page<Book> bookPage;
+        if (title != null && !title.isEmpty()) {
+            bookPage = bookService.searchBooks(title, pageable);
+        } else if (category != null) {
+            bookPage = bookService.getBooksByCategory(category, pageable);
+        } else {
+            bookPage = bookService.getAllBooks(pageable);
+        }
 
-        model.addAttribute("books", pagedBooks);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("books", bookPage.getContent());
+        model.addAttribute("currentPage", bookPage.getNumber() + 1);
+        model.addAttribute("totalPages", bookPage.getTotalPages() > 0 ? bookPage.getTotalPages() : 1);
+        model.addAttribute("totalItems", bookPage.getTotalElements());
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("category", category);
 
@@ -118,42 +105,25 @@ public class BookController {
                               @RequestParam(required = false) String sortBy,
                               Model model,
                               Authentication authentication) {
-        List<Book> books = new ArrayList<>(bookService.searchBooks(query));
-
-        // Sắp xếp
+        Sort sort = Sort.unsorted();
         if ("author".equals(sortBy)) {
-            books.sort((b1, b2) -> {
-                String a1 = b1.getAuthor() != null ? b1.getAuthor().getName() : "";
-                String a2 = b2.getAuthor() != null ? b2.getAuthor().getName() : "";
-                return a1.compareToIgnoreCase(a2);
-            });
+            sort = Sort.by(Sort.Direction.ASC, "author.name");
         } else if ("category".equals(sortBy)) {
-            books.sort((b1, b2) -> {
-                String c1 = b1.getCategories().isEmpty() ? "" : b1.getCategories().iterator().next().getCategoryName();
-                String c2 = b2.getCategories().isEmpty() ? "" : b2.getCategories().iterator().next().getCategoryName();
-                return c1.compareToIgnoreCase(c2);
-            });
+            sort = Sort.by(Sort.Direction.ASC, "categories.categoryName");
         } else if ("quantity".equals(sortBy)) {
-            books.sort((b1, b2) -> Integer.compare(b2.getQuantity(), b1.getQuantity()));
+            sort = Sort.by(Sort.Direction.DESC, "quantity");
         }
 
-        // Phân trang
-        int pageSize = 10;
-        int totalItems = books.size();
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-        if (totalPages == 0) totalPages = 1;
         if (page < 1) page = 1;
-        if (page > totalPages) page = totalPages;
+        Pageable pageable = PageRequest.of(page - 1, 10, sort);
 
-        int start = (page - 1) * pageSize;
-        int end = Math.min(start + pageSize, totalItems);
-        List<Book> pagedBooks = books.subList(start, end);
+        Page<Book> bookPage = bookService.searchBooks(query, pageable);
 
-        model.addAttribute("books", pagedBooks);
+        model.addAttribute("books", bookPage.getContent());
         model.addAttribute("searchQuery", query);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("currentPage", bookPage.getNumber() + 1);
+        model.addAttribute("totalPages", bookPage.getTotalPages() > 0 ? bookPage.getTotalPages() : 1);
+        model.addAttribute("totalItems", bookPage.getTotalElements());
         model.addAttribute("sortBy", sortBy);
         
         addUserDataToModel(model, authentication);

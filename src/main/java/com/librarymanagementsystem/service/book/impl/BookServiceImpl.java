@@ -5,9 +5,9 @@ import org.springframework.data.domain.PageRequest;
 import com.librarymanagementsystem.model.book.Category;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
 import com.librarymanagementsystem.model.user.Author;
-import com.librarymanagementsystem.repository.AuthorRepository;
-import com.librarymanagementsystem.repository.BookRepository;
-import com.librarymanagementsystem.repository.CategoryRepository;
+import com.librarymanagementsystem.repository.book.author.AuthorRepository;
+import com.librarymanagementsystem.repository.book.BookRepository;
+import com.librarymanagementsystem.repository.book.category.CategoryRepository;
 import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
 import com.librarymanagementsystem.service.book.BookService;
 import jakarta.transaction.Transactional;
@@ -21,6 +21,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @Transactional
@@ -36,8 +39,8 @@ public class BookServiceImpl implements BookService {
     private String upload;
 
     @Override
-    public List<Book> getAllBooks() {
-        return bookRepository.findAll();
+    public Page<Book> getAllBooks(Pageable pageable) {
+        return bookRepository.findAll(pageable);
     }
 
     @Override
@@ -139,18 +142,18 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public List<Book> searchBooks(String query) {
-        return bookRepository.findByTitleContainingIgnoreCaseOrAuthorNameContainingIgnoreCase(query, query);
+    public Page<Book> searchBooks(String query, Pageable pageable) {
+        return bookRepository.findByTitleContainingIgnoreCaseOrAuthorNameContainingIgnoreCase(query, query, pageable);
     }
 
     @Override
-    public List<Book> getBooksByCategory(Long categoryId) {
-        return bookRepository.findByCategoriesId(categoryId);
+    public Page<Book> getBooksByCategory(Long categoryId, Pageable pageable) {
+        return bookRepository.findByCategoriesId(categoryId, pageable);
     }
 
     @Override
-    public List<Book> getBooksByAuthor(Long authorId) {
-        return bookRepository.findByAuthorId(authorId);
+    public Page<Book> getBooksByAuthor(Long authorId, Pageable pageable) {
+        return bookRepository.findByAuthorId(authorId, pageable);
     }
 
     // Chuyển đổi dữ liệu từ BookDTO sang Book

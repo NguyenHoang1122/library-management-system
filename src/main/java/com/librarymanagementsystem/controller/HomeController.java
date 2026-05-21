@@ -2,7 +2,7 @@ package com.librarymanagementsystem.controller;
 
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.service.book.BookService;
-import com.librarymanagementsystem.service.impl.UserServiceImpl;
+import com.librarymanagementsystem.service.user.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;

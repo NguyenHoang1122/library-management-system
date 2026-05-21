@@ -379,3 +379,20 @@ main, .content-wrapper {
     border-left: 3px solid #16a085 !important;
     padding-left: 13px !important; /* Adjust padding due to border */
 }
+
+/* Enhancing Notification Text Visibility/Contrast */
+.notification-list .dropdown-item {
+    color: #e0e0e0 !important;
+}
+.notification-list .notification-title {
+    color: #ffffff !important;
+}
+.notification-list .notification-title.text-secondary {
+    color: #b0b3b8 !important;
+}
+.notification-list .notification-content {
+    color: #b0b3b8 !important;
+}
+.notification-list .notification-time {
+    color: #90949c !important;
+}

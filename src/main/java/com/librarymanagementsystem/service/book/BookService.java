@@ -2,13 +2,15 @@ package com.librarymanagementsystem.service.book;
 
 import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface BookService {
 
-    List<Book> getAllBooks();
+    Page<Book> getAllBooks(Pageable pageable);
 
     Optional<Book> getBookById(Long id);
 
@@ -18,11 +20,11 @@ public interface BookService {
 
     void deleteBook(Long id);
 
-    List<Book> searchBooks(String query);
+    Page<Book> searchBooks(String query, Pageable pageable);
 
-    List<Book> getBooksByCategory(Long categoryId);
+    Page<Book> getBooksByCategory(Long categoryId, Pageable pageable);
 
-    List<Book> getBooksByAuthor(Long authorId);
+    Page<Book> getBooksByAuthor(Long authorId, Pageable pageable);
 
     //lay 5 cuốn truyện
     List<Book> getNewestBooks();

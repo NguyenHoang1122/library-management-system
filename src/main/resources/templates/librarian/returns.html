@@ -70,11 +70,9 @@
                                             class="btn btn-secondary btn-sm rounded-pill px-3 fw-bold disabled" disabled>ĐÃ DUYỆT</button>
 
                                     <!-- Bước 2: Xác nhận đã trả -->
-                                    <form th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).APPROVED}" 
-                                          th:action="@{/librarian/returns/complete/{id}(id=${request.id})}" method="post">
-                                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">XÁC NHẬN TRẢ</button>
-                                    </form>
+                                    <button th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).APPROVED}"
+                                            type="button" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold"
+                                            th:onclick="'openConfirmReturnModal(' + ${request.id} + ')'">XÁC NHẬN TRẢ</button>
 
                                     <button type="button" th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).PENDING}"
                                             class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold"
@@ -132,6 +130,28 @@
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn btn-danger rounded-pill px-5 fw-bold">XÁC NHẬN TỪ CHỐI</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Return Modal -->
+<div class="modal fade" id="confirmReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Xác nhận trả truyện</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="confirmReturnForm" method="post">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xác nhận độc giả đã trả truyện thành công?</p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold">XÁC NHẬN</button>
                 </div>
             </form>
         </div>

@@ -69,51 +69,76 @@
                         <!-- Dropdown notifications -->
                         <div class="dropdown" sec:authorize="isAuthenticated()">
                             <a class="text-white no-caret d-flex align-items-center" href="#" role="button" id="notificationDropdown"
-                                data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none;">
+                               data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none;">
                                 <div class="notification-wrapper">
                                     <i class="bi bi-bell text-white fs-5"></i>
                                     <span th:if="${notifications != null and !notifications.isEmpty() and unreadCount > 0}"
-                                        id="notificationBadge" class="notification-badge-dot" th:text="${unreadCount}">0</span>
+                                          id="notificationBadge" class="notification-badge-dot" th:text="${unreadCount}">0</span>
                                 </div>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end notification-list"
-                                aria-labelledby="notificationDropdown">
-                                <li th:if="${notifications != null and !notifications.isEmpty()}" class="notification-header">
-                                    <span class="small fw-bold">Thông báo</span>
-                                    <div class="m-0">
-                                        <button type="button" id="deleteReadNotificationsBtn" class="btn btn-link btn-sm text-info p-0 text-decoration-none small">
-                                            <i class="fas fa-trash-alt me-1"></i>Xóa đã đọc
-                                        </button>
+                                aria-labelledby="notificationDropdown" style="min-width: 350px;">
+
+                                <!-- Header: Tiêu đề + Nút hành động -->
+                                <li th:if="${notifications != null and !notifications.isEmpty()}" class="notification-header px-3 py-2 border-bottom border-secondary border-opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center w-100">
+                                        <span class="small fw-bold text-light">Thông báo</span>
+                                        <div class="d-flex gap-3">
+                                            <!-- Nút Đọc tất cả -->
+                                            <button type="button" id="markAllReadNotificationsBtn" th:if="${notifications != null and !notifications.isEmpty()}" class="btn btn-sm text-success p-0" style="font-size: 0.75rem; text-decoration: none; border: none; background: transparent;">
+                                                <i class="bi bi-check-all me-1"></i>
+                                                <span>Đọc tất cả</span>
+                                            </button>
+
+                                            <!-- Nút Xóa đã đọc -->
+                                            <button type="button" id="deleteReadNotificationsBtn" class="btn btn-sm text-danger p-0" style="font-size: 0.75rem; text-decoration: none; border: none; background: transparent;">
+                                                <i class="fas fa-trash-alt me-1"></i>
+                                                <span>Xóa đã đọc</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </li>
-                                <li th:if="${notifications == null or notifications.isEmpty()}"><a
-                                        class="dropdown-item">Không có thông báo</a></li>
+
+                                <!-- Empty state -->
+                                <li th:if="${notifications == null or notifications.isEmpty()}">
+                                    <a class="dropdown-item text-center py-3 text-muted small" href="#">
+                                        Không có thông báo
+                                    </a>
+                                </li>
+
+                                <!-- Danh sách thông báo -->
                                 <li th:each="notification : ${notifications}">
-                                    <div class="dropdown-item py-2 border-bottom border-secondary border-opacity-25 d-flex align-items-center justify-content-between" th:classappend="${!notification.read ? 'bg-dark bg-opacity-50' : ''}">
-                                        <a class="text-decoration-none text-light flex-grow-1" th:href="@{/my-notifications/{id}(id=${notification.id})}">
+                                    <div class="dropdown-item py-2 px-0 border-bottom border-secondary border-opacity-25 d-flex align-items-start justify-content-between"
+                                         th:classappend="${!notification.read ? 'bg-dark bg-opacity-50' : ''}"
+                                         style="cursor: pointer; transition: background-color 0.2s;">
+
+                                        <!-- Nội dung thông báo (clickable) -->
+                                        <a class="text-decoration-none text-light flex-grow-1 px-3" th:href="@{/my-notifications/{id}(id=${notification.id})}" style="min-height: 50px; display: flex; flex-direction: column; justify-content: center;">
                                             <div class="d-flex flex-column">
-                                                <span class="small fw-bold notification-title" th:classappend="${notification.read ? 'text-secondary font-weight-normal' : 'text-light'}" th:text="${notification.title}">Tiêu đề</span>
-                                                <small class="text-secondary text-truncate" style="max-width: 200px;" th:text="${notification.content}">Nội dung</small>
-                                                <small class="text-muted mt-1" style="font-size: 0.7rem;" th:text="${#temporals.format(notification.createdAt, 'dd/MM/yyyy HH:mm')}">Thời gian</small>
+                        <span class="small fw-bold notification-title"
+                              th:classappend="${notification.read ? 'text-secondary' : 'text-light'}"
+                              th:text="${notification.title}">Tiêu đề</span>
+                                                <small class="text-secondary text-truncate mt-1 notification-content" style="max-width: 250px; font-size: 0.8rem;"
+                                                       th:text="${notification.content}">Nội dung</small>
+                                                <small class="text-muted mt-1 notification-time" style="font-size: 0.7rem;"
+                                                       th:text="${#temporals.format(notification.createdAt, 'dd/MM/yyyy HH:mm')}">Thời gian</small>
                                             </div>
                                         </a>
-                                        <!-- Dấu tích để đánh dấu đã đọc nhanh -->
-                                        <div class="ms-2">
-                                            <button th:if="${!notification.read}" 
-                                                    class="btn btn-link p-0 text-success mark-read-btn" 
-                                                    th:attr="data-id=${notification.id}" 
-                                                    title="Đánh dấu đã đọc" 
+
+                                        <!-- Icon: Đánh dấu đã đọc nhanh -->
+                                        <div class="ms-2 px-2">
+                                            <button th:if="${!notification.read}"
+                                                    class="btn btn-link p-0 text-success mark-read-btn"
+                                                    th:attr="data-id=${notification.id}"
+                                                    title="Đánh dấu đã đọc"
                                                     style="text-decoration: none;">
                                                 <i class="bi bi-check2-circle fs-5 hover-scale"></i>
                                             </button>
                                             <span th:if="${notification.read}" class="text-muted text-opacity-50" title="Đã đọc">
-                                                <i class="bi bi-check2-all fs-5"></i>
-                                            </span>
+                        <i class="bi bi-check2-all fs-5"></i>
+                    </span>
                                         </div>
                                     </div>
-                                </li>
-                                <li th:if="${notifications != null and !notifications.isEmpty()}">
-                                    <a class="dropdown-item text-center py-2 small text-info" th:href="@{/my-notifications}">Xem tất cả</a>
                                 </li>
                             </ul>
                         </div>

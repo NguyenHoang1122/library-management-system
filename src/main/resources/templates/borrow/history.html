@@ -61,7 +61,7 @@
                     </thead>
                     <tbody>
                         <tr th:each="borrow, borrowStat : ${borrowHistory}">
-                            <td th:text="${borrowStat.index + 1}">1</td>
+                            <td th:text="${(currentPage - 1) * 10 + borrowStat.count}">1</td>
                             <td class="fw-bold">
                                 <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="text-info text-decoration-none" th:text="${borrow.bookName}">Tên truyện</a>
                             </td>
@@ -74,6 +74,25 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/borrow/history(page=${currentPage - 1})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{/borrow/history(page=${i})}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{/borrow/history(page=${currentPage + 1})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </main>

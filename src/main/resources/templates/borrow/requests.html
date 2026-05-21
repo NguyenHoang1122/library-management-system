@@ -43,7 +43,7 @@
                     </thead>
                     <tbody>
                         <tr th:each="request, iterStat : ${borrowRequests}">
-                            <td th:text="${iterStat.count}" class="text-secondary"></td>
+                            <td th:text="${(currentPage - 1) * 10 + iterStat.count}" class="text-secondary"></td>
                             <td class="fw-bold text-light" th:text="${request.borrowRequestItems[0].book.title}"></td>
                             <td th:text="${#temporals.format(request.requestDate, 'dd/MM/yyyy HH:mm')}"></td>
                             <td>
@@ -63,7 +63,7 @@
                                 </div>
                             </td>
                              <td class="text-end">
-                                <form th:if="${request.requestStatus.name() == 'PENDING'}"
+                                 <form th:if="${request.requestStatus.name() == 'PENDING'}"
                                       th:action="@{/borrow/{requestId}/cancel(requestId=${request.id})}"
                                       method="post"
                                       class="d-inline">
@@ -75,6 +75,25 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/borrow(page=${currentPage - 1})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{/borrow(page=${i})}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{/borrow(page=${currentPage + 1})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </main>

@@ -3,6 +3,8 @@ package com.librarymanagementsystem.repository.borrow;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
 import com.librarymanagementsystem.model.borrow.status.TransactionStatus;
 import com.librarymanagementsystem.model.user.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +17,8 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
 
     //giao dịch mượn theo user
     List<BorrowTransaction> findByUserOrderByBorrowDateDesc(User user);
+
+    Page<BorrowTransaction> findByUser(User user, Pageable pageable);
 
     // mượn theo trạng thái giao dịch
 //    List<BorrowTransaction> findByStatus(TransactionStatus status);
@@ -31,6 +35,8 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
 
     //giao dịch mượn đang hoạt động của user
     List<BorrowTransaction> findByUserAndStatusInOrderByBorrowDateDesc(User user, List<TransactionStatus> statuses);
+
+    Page<BorrowTransaction> findByUserAndStatusIn(User user, List<TransactionStatus> statuses, Pageable pageable);
 
 
 
@@ -55,4 +61,16 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
             "WHERE bt.user.id = :userId " +
             "AND bi.book.id = :bookId")
     boolean hasUserRentedBook(@Param("userId") Long userId, @Param("bookId") Long bookId);
+
+    @Query("SELECT bt.user.id AS userId, bt.user.fullName AS fullName, bt.user.userName AS userName, bt.user.email AS email, COUNT(bi.id) AS borrowCount " +
+           "FROM BorrowTransaction bt " +
+           "JOIN bt.items bi " +
+           "WHERE bt.status IN (com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED, com.librarymanagementsystem.model.borrow.status.TransactionStatus.OVERDUE) " +
+           "AND (:query IS NULL OR :query = '' OR " +
+           "     LOWER(bt.user.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "     LOWER(bt.user.userName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "     LOWER(bt.user.email) LIKE LOWER(CONCAT('%', :query, '%')))" +
+           "GROUP BY bt.user.id, bt.user.fullName, bt.user.userName, bt.user.email " +
+           "ORDER BY COUNT(bi.id) DESC")
+    Page<Object[]> findActiveBorrowers(@Param("query") String query, Pageable pageable);
 }

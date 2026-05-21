@@ -2,7 +2,10 @@ package com.librarymanagementsystem.controller;
 
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.model.user.dto.UserDTO;
-import com.librarymanagementsystem.service.UserService;
+import com.librarymanagementsystem.service.user.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -67,37 +70,20 @@ public class UserController {
     public String searchActiveUsers(@RequestParam(required = false) String query,
                                     @RequestParam(defaultValue = "1") int page,
                                     Model model) {
-        List<User> users = userService.getAllActiveUsers();
-        if (query != null && !query.trim().isEmpty()) {
-            String lowerQuery = query.toLowerCase();
-            users = users.stream()
-                .filter(u -> (u.getFullName() != null && u.getFullName().toLowerCase().contains(lowerQuery)) ||
-                             (u.getUserName() != null && u.getUserName().toLowerCase().contains(lowerQuery)) ||
-                             (u.getEmail() != null && u.getEmail().toLowerCase().contains(lowerQuery)))
-                .collect(Collectors.toList());
-        }
-
-        int pageSize = 10;
-        int totalItems = users.size();
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-        if (totalPages == 0) totalPages = 1;
         if (page < 1) page = 1;
-        if (page > totalPages) page = totalPages;
+        Pageable pageable = PageRequest.of(page - 1, 10);
+        Page<User> userPage = userService.getActiveUsers(query, pageable);
 
-        int start = (page - 1) * pageSize;
-        int end = Math.min(start + pageSize, totalItems);
-        List<User> pagedUsers = users.subList(start, end);
-
-        model.addAttribute("users", pagedUsers);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("users", userPage.getContent());
+        model.addAttribute("currentPage", userPage.getNumber() + 1);
+        model.addAttribute("totalPages", userPage.getTotalPages() > 0 ? userPage.getTotalPages() : 1);
+        model.addAttribute("totalItems", userPage.getTotalElements());
         model.addAttribute("searchQuery", query);
         model.addAttribute("isTrash", false);
         return "user/list-users";
     }
 
-   // Các user bị xóa mềm
+    // Các user bị xóa mềm
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/trash")
     public String listDeletedUsers(@RequestParam(defaultValue = "1") int page, Model model) {
@@ -110,31 +96,14 @@ public class UserController {
     public String searchDeletedUsers(@RequestParam(required = false) String query,
                                      @RequestParam(defaultValue = "1") int page,
                                      Model model) {
-        List<User> deletedUsers = userService.getAllDeletedUsers();
-        if (query != null && !query.trim().isEmpty()) {
-            String lowerQuery = query.toLowerCase();
-            deletedUsers = deletedUsers.stream()
-                .filter(u -> (u.getFullName() != null && u.getFullName().toLowerCase().contains(lowerQuery)) ||
-                             (u.getUserName() != null && u.getUserName().toLowerCase().contains(lowerQuery)) ||
-                             (u.getEmail() != null && u.getEmail().toLowerCase().contains(lowerQuery)))
-                .collect(Collectors.toList());
-        }
-
-        int pageSize = 10;
-        int totalItems = deletedUsers.size();
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-        if (totalPages == 0) totalPages = 1;
         if (page < 1) page = 1;
-        if (page > totalPages) page = totalPages;
+        Pageable pageable = PageRequest.of(page - 1, 10);
+        Page<User> userPage = userService.getDeletedUsers(query, pageable);
 
-        int start = (page - 1) * pageSize;
-        int end = Math.min(start + pageSize, totalItems);
-        List<User> pagedUsers = deletedUsers.subList(start, end);
-
-        model.addAttribute("users", pagedUsers);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("users", userPage.getContent());
+        model.addAttribute("currentPage", userPage.getNumber() + 1);
+        model.addAttribute("totalPages", userPage.getTotalPages() > 0 ? userPage.getTotalPages() : 1);
+        model.addAttribute("totalItems", userPage.getTotalElements());
         model.addAttribute("searchQuery", query);
         model.addAttribute("isTrash", true);
         return "user/trash";

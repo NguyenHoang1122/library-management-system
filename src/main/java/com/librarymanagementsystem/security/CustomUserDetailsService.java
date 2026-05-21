@@ -1,7 +1,7 @@
 package com.librarymanagementsystem.security;
 
 import com.librarymanagementsystem.model.user.User;
-import com.librarymanagementsystem.repository.UserRepository;
+import com.librarymanagementsystem.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -24,6 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .withUsername(user.getUserName())
                 .password(user.getPassword())
                 .authorities(user.getRole().getRoleName().name())
+                .disabled(user.getUserStatus() == com.librarymanagementsystem.model.borrow.status.UserStatus.BANNED)
                 .build();
     }
 }

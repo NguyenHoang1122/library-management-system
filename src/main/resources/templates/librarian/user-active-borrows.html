@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Chi tiết truyện đang mượn | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
@@ -10,34 +10,24 @@
 <div th:replace="~{layout :: header}"></div>
 
 <main class="container-fluid my-5 px-0">
-    <div class="row g-0">
+    <div class="row gx-0">
         <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2">
-            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='activeborrows')}"></div>
-        </div>
+        <!--        <div class="col-md-3 col-lg-2">-->
+        <!--            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='activeborrows')}"></div>-->
+        <!--        </div>-->
 
         <!-- Main Content -->
-        <div class="col-md-9 col-lg-10 px-5">
-            <div>
+        <div class="">
+            <div class="">
                 <a th:href="@{/librarian/active-borrows}" class="btn btn-outline-secondary rounded-pill mb-4 px-4">
                     <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
                 </a>
             </div>
 
             <div class="admin-header-waka">
-                <h3 class="mb-0"><i class="bi bi-journal-check me-2 text-warning"></i> Chi tiết truyện thành viên đang mượn</h3>
-            </div>
-
-            <!-- Alerts for messages -->
-            <div th:if="${message}" class="alert alert-success alert-dismissible fade show bg-success bg-opacity-10 text-success border-success border-opacity-25" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i>
-                <span th:text="${message}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-10 text-danger border-danger border-opacity-25" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                <span th:text="${error}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                <h3 class="mb-0"><i class="bi bi-journal-check me-2 text-warning"></i> Chi tiết truyện thành viên đang
+                    mượn
+                </h3>
             </div>
 
             <!-- Member Info Card -->
@@ -45,7 +35,8 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <div class="d-flex align-items-center">
-                            <div class="avatar-waka me-3 bg-secondary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <div class="avatar-waka me-3 bg-secondary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width: 50px; height: 50px;">
                                 <i class="bi bi-person-fill text-info" style="font-size: 1.5rem;"></i>
                             </div>
                             <div>
@@ -59,7 +50,7 @@
                     </div>
                     <div class="col-md-4 text-md-end mt-3 mt-md-0">
                         <span class="badge bg-dark border border-secondary text-info px-4 py-3 fs-6">
-                            Đang mượn: <span class="fw-bold" th:text="${#lists.size(borrowDataMap)}"></span> cuốn
+                            Đang mượn: <span class="fw-bold" th:text="${totalItems}"></span> cuốn
                         </span>
                     </div>
                 </div>
@@ -69,55 +60,140 @@
             <div class="table-responsive">
                 <table class="table table-waka align-middle">
                     <thead>
-                        <tr>
-                            <th style="width: 60px;">STT</th>
-                            <th>Truyện</th>
-                            <th>Ngày mượn</th>
-                            <th>Hạn trả</th>
-                            <th class="text-end">Tiền phạt</th>
-                            <th>Trạng thái</th>
-                        </tr>
+                    <tr>
+                        <th style="width: 60px;">STT</th>
+                        <th>Truyện</th>
+                        <th>Ngày mượn</th>
+                        <th>Hạn trả</th>
+                        <th class="text-end">Tiền phạt</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="data, iterStat : ${borrowDataMap}" th:classappend="${data.get('isOverdue') ? 'row-overdue' : ''}">
-                            <td th:text="${iterStat.count}" class="text-secondary"></td>
-                            <td>
-                                <div th:each="item : ${data.get('borrow').items}" class="d-flex align-items-center mb-1">
-                                    <img th:if="${item.book.image != null}" th:src="${item.book.image}" class="rounded me-3" style="width: 45px; height: 65px; object-fit: cover;" />
-                                    <div th:unless="${item.book.image != null}" class="bg-secondary bg-opacity-25 rounded me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 65px;">
-                                        <i class="bi bi-book text-muted"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold text-light" th:text="${item.book.title}"></div>
-                                        <small class="text-secondary" th:text="'ISBN: ' + ${item.book.isbn ?: 'N/A'}"></small>
-                                    </div>
+                    <tr th:each="data, iterStat : ${borrowDataMap}"
+                        th:classappend="${data.get('isOverdue') ? 'row-overdue' : ''}">
+                        <td th:text="${(currentPage - 1) * 10 + iterStat.count}" class="text-secondary"></td>
+                        <td>
+                            <div th:each="item : ${data.get('borrow').items}" class="d-flex align-items-center mb-1">
+                                <img th:if="${item.book.image != null}" th:src="${item.book.image}" class="rounded me-3"
+                                     style="width: 45px; height: 65px; object-fit: cover;"/>
+                                <div th:unless="${item.book.image != null}"
+                                     class="bg-secondary bg-opacity-25 rounded me-3 d-flex align-items-center justify-content-center"
+                                     style="width: 45px; height: 65px;">
+                                    <i class="bi bi-book text-muted"></i>
                                 </div>
-                            </td>
-                            <td th:text="${#temporals.format(data.get('borrow').borrowDate, 'dd/MM/yyyy')}"></td>
-                            <td th:text="${#temporals.format(data.get('borrow').dueDate, 'dd/MM/yyyy')}" th:classappend="${data.get('isOverdue') ? 'text-danger fw-bold' : ''}"></td>
-                            <td class="text-end" th:classappend="${data.get('isOverdue') ? 'text-danger fw-bold' : 'text-secondary'}">
-                                <span th:text="${data.get('isOverdue') ? #numbers.formatInteger(data.get('lateFine'), 0, 'POINT') + ' VND' : '0 VND'}"></span>
-                            </td>
-                            <td>
-                                <span th:if="${data.get('borrow').status.name() == 'PENDING'}" class="badge bg-warning text-dark">Chờ xác nhận trả</span>
-                                <span th:if="${data.get('borrow').status.name() == 'BORROWED' && !data.get('isOverdue')}" class="badge bg-success">Đang mượn</span>
-                                <span th:if="${data.get('isOverdue')}" class="badge bg-danger">Quá hạn</span>
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(borrowDataMap)}">
-                            <td colspan="7" class="text-center py-5 text-secondary">
-                                <i class="bi bi-journal-check display-4 text-secondary mb-3 d-block"></i>
-                                Thành viên này không có truyện nào đang được mượn.
-                            </td>
-                        </tr>
+                                <div>
+                                    <div class="fw-bold text-light" th:text="${item.book.title}"></div>
+                                    <small class="text-secondary"
+                                           th:text="'ISBN: ' + ${item.book.isbn ?: 'N/A'}"></small>
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${#temporals.format(data.get('borrow').borrowDate, 'dd/MM/yyyy')}"></td>
+                        <td th:text="${#temporals.format(data.get('borrow').dueDate, 'dd/MM/yyyy')}"
+                            th:classappend="${data.get('isOverdue') ? 'text-danger fw-bold' : ''}"></td>
+                        <td class="text-end"
+                            th:classappend="${data.get('isOverdue') ? 'text-danger fw-bold' : 'text-secondary'}">
+                            <span th:text="${data.get('isOverdue') ? #numbers.formatInteger(data.get('lateFine'), 0, 'POINT') + ' VND' : '0 VND'}"></span>
+                        </td>
+                        <td>
+                        <span th:if="${data.get('borrow').status.name() == 'PENDING'}"
+                              class="badge bg-warning text-dark">Chờ xác nhận trả</span>
+                            <span th:if="${data.get('borrow').status.name() == 'BORROWED' && !data.get('isOverdue')}"
+                                  class="badge bg-success">Đang mượn</span>
+                            <span th:if="${data.get('isOverdue')}" class="badge bg-danger">Quá hạn</span>
+                        </td>
+                        <td class="text-end">
+                            <button th:if="${data.get('borrow').status.name() != 'PENDING'}"
+                                    type="button"
+                                    class="btn btn-outline-success btn-sm rounded-pill px-2 fw-semibold text-nowrap"
+                                    style="font-size: 12px;"
+                                    th:onclick="'openDirectReturnModal(' + ${data.get('borrow').id} + ', ' + ${data.get('isOverdue')} + ')'">
+                                <i class="bi bi-arrow-return-left me-1"></i> TRẢ TRỰC TIẾP
+                            </button>
+                            <span th:if="${data.get('borrow').status.name() == 'PENDING'}"
+                                  class="text-secondary small">-</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(borrowDataMap)}">
+                        <td colspan="8" class="text-center py-5 text-secondary">
+                            <i class="bi bi-journal-check display-4 text-secondary mb-3 d-block"></i>
+                            Thành viên này không có truyện nào đang được mượn.
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/librarian/active-borrows/user/{userId}(userId=${user.id}, page=${currentPage - 1})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}"
+                        th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}"
+                           th:href="@{/librarian/active-borrows/user/{userId}(userId=${user.id}, page=${i})}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/librarian/active-borrows/user/{userId}(userId=${user.id}, page=${currentPage + 1})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </main>
 
 <div th:replace="~{layout :: footer}"></div>
+
+<!-- Direct Return Modal -->
+<div class="modal fade" id="directReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Xác nhận trả trực tiếp</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <form id="directReturnForm" method="post">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="userId" th:value="${user.id}"/>
+                <div class="modal-body">
+                    <p id="directReturnMsg">Bạn có chắc chắn muốn xác nhận độc giả đã trả trực tiếp truyện này tại
+                        quầy?</p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        Hủy
+                    </button>
+                    <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold">XÁC NHẬN</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openDirectReturnModal(transactionId, isOverdue) {
+        const modal = new bootstrap.Modal(document.getElementById('directReturnModal'));
+        document.getElementById('directReturnForm').action = '/librarian/active-borrows/return/' + transactionId;
+        const msgEl = document.getElementById('directReturnMsg');
+        if (isOverdue) {
+            msgEl.innerHTML = '<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Truyện đã quá hạn!</span> Bạn có chắc chắn muốn xác nhận trả và ghi nhận phạt cho giao dịch này?';
+        } else {
+            msgEl.textContent = 'Bạn có chắc chắn muốn xác nhận độc giả đã trả trực tiếp truyện này tại quầy?';
+        }
+        modal.show();
+    }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

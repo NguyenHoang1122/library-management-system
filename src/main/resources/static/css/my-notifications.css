@@ -48,10 +48,21 @@ body {
 }
 .noti-time {
     font-size: 0.8rem;
-    color: #777;
+    color: #a0a0a0; /* Lighter gray for time */
 }
 .btn-link:hover {
     opacity: 0.8;
     transform: scale(1.1);
     transition: all 0.2s;
+}
+
+/* Enhancing Notification List Text Contrast */
+.noti-item-waka a {
+    color: #e0e0e0;
+}
+.noti-item-waka h6.text-secondary {
+    color: #b0b3b8 !important; /* Read title: lighter gray instead of dark text-secondary */
+}
+.noti-item-waka p.text-secondary {
+    color: #b0b3b8 !important; /* Content: lighter gray instead of dark text-secondary */
 }
