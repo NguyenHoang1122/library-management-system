@@ -22,6 +22,8 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
 
     // mượn theo trạng thái giao dịch
 //    List<BorrowTransaction> findByStatus(TransactionStatus status);
+    
+    List<BorrowTransaction> findByStatusAndDueDateBetween(TransactionStatus status, java.time.LocalDateTime start, java.time.LocalDateTime end);
 
     //giao dịch mượn có trạng thái nằm trong danh sách các trạng thái truyền vào
     List<BorrowTransaction> findByStatusIn(List<TransactionStatus> statuses);
@@ -44,12 +46,12 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
     @Query("SELECT COUNT(bi) > 0 FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
-            "AND bi.book.id = :bookId " +
+            "AND bi.bookCopy.book.id = :bookId " +
             "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
     boolean isBookBorrowedByUser(@Param("userId") Long userId, @Param("bookId") Long bookId);
 
     //các ID của sách đang được mượn or đang yêu cầu mượn bởi user
-    @Query("SELECT DISTINCT bi.book.id FROM BorrowTransaction bt " +
+    @Query("SELECT DISTINCT bi.bookCopy.book.id FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
             "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
@@ -59,13 +61,14 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
     @Query("SELECT COUNT(bi) > 0 FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
-            "AND bi.book.id = :bookId")
+            "AND bi.bookCopy.book.id = :bookId")
     boolean hasUserRentedBook(@Param("userId") Long userId, @Param("bookId") Long bookId);
 
     @Query("SELECT bt.user.id AS userId, bt.user.fullName AS fullName, bt.user.userName AS userName, bt.user.email AS email, COUNT(bi.id) AS borrowCount " +
            "FROM BorrowTransaction bt " +
            "JOIN bt.items bi " +
-           "WHERE bt.status IN (com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED, com.librarymanagementsystem.model.borrow.status.TransactionStatus.OVERDUE) " +
+           "WHERE bt.status IN (com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED, com.librarymanagementsystem.model.borrow.status.TransactionStatus.OVERDUE, com.librarymanagementsystem.model.borrow.status.TransactionStatus.PENDING) " +
+           "AND bi.returnDate IS NULL " +
            "AND (:query IS NULL OR :query = '' OR " +
            "     LOWER(bt.user.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "     LOWER(bt.user.userName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +

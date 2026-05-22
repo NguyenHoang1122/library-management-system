@@ -4,6 +4,8 @@ import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
 import com.librarymanagementsystem.model.borrow.ReturnRequest;
 import com.librarymanagementsystem.model.borrow.dto.BorrowHistoryDTO;
+import com.librarymanagementsystem.model.borrow.dto.CombinedHistoryDTO;
+import com.librarymanagementsystem.model.borrow.status.DeliveryMethod;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BorrowService {
+    
+    BorrowRequest checkout(Long userId, DeliveryMethod deliveryMethod, String shippingAddress, String note);
 
     BorrowRequest createBorrowRequest(Long userId, Long bookId, String note);
 
@@ -26,8 +30,11 @@ public interface BorrowService {
     //tự hủy yêu cầu mượn sách của mình khi đang chờ duyệt
     void cancelBorrowRequest(Long requestId);
 
-    // Thủ thư duyệt yêu cầu mượn truyện
-    BorrowTransaction approveBorrowRequest(Long requestId, Long librarianId, Integer borrowDays);
+    // Thủ thư duyệt yêu cầu mượn truyện (chuyển sang trạng thái Đang Gửi/Chờ nhận)
+    void approveBorrowRequest(Long requestId, Long librarianId, Integer borrowDays);
+
+    // Thủ thư xác nhận đã giao sách (chuyển đơn sang Đang mượn)
+    BorrowTransaction completeBorrowDelivery(Long requestId, Long librarianId);
 
     // Thủ thư từ chối yêu cầu mượn truyện
     void rejectBorrowRequest(Long requestId, String reason);
@@ -35,11 +42,13 @@ public interface BorrowService {
     // toàn bộ lịch sử giao dịch mượn trả sách của user
     Page<BorrowHistoryDTO> getUserBorrowHistory(Long userId, Pageable pageable);
 
+    Page<CombinedHistoryDTO> getCombinedBorrowHistory(Long userId, Pageable pageable);
+
     //chi tiết thông tin của một giao dịch mượn trả
     Optional<BorrowTransaction> getBorrowTransactionDetail(Long transactionId);
 
     // Thủ thư xác nhận người dùng trả sách trực tiếp tại quầy
-    void returnBorrowItems(Long transactionId, Long librarianId);
+    void returnBorrowItems(Long transactionId, Long librarianId, List<Long> itemIds, Double returnShippingFee);
 
     // Tính tiền phạt
     long calculateLateFine(Long transactionId);
@@ -52,6 +61,9 @@ public interface BorrowService {
     // Check mượn quá hạn chưa
     boolean isOverdue(Long transactionId);
 
+    // Gia hạn sách
+    void extendBorrowTransaction(Long transactionId);
+
     // Mượn quá hạn
     List<BorrowTransaction> getOverdueBooks(Long userId);
 
@@ -60,6 +72,8 @@ public interface BorrowService {
 
     org.springframework.data.domain.Page<BorrowRequest> getPendingRequests(String query, org.springframework.data.domain.Pageable pageable);
 
+    org.springframework.data.domain.Page<BorrowRequest> getApprovedRequests(String query, org.springframework.data.domain.Pageable pageable);
+
     // Danh sách truyện đang mượn
     List<BorrowTransaction> getAllActiveBorrows();
 
@@ -67,16 +81,23 @@ public interface BorrowService {
 
     // User tạo yêu cầu trả sách trực tuyến
     void createReturnRequest(Long userId, Long transactionId, LocalDateTime returnDateTime, String note);
+    void createPartialReturnRequest(Long userId, Long requestId, java.util.Map<Long, Integer> returnItems, String returnMethod, String returnAddress);
+    void extendBorrowRequest(Long userId, Long requestId);
+    ReturnRequest getReturnRequestForBorrowRequest(Long requestId);
+    BorrowTransaction getTransactionForBorrowRequest(Long requestId);
 
     // Danh sách yêu cầu trả chờ duyệt
     List<ReturnRequest> getAllPendingReturnRequests();
 
     org.springframework.data.domain.Page<ReturnRequest> getPendingReturnRequests(String query, org.springframework.data.domain.Pageable pageable);
 
-    // Thủ thư duyệt yêu cầu trả sách
+    // Thủ thư duyệt yêu cầu trả sách (Shipper bắt đầu đi lấy)
     void approveReturnRequest(Long requestId, Long librarianId);
 
-    // Hoàn tất yêu cầu trả sách
+    // Shipper đã lấy được hàng từ tay người dùng
+    void receiveReturnRequest(Long requestId, Long librarianId);
+
+    // Hoàn tất yêu cầu trả sách (đã đem về thư viện)
     void completeReturnRequest(Long requestId, Long librarianId);
 
     // Thủ thư từ chối yêu cầu trả sách

@@ -224,4 +224,20 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
     }
+
+    // Gửi thông báo chung
+    @Override
+    public void sendNotification(User user, String title, String content, String link) {
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setTitle(title);
+        // Lưu link vào nội dung hoặc tuỳ theo thiết kế database (hiện tại nối thêm vào nội dung)
+        if (link != null && !link.isEmpty()) {
+            content += " (Link: " + link + ")";
+        }
+        notification.setContent(content);
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
 }

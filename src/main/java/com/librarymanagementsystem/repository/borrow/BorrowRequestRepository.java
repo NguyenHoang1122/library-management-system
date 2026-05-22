@@ -32,4 +32,23 @@ public interface BorrowRequestRepository extends JpaRepository<BorrowRequest, Lo
            " LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')))" +
            "ORDER BY br.requestDate DESC")
     Page<BorrowRequest> findPendingRequestsWithSearch(@Param("query") String query, Pageable pageable);
+
+    @Query("SELECT DISTINCT br FROM BorrowRequest br " +
+           "LEFT JOIN br.user u " +
+           "WHERE br.requestStatus = com.librarymanagementsystem.model.borrow.status.RequestStatus.APPROVED AND " +
+           "(:query IS NULL OR :query = '' OR " +
+           " LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           " LOWER(u.userName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           " LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')))" +
+           "ORDER BY br.requestDate DESC")
+    Page<BorrowRequest> findApprovedRequestsWithSearch(@Param("query") String query, Pageable pageable);
+
+    @Query("SELECT SUM(br.totalDeposit + br.shippingFee) FROM BorrowRequest br WHERE br.requestStatus = 'APPROVED'")
+    Double sumTotalRevenue();
+
+    @Query("SELECT SUM(bri.quantity * b.importPrice) FROM BorrowRequestItem bri JOIN bri.borrowRequest br JOIN bri.book b WHERE br.requestStatus = 'APPROVED'")
+    Double sumTotalCost();
+
+    @Query(value = "SELECT DATE(request_date) as date, SUM(total_deposit + shipping_fee) as revenue FROM borrow_requests WHERE request_status = 'APPROVED' GROUP BY DATE(request_date) ORDER BY date DESC LIMIT 30", nativeQuery = true)
+    List<Object[]> getDailyRevenue();
 }

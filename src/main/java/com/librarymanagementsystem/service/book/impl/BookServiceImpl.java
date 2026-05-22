@@ -7,6 +7,9 @@ import com.librarymanagementsystem.model.book.dto.BookDTO;
 import com.librarymanagementsystem.model.user.Author;
 import com.librarymanagementsystem.repository.book.author.AuthorRepository;
 import com.librarymanagementsystem.repository.book.BookRepository;
+import com.librarymanagementsystem.repository.book.BookCopyRepository;
+import com.librarymanagementsystem.model.book.BookCopy;
+import com.librarymanagementsystem.model.book.status.BookCopyStatus;
 import com.librarymanagementsystem.repository.book.category.CategoryRepository;
 import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
 import com.librarymanagementsystem.service.book.BookService;
@@ -31,6 +34,7 @@ import org.springframework.data.domain.Pageable;
 public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
+    private final BookCopyRepository bookCopyRepository;
     private final CategoryRepository categoryRepository;
     private final AuthorRepository authorRepository;
     private final BorrowTransactionRepository borrowTransactionRepository;
@@ -56,7 +60,21 @@ public class BookServiceImpl implements BookService {
         Book book = mapDtoToEntity(bookDTO);
         book.setCreatedDate(LocalDateTime.now());
         book.setUpdatedDate(LocalDateTime.now());
-        return bookRepository.save(book);
+        Book savedBook = bookRepository.save(book);
+
+        // Tạo book copies
+        if (savedBook.getQuantity() != null && savedBook.getQuantity() > 0) {
+            for (int i = 0; i < savedBook.getQuantity(); i++) {
+                BookCopy copy = new BookCopy();
+                copy.setBook(savedBook);
+                copy.setBarcode(savedBook.getIsbn() + "-" + (i + 1));
+                copy.setStatus(BookCopyStatus.AVAILABLE);
+                copy.setCreatedDate(LocalDateTime.now());
+                bookCopyRepository.save(copy);
+            }
+        }
+        
+        return savedBook;
     }
 
     @Override
@@ -73,7 +91,36 @@ public class BookServiceImpl implements BookService {
         book.setDescription(bookDTO.getDescription());
         book.setIsbn(bookDTO.getIsbn());
         book.setPublishYear(bookDTO.getPublishYear());
-        book.setQuantity(bookDTO.getQuantity());
+        
+        // Xử lý đồng bộ số lượng BookCopy
+        int currentQuantity = book.getQuantity() != null ? book.getQuantity() : 0;
+        int newQuantity = bookDTO.getQuantity() != null ? bookDTO.getQuantity() : 0;
+        
+        if (newQuantity > currentQuantity) {
+            int diff = newQuantity - currentQuantity;
+            for (int i = 0; i < diff; i++) {
+                BookCopy copy = new BookCopy();
+                copy.setBook(book);
+                copy.setBarcode(book.getIsbn() + "-" + System.currentTimeMillis() + "-" + i);
+                copy.setStatus(BookCopyStatus.AVAILABLE);
+                copy.setCreatedDate(LocalDateTime.now());
+                bookCopyRepository.save(copy);
+            }
+        } else if (newQuantity < currentQuantity) {
+            int diff = currentQuantity - newQuantity;
+            List<BookCopy> availableCopies = bookCopyRepository.findByBookIdAndStatus(book.getId(), BookCopyStatus.AVAILABLE);
+            if (availableCopies.size() < diff) {
+                throw new RuntimeException("Không thể giảm số lượng truyện xuống " + newQuantity + " vì số truyện có sẵn trong kho không đủ để trừ (có thể do đang được mượn). Chỉ có thể giảm đi tối đa " + availableCopies.size() + " cuốn.");
+            }
+            // Xóa đi 'diff' cuốn AVAILABLE
+            for (int i = 0; i < diff; i++) {
+                bookCopyRepository.delete(availableCopies.get(i));
+            }
+        }
+        book.setQuantity(newQuantity);
+        
+        book.setImportPrice(bookDTO.getImportPrice());
+        book.setDepositPrice(bookDTO.getDepositPrice());
 
         // Xử lý ảnh
         if (bookDTO.getImageFile() != null && !bookDTO.getImageFile().isEmpty()) {
@@ -138,7 +185,17 @@ public class BookServiceImpl implements BookService {
                 e.printStackTrace();
             }
         }
-        bookRepository.deleteById(id);
+        
+        // Xóa liên kết foreign key bảng book_categories trước khi xóa
+        book.getCategories().clear();
+        bookRepository.save(book);
+        
+        try {
+            bookRepository.delete(book);
+            bookRepository.flush();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new RuntimeException("Không thể xóa truyện này vì đã phát sinh giao dịch mượn/trả hoặc đang nằm trong giỏ hàng/yêu thích của người dùng.");
+        }
     }
 
     @Override
@@ -164,6 +221,8 @@ public class BookServiceImpl implements BookService {
         book.setIsbn(bookDTO.getIsbn());
         book.setPublishYear(bookDTO.getPublishYear());
         book.setQuantity(bookDTO.getQuantity());
+        book.setImportPrice(bookDTO.getImportPrice());
+        book.setDepositPrice(bookDTO.getDepositPrice());
 
         // Upload ảnh
         if (bookDTO.getImageFile() != null && !bookDTO.getImageFile().isEmpty()) {

@@ -30,6 +30,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findTop5ByCategoryName(@Param("categoryName") String categoryName, Pageable pageable);
 
     // 5 cuốn truyện mượn nhiều nhất
-    @Query("SELECT bi.book FROM BorrowItem bi GROUP BY bi.book.id ORDER BY COUNT(bi.id) DESC")
+    @Query("SELECT bi.bookCopy.book FROM BorrowItem bi GROUP BY bi.bookCopy.book.id ORDER BY COUNT(bi.id) DESC")
     List<Book> findTop5HotBooks(Pageable pageable);
 }

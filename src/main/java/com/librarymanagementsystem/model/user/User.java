@@ -39,6 +39,9 @@ public class User {
     @Column(length = 500)
     private String image;
 
+    @Column(name = "balance", nullable = false)
+    private Double balance = 0.0;
+
     @Enumerated(EnumType.STRING)
     private UserStatus userStatus;
 

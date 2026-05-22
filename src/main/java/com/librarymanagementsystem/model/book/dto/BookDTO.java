@@ -44,4 +44,12 @@ public class BookDTO {
 
     @NotBlank(message = "Tên tác giả không được để trống")
     private String authorName;
+
+    @NotNull(message = "Giá nhập không được để trống")
+    @Positive(message = "Giá nhập phải lớn hơn 0")
+    private Double importPrice;
+
+    @NotNull(message = "Giá cọc không được để trống")
+    @Positive(message = "Giá cọc phải lớn hơn 0")
+    private Double depositPrice;
 }

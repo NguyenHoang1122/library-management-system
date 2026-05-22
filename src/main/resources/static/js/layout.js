@@ -7,16 +7,21 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             
             const notificationId = btn.getAttribute('data-id');
-            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        const csrfMeta = document.querySelector('meta[name="_csrf"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+        const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : '';
+            
+            const headers = {};
+            if (csrfHeader && csrfToken) {
+                headers[csrfHeader] = csrfToken;
+            }
             
             btn.disabled = true;
             
             fetch(`/my-notifications/${notificationId}/mark-read-ajax`, {
                 method: 'POST',
-                headers: {
-                    [csrfHeader]: csrfToken
-                }
+                headers: headers
             })
             .then(res => res.json())
             .then(data => {
@@ -37,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const parentDiv = btn.parentElement;
                     if (parentDiv) {
                         parentDiv.innerHTML = `
-                            <span class="text-muted text-opacity-50" title="Đã đọc">
+                            <span class="text-muted text-opacity-50" title="ﾄ静｣ ﾄ黛ｻ皇">
                                 <i class="bi bi-check2-all fs-5"></i>
                             </span>
                         `;
@@ -73,16 +78,21 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             e.stopPropagation();
             
-            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : '';
+            
+            const headers = {};
+            if (csrfHeader && csrfToken) {
+                headers[csrfHeader] = csrfToken;
+            }
             
             markAllReadBtn.disabled = true;
             
             fetch('/my-notifications/mark-all-read-ajax', {
                 method: 'POST',
-                headers: {
-                    [csrfHeader]: csrfToken
-                }
+                headers: headers
             })
             .then(res => res.json())
             .then(data => {
@@ -90,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
-                            title: 'Thành công',
+                            title: 'Thﾃnh cﾃｴng',
                             html: data.message,
                             confirmButtonColor: '#00b074',
                             background: '#181818',
@@ -129,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const markReadBtnDiv = itemDiv.querySelector('.ms-2.px-2');
                                 if (markReadBtnDiv) {
                                     markReadBtnDiv.innerHTML = `
-                                        <span class="text-muted text-opacity-50" title="Đã đọc">
+                                        <span class="text-muted text-opacity-50" title="ﾄ静｣ ﾄ黛ｻ皇">
                                             <i class="bi bi-check2-all fs-5"></i>
                                         </span>
                                     `;
@@ -149,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Thất bại',
+                            title: 'Th蘯･t b蘯｡i',
                             html: data.message,
                             confirmButtonColor: '#dc3545',
                             background: '#181818',
@@ -178,16 +188,21 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             e.stopPropagation();
             
-            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : '';
+            
+            const headers = {};
+            if (csrfHeader && csrfToken) {
+                headers[csrfHeader] = csrfToken;
+            }
             
             deleteReadBtn.disabled = true;
             
             fetch('/my-notifications/delete-read-ajax', {
                 method: 'POST',
-                headers: {
-                    [csrfHeader]: csrfToken
-                }
+                headers: headers
             })
             .then(res => res.json())
             .then(data => {
@@ -195,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
-                            title: 'Thành công',
+                            title: 'Thﾃnh cﾃｴng',
                             html: data.message,
                             confirmButtonColor: '#00b074',
                             background: '#181818',
@@ -234,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // If no notifications left, show empty placeholder
                         if (remainingCount === 0) {
                             dropdownMenu.innerHTML = `
-                                <li><a class="dropdown-item text-center py-3 text-secondary">Không có thông báo</a></li>
+                                <li><a class="dropdown-item text-center py-3 text-secondary">Khﾃｴng cﾃｳ thﾃｴng bﾃ｡o</a></li>
                             `;
                             // Also remove/hide badge if present
                             const badge = document.getElementById('notificationBadge');
@@ -246,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'info',
-                            title: 'Thông báo',
+                            title: 'Thﾃｴng bﾃ｡o',
                             html: data.message,
                             confirmButtonColor: '#00b074',
                             background: '#181818',
@@ -277,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (message) {
             Swal.fire({
                 icon: 'success',
-                title: 'Thành công',
+                title: 'Thﾃnh cﾃｴng',
                 html: message,
                 confirmButtonColor: '#00b074',
                 background: '#181818',
@@ -291,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (error) {
             Swal.fire({
                 icon: 'error',
-                title: 'Thất bại',
+                title: 'Th蘯･t b蘯｡i',
                 html: error,
                 confirmButtonColor: '#dc3545',
                 background: '#181818',
@@ -303,3 +318,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+

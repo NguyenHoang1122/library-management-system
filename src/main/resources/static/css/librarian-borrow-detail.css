@@ -1,0 +1,30 @@
+.cart-card {
+    background-color: #181818;
+}
+
+.book-cover-img {
+    width: 60px;
+    height: 85px;
+    object-fit: cover;
+}
+
+.table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-color: #e0e0e0;
+    --bs-table-border-color: #333;
+}
+
+.table-dark th {
+    font-weight: 600;
+    color: #fff;
+    border-bottom: 2px solid #444;
+}
+
+.table-dark td {
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 0.4em 0.6em;
+    font-size: 0.75rem;
+}

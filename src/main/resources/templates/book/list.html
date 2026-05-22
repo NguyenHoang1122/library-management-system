@@ -112,6 +112,8 @@
                                             th:data-description="${book.description}"
                                             th:data-publishyear="${book.publishYear}"
                                             th:data-quantity="${book.quantity}"
+                                            th:data-importprice="${book.importPrice}"
+                                            th:data-depositprice="${book.depositPrice}"
                                             th:data-author="${book.author?.name}"
                                             th:data-categories="${book.categoryIds}">Sửa</button>
                                     <a sec:authorize="hasRole('ADMIN')"
@@ -199,6 +201,19 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
+                            <label class="fw-bold text-secondary small mb-2">GIÁ NHẬP (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" id="addBookImportPrice" th:field="*{importPrice}" class="form-control" th:classappend="${#fields.hasErrors('importPrice')} ? 'is-invalid'" placeholder="Ví dụ: 50000">
+                            <div th:if="${#fields.hasErrors('importPrice')}" th:errors="*{importPrice}" class="text-danger small mt-1"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold text-secondary small mb-2">GIÁ CỌC (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" id="addBookDepositPrice" th:field="*{depositPrice}" class="form-control" th:classappend="${#fields.hasErrors('depositPrice')} ? 'is-invalid'" placeholder="Ví dụ: 60000">
+                            <div th:if="${#fields.hasErrors('depositPrice')}" th:errors="*{depositPrice}" class="text-danger small mt-1"></div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
                             <label class="fw-bold text-secondary small mb-2">DANH MỤC <span class="text-danger">*</span></label>
                             <div id="addCategoryListContainer" class="form-control category-checkbox-list" th:classappend="${#fields.hasErrors('categoryIds')} ? 'is-invalid'" style="height: auto; min-height: 38px; overflow-y: auto; max-height: 120px; background-color: #252525 !important; border: 1px solid #3d3d3d !important;">
                                 <div class="row px-2">
@@ -277,6 +292,19 @@
                             <label class="fw-bold text-secondary small mb-2">ẢNH BÌA TRUYỆN</label>
                             <input type="file" name="imageFile" id="editBookImage" class="form-control file-input-dark" accept="image/png, image/jpeg">
                             <small class="text-secondary small d-block mt-1"><i class="bi bi-info-circle me-1"></i>Để trống nếu giữ nguyên ảnh.</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold text-secondary small mb-2">GIÁ NHẬP (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" id="editBookImportPrice" th:field="*{importPrice}" class="form-control" th:classappend="${#fields.hasErrors('importPrice')} ? 'is-invalid'">
+                            <div th:if="${#fields.hasErrors('importPrice')}" th:errors="*{importPrice}" class="text-danger small mt-1"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold text-secondary small mb-2">GIÁ CỌC (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" id="editBookDepositPrice" th:field="*{depositPrice}" class="form-control" th:classappend="${#fields.hasErrors('depositPrice')} ? 'is-invalid'">
+                            <div th:if="${#fields.hasErrors('depositPrice')}" th:errors="*{depositPrice}" class="text-danger small mt-1"></div>
                         </div>
                     </div>
 

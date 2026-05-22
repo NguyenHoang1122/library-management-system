@@ -7,67 +7,103 @@ if (wishlistBtn) {
     checkWishlistStatus(bookId);
 }
 
-if (borrowBtn) {
-    const bookId = borrowBtn.getAttribute('data-book-id');
-    const borrowModal = new bootstrap.Modal(document.getElementById('borrowModal'));
-    const confirmBorrowBtn = document.getElementById('confirmBorrowBtn');
-    const borrowNote = document.getElementById('borrowNote');
+// Xử lý nút Thêm vào giỏ hàng
+const btnAddToCart = document.querySelector('.btn-add-to-cart');
+if (btnAddToCart) {
+    btnAddToCart.addEventListener('click', function(e) {
+        e.preventDefault();
+        const bookId = this.getAttribute('data-id');
+        const csrfMeta = document.querySelector('meta[name="_csrf"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+        const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+        const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : '';
 
-    borrowBtn.addEventListener('click', () => {
-        borrowModal.show();
-    });
+        const formData = new URLSearchParams();
+        formData.append('bookId', bookId);
+        formData.append('quantity', 1);
 
-    confirmBorrowBtn.addEventListener('click', () => {
-        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-        const note = borrowNote.value; 
-        
-        confirmBorrowBtn.disabled = true;
-        confirmBorrowBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang gửi...';
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        };
+        if (csrfHeader && csrfToken) {
+            headers[csrfHeader] = csrfToken;
+        }
 
-        fetch(`/borrow/quick-request/${bookId}`, {
+        const originalHtml = this.innerHTML;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang thêm...';
+        this.disabled = true;
+
+        fetch('/cart/add', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                [csrfHeader]: csrfToken
-            },
-            body: `note=${encodeURIComponent(note)}`
+            headers: headers,
+            body: formData.toString()
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                borrowModal.hide();
-                showSuccessModal("Đã gửi yêu cầu mượn thành công");
-                borrowBtn.parentElement.innerHTML = `
-                    <button class="btn btn-secondary rounded-pill px-4 disabled">
-                        <i class="fas fa-check-circle"></i> Đang chờ duyệt
-                    </button>
-                `;
-                const stockValue = document.querySelector('.info-item:last-child .value');
-                if (stockValue) {
-                    const currentText = stockValue.innerText;
-                    const match = currentText.match(/(\d+)/);
-                    if (match) {
-                        const newQty = parseInt(match[1]) - 1;
-                        stockValue.innerText = newQty > 0 ? `${newQty} cuốn` : "Hết hàng";
-                    } else if (currentText.includes("1")) {
-                         stockValue.innerText = "Hết hàng";
-                    }
-                }
-            } else {
-                alert("Lỗi: " + data.message);
-                confirmBorrowBtn.disabled = false;
-                confirmBorrowBtn.innerText = 'Xác nhận mượn';
+        .then(res => {
+            // Check if redirect to login
+            if (res.redirected && res.url.includes('/login')) {
+                window.location.href = res.url;
+                return null; // Stop chain
             }
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return null;
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (!data) return; // redirected
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công',
+                    html: data.message || 'Đã thêm vào giỏ hàng!',
+                    confirmButtonColor: '#00b074',
+                    background: '#181818',
+                    color: '#e0e0e0',
+                    customClass: {
+                        popup: 'border border-success border-opacity-25 rounded-3'
+                    }
+                }).then(() => {
+                    // Update cart badge logic if needed
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi',
+                    html: data.message || 'Thêm vào giỏ hàng thất bại',
+                    confirmButtonColor: '#d33',
+                    background: '#181818',
+                    color: '#e0e0e0',
+                    customClass: {
+                        popup: 'border border-danger border-opacity-25 rounded-3'
+                    }
+                });
+            }
+            this.innerHTML = originalHtml;
+            this.disabled = false;
         })
         .catch(err => {
-            console.error(err);
-            alert("Đã có lỗi xảy ra khi gửi yêu cầu.");
-            confirmBorrowBtn.disabled = false;
-            confirmBorrowBtn.innerText = 'Xác nhận mượn';
+            console.error('Error adding to cart:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                html: 'Không thể thêm vào giỏ hàng do lỗi mạng.',
+                confirmButtonColor: '#d33',
+                background: '#181818',
+                color: '#e0e0e0',
+                customClass: {
+                    popup: 'border border-danger border-opacity-25 rounded-3'
+                }
+            });
+            this.innerHTML = originalHtml;
+            this.disabled = false;
         });
     });
 }
+
+
 
 function addToWishlist(bookId) {
     fetch(`/wishlist/add/${bookId}`, { method: 'POST' })

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Truyện đang gửi | Truyện 360</title>
+    <div th:replace="~{layout :: header_head}"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/borrows.css}">
+</head>
+<body>
+<div th:replace="~{layout :: header}"></div>
+
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='deliveries')}"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <div class="admin-header-waka">
+                <h3 class="mb-0"><i class="bi bi-truck me-2 text-warning"></i> Truyện Đang Gửi</h3>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-4 border-secondary">
+                <li class="nav-item">
+                    <a class="nav-link text-warning bg-transparent border-secondary" th:classappend="${currentTab == 'borrow' ? 'active fw-bold border-bottom-0' : ''}" th:href="@{/librarian/deliveries(tab='borrow')}">Giao Truyện</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-warning bg-transparent border-secondary" th:classappend="${currentTab == 'return' ? 'active fw-bold border-bottom-0' : ''}" th:href="@{/librarian/deliveries(tab='return')}">Lấy Truyện Trả</a>
+                </li>
+            </ul>
+
+            <!-- Search Area -->
+            <form th:action="@{/librarian/deliveries/search}" method="get" class="mb-4">
+                <input type="hidden" name="tab" th:value="${currentTab}">
+                <div class="search-box-waka">
+                    <i class="bi bi-search text-secondary me-2"></i>
+                    <input type="text" name="query" class="form-control" placeholder="Tìm kiếm theo tên thành viên, email hoặc truyện..." th:value="${searchQuery}">
+                    <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold">TÌM</button>
+                </div>
+            </form>
+
+            <!-- Table Area (Borrow) -->
+            <div class="table-responsive" th:if="${currentTab == 'borrow'}">
+                <table class="table table-waka align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Người dùng</th>
+                            <th>Truyện</th>
+                            <th>Giao hàng</th>
+                            <th>Ngày yêu cầu</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="request : ${deliveryRequests}">
+                            <td th:text="${request.id}" class="text-secondary"></td>
+                            <td class="fw-bold text-light" th:text="${request.user.fullName}"></td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 200px;" th:text="${request.borrowRequestItems[0].book.title}"></div>
+                            </td>
+                            <td>
+                                <span th:if="${request.deliveryMethod != null and request.deliveryMethod.name() == 'SHIPPING'}" class="badge bg-info text-dark"><i class="bi bi-truck me-1"></i> Giao tận nơi</span>
+                                <span th:if="${request.deliveryMethod == null or request.deliveryMethod.name() == 'PICKUP'}" class="badge bg-secondary"><i class="bi bi-shop me-1"></i> Nhận tại thư viện</span>
+                            </td>
+                            <td th:text="${#temporals.format(request.requestDate, 'dd/MM/yyyy')}"></td>
+                            <td class="text-end">
+                                <a th:href="@{/librarian/deliveries/detail/{id}(id=${request.id})}" class="btn btn-outline-info btn-sm rounded-pill px-3">
+                                    <i class="bi bi-eye me-1"></i> Chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(deliveryRequests)}">
+                            <td colspan="6" class="text-center py-5 text-secondary">Hiện không có đơn nào đang gửi.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Area (Return) -->
+            <div class="table-responsive" th:if="${currentTab == 'return'}">
+                <table class="table table-waka align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Người dùng</th>
+                            <th>Ngày yêu cầu</th>
+                            <th>Ngày trả dự kiến</th>
+                            <th>Ghi chú</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="request : ${returnRequests}">
+                            <td th:text="${request.id}" class="text-secondary"></td>
+                            <td class="fw-bold text-light" th:text="${request.user != null ? request.user.fullName : 'N/A'}"></td>
+                            <td th:text="${#temporals.format(request.requestDate, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${#temporals.format(request.returnDateTime, 'dd/MM/yyyy HH:mm')}" class="text-info"></td>
+                            <td th:text="${request.note != null ? request.note : '-'}" class="small"></td>
+                            <td>
+                                <span th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).PENDING}" 
+                                      class="badge bg-warning text-dark">Chờ lấy hàng</span>
+                                <span th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).APPROVED}" 
+                                      class="badge bg-info">Đang đi lấy hàng</span>
+                                <span th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).RETURNING}" 
+                                      class="badge bg-primary">Đang mang về</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <form th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).PENDING}" 
+                                          th:action="@{/librarian/deliveries/return/{id}/start(id=${request.id})}" method="post">
+                                        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">BẮT ĐẦU ĐI LẤY</button>
+                                    </form>
+
+                                    <form th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).APPROVED}" 
+                                          th:action="@{/librarian/deliveries/return/{id}/receive(id=${request.id})}" method="post">
+                                        <button type="submit" class="btn btn-info text-dark btn-sm rounded-pill px-3 fw-bold">ĐÃ NHẬN HÀNG</button>
+                                    </form>
+
+                                    <form th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).RETURNING}" 
+                                          th:action="@{/librarian/deliveries/return/{id}/complete(id=${request.id})}" method="post">
+                                        <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 fw-bold">HOÀN THÀNH</button>
+                                    </form>
+
+                                    <form th:if="${request.requestStatus == T(com.librarymanagementsystem.model.borrow.status.RequestStatus).PENDING}" 
+                                          th:action="@{/librarian/deliveries/return/{id}/reject(id=${request.id})}" method="post">
+                                        <input type="hidden" name="reason" value="Không thể lấy hàng">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">HỦY ĐƠN</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(returnRequests)}">
+                            <td colspan="7" class="text-center py-5 text-secondary">Hiện không có đơn lấy truyện trả nào.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/librarian/deliveries/search' : '/librarian/deliveries'}(query=${searchQuery}, page=${currentPage - 1}, tab=${currentTab})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{${searchQuery != null ? '/librarian/deliveries/search' : '/librarian/deliveries'}(query=${searchQuery}, page=${i}, tab=${currentTab})}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/librarian/deliveries/search' : '/librarian/deliveries'}(query=${searchQuery}, page=${currentPage + 1}, tab=${currentTab})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{layout :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

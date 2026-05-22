@@ -25,7 +25,7 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequest, Lo
 
     @Query("SELECT DISTINCT rr FROM ReturnRequest rr " +
            "LEFT JOIN rr.user u " +
-           "WHERE rr.requestStatus IN (com.librarymanagementsystem.model.borrow.status.RequestStatus.PENDING, com.librarymanagementsystem.model.borrow.status.RequestStatus.APPROVED) AND " +
+           "WHERE rr.requestStatus IN (com.librarymanagementsystem.model.borrow.status.RequestStatus.PENDING, com.librarymanagementsystem.model.borrow.status.RequestStatus.APPROVED, com.librarymanagementsystem.model.borrow.status.RequestStatus.RETURNING) AND " +
            "(:query IS NULL OR :query = '' OR " +
            " LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            " LOWER(u.userName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Chi Tiết Đơn Mượn | Truyện 360</title>
+    <div th:replace="~{layout :: header_head}"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/cart.css}">
+    <link rel="stylesheet" th:href="@{/css/request-detail.css}">
+</head>
+<body class="bg-page">
+<div th:replace="~{layout :: header}"></div>
+
+<div class="container my-5 min-h-60">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <h4 class="fw-bold text-success"><i class="bi bi-receipt me-2"></i>Chi Tiết Đơn Mượn #<span th:text="${request.id}"></span></h4>
+        <a th:href="@{/borrow/history}" class="btn btn-outline-info rounded-pill px-4"><i class="bi bi-arrow-left me-2"></i>Quay lại lịch sử</a>
+    </div>
+
+    <div class="row">
+                <!-- Cột trái: Danh sách truyện -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0 rounded-3 mb-4 cart-card text-light">
+                        <div class="card-header border-bottom border-secondary py-3 bg-transparent-header">
+                            <h5 class="mb-0 fw-bold"><i class="bi bi-book me-2 text-info"></i>Danh sách truyện</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 table-dark table-striped">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th scope="col" class="ps-4">Tên truyện</th>
+                                            <th scope="col" class="text-center">Số lượng</th>
+                                            <th scope="col" class="text-end pe-4">Giá cọc</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="item : ${request.borrowRequestItems}">
+                                            <td class="ps-4 py-3 border-secondary">
+                                                <div class="d-flex align-items-center">
+                                                    <img th:src="${item.book.image}" alt="Cover" class="rounded me-3 shadow-sm book-cover-img">
+                                                    <div>
+                                                        <h6 class="mb-1 fw-bold text-light" th:text="${item.book.title}">Tên truyện</h6>
+                                                        <span class="badge bg-secondary" th:text="${item.book.author != null ? item.book.author.name : 'Đang cập nhật'}">Tác giả</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center border-secondary">
+                                                <div class="fw-medium fs-5" th:text="${item.quantity}">1</div>
+                                                <div th:if="${transaction != null}" class="d-flex flex-column gap-1 align-items-center mt-2">
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-normal px-2 py-1 w-100" th:if="${returnedQuantities.get(item.book.id) != null and returnedQuantities.get(item.book.id) > 0}" th:text="'Đã trả: ' + ${returnedQuantities.get(item.book.id)}"></span>
+                                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 fw-normal px-2 py-1 w-100" th:if="${unreturnedQuantities.get(item.book.id) != null and unreturnedQuantities.get(item.book.id) > 0}" th:text="'Đang mượn: ' + ${unreturnedQuantities.get(item.book.id)}"></span>
+                                                </div>
+                                            </td>
+                                            <td class="text-end pe-4 fw-medium text-warning border-secondary">
+                                                <span th:text="${#numbers.formatDecimal((item.book.depositPrice != null ? item.book.depositPrice : 0) * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cột phải: Thông tin đơn và thanh toán -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm border-0 rounded-3 mb-4 cart-card text-light">
+                        <div class="card-header border-bottom border-secondary py-3 bg-transparent-header">
+                            <h5 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2 text-info"></i>Thông tin chung</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3 d-flex justify-content-between border-bottom border-secondary pb-2">
+                                <span class="text-secondary">Ngày mượn:</span>
+                                <span class="fw-medium" th:text="${#temporals.format(request.requestDate, 'dd/MM/yyyy HH:mm')}">01/01/2023</span>
+                            </div>
+                            <div class="mb-3 d-flex justify-content-between border-bottom border-secondary pb-2" th:if="${request.requestStatus.name() == 'COMPLETED'}">
+                                <span class="text-secondary">Hạn trả:</span>
+                                <span class="fw-medium text-warning" th:text="${#temporals.format(request.requestDate.plusDays(7), 'dd/MM/yyyy')}">08/01/2023</span>
+                            </div>
+                            <div class="mb-3 d-flex justify-content-between border-bottom border-secondary pb-2">
+                                <span class="text-secondary">Trạng thái:</span>
+                                <div class="d-flex flex-column align-items-end">
+                                    <!-- Borrow Status (Show if no active return request) -->
+                                    <span th:if="${returnRequest == null or (returnRequest.requestStatus.name() != 'PENDING' and returnRequest.requestStatus.name() != 'APPROVED' and returnRequest.requestStatus.name() != 'RETURNING')}" 
+                                          class="badge" 
+                                          th:with="statusName=${transaction != null and request.requestStatus.name() == 'COMPLETED' ? transaction.status.name() : request.requestStatus.name()}"
+                                          th:classappend="${statusName == 'PENDING' ? 'bg-warning text-dark' : 
+                                                         (statusName == 'APPROVED' ? 'bg-primary' : 
+                                                         (statusName == 'COMPLETED' or statusName == 'BORROWED' ? 'bg-info' : 
+                                                         (statusName == 'RETURNED' ? 'bg-success' : 
+                                                         (statusName == 'REJECTED' ? 'bg-danger' : 
+                                                         (statusName == 'OVERDUE' ? 'bg-danger' : 'bg-secondary')))))}"
+                                          th:text="${statusName == 'PENDING' ? 'Chờ xử lý' : 
+                                                    (statusName == 'APPROVED' ? 'Đang gửi hàng' :
+                                                    (statusName == 'COMPLETED' or statusName == 'BORROWED' ? 'Đang mượn' :
+                                                    (statusName == 'RETURNED' ? 'Đã trả' :
+                                                    (statusName == 'REJECTED' ? 'Từ chối' : 
+                                                    (statusName == 'CANCELLED' ? 'Đã hủy' : statusName)))))}">Status</span>
+
+                                    <!-- Return Status (Show ONLY if active) -->
+                                    <span th:if="${returnRequest != null and (returnRequest.requestStatus.name() == 'PENDING' or returnRequest.requestStatus.name() == 'APPROVED' or returnRequest.requestStatus.name() == 'RETURNING')}" 
+                                          class="badge"
+                                          th:classappend="${returnRequest.requestStatus.name() == 'PENDING' ? 'bg-warning text-dark' : 'bg-primary'}"
+                                          th:text="${returnRequest.requestStatus.name() == 'PENDING' ? 'Chờ lấy truyện trả' : 
+                                                    (returnRequest.requestStatus.name() == 'APPROVED' ? 'Shipper đang đi lấy' : 'Đang mang truyện về thư viện')}">Return Status</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <span class="text-secondary d-block mb-1">Giao hàng:</span>
+                                <span class="fw-medium text-info">
+                                    <i class="bi bi-truck me-1"></i>
+                                    <span th:text="${request.deliveryMethod != null and request.deliveryMethod.name() == 'SHIPPING' ? 'Giao tận nơi' : 'Nhận tại thư viện'}">Nhận tại thư viện</span>
+                                </span>
+                                <div th:if="${request.deliveryMethod != null and request.deliveryMethod.name() == 'SHIPPING'}" class="small text-light mt-2 p-2 rounded border border-secondary info-box-dark">
+                                    <i class="bi bi-geo-alt text-danger me-1"></i> <span th:text="${request.shippingAddress}">Địa chỉ</span>
+                                </div>
+                            </div>
+                            <div th:if="${request.note != null and !request.note.isEmpty()}" class="mb-3">
+                                <span class="text-secondary d-block mb-1">Ghi chú:</span>
+                                <span class="small p-2 rounded border border-secondary d-block text-light info-box-dark" th:text="${request.note}"></span>
+                            </div>
+                            <div th:if="${request.rejectionReason != null}" class="mb-3">
+                                <span class="text-danger fw-bold d-block mb-1">Lý do từ chối:</span>
+                                <span class="small text-danger bg-danger bg-opacity-10 p-2 rounded border border-danger d-block" th:text="${request.rejectionReason}"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm border-0 rounded-3 border-top border-success border-4 cart-card text-light">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-cash-stack me-2 text-success"></i>Thanh toán</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-secondary">Tổng cọc truyện:</span>
+                                <span class="fw-medium" th:text="${#numbers.formatDecimal(request.totalDeposit != null ? request.totalDeposit : 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3 border-bottom border-secondary pb-3">
+                                <span class="text-secondary">Phí vận chuyển:</span>
+                                <span class="fw-medium text-warning" th:text="${#numbers.formatDecimal(request.shippingFee != null ? request.shippingFee : 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-4">
+                                <span class="fw-bold fs-5 text-light">Tổng cộng:</span>
+                                <span class="fw-bold text-success fs-4" th:text="${#numbers.formatDecimal((request.totalDeposit != null ? request.totalDeposit : 0) + (request.shippingFee != null ? request.shippingFee : 0), 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                            </div>
+                            
+                            </div>
+                            
+                            <!-- Bảng thông tin thanh toán TRẢ TRUYỆN -->
+                            <div th:if="${returnRequest != null}" class="mt-4 pt-3 border-top border-secondary">
+                                <h6 class="fw-bold text-info mb-3"><i class="bi bi-arrow-return-left me-2"></i>Dự toán Trả & Hoàn cọc</h6>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-secondary small">Cọc sách sẽ trả:</span>
+                                    <span class="fw-medium small" th:text="${#numbers.formatDecimal(returnOriginalDeposit, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-secondary small">Trừ phí thuê:</span>
+                                    <span class="fw-medium text-danger small" th:text="'- ' + ${#numbers.formatDecimal(returnBorrowFee, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                </div>
+                                <div th:if="${returnLateFine > 0}" class="d-flex justify-content-between mb-2">
+                                    <span class="text-secondary small">Trừ phạt trễ hạn:</span>
+                                    <span class="fw-medium text-danger small" th:text="'- ' + ${#numbers.formatDecimal(returnLateFine, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                </div>
+                                <div th:if="${returnRequest.returnMethod.name() == 'SHIPPING'}" class="d-flex justify-content-between mb-2">
+                                    <span class="text-secondary small">Trừ phí ship trả:</span>
+                                    <span class="fw-medium text-danger small" th:text="'- ' + ${#numbers.formatDecimal(returnRequest.shippingFee != null ? returnRequest.shippingFee : 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between mt-2 pt-2 border-top border-secondary border-opacity-50">
+                                    <span class="fw-bold small text-light">Hoàn cọc dự kiến:</span>
+                                    <span class="fw-bold text-info" th:text="${#numbers.formatDecimal(returnRefundAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                </div>
+                                <div class="mt-2 text-secondary" style="font-size: 0.75rem;">
+                                    <i>* Tiền hoàn cọc sẽ được cộng lại vào Số dư ví của bạn sau khi đơn hàng trả được Shipper hoàn tất.</i>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div th:if="${request.requestStatus.name() == 'COMPLETED' and (transaction == null or transaction.status.name() != 'RETURNED')}" class="d-flex flex-column gap-2 mt-4">
+                                <div th:if="${returnRequest == null or returnRequest.requestStatus.name() == 'COMPLETED' or returnRequest.requestStatus.name() == 'REJECTED'}">
+                                    <button type="button" class="btn btn-info fw-bold rounded-pill w-100 shadow-sm text-dark" data-bs-toggle="modal" data-bs-target="#returnBooksModal">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i> Trả truyện
+                                    </button>
+                                </div>
+                                <form id="extendRequestForm" th:action="@{/borrow/request/extend/{id}(id=${request.id})}" method="post" style="display: none;"></form>
+                                <button type="button" class="btn btn-outline-warning fw-bold rounded-pill w-100 shadow-sm mt-2" onclick="showExtendDialog()">
+                                    <i class="bi bi-clock-history me-2"></i> Gia hạn thêm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cancel Button -->
+                    <div th:if="${request.requestStatus.name() == 'PENDING'}" class="mt-4">
+                        <form id="cancelRequestForm" th:action="@{/borrow/request/cancel/{id}(id=${request.id})}" method="post">
+                            <button type="button" class="btn btn-outline-danger w-100 fw-bold rounded-pill shadow-sm" onclick="confirmCancel()">
+                                <i class="bi bi-x-circle me-2"></i> Hủy Đơn Mượn
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+    </div>
+</div>
+
+<div th:replace="~{layout :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script th:src="@{/js/request-detail.js}"></script>
+
+<!-- Return Books Modal -->
+<div class="modal fade" id="returnBooksModal" tabindex="-1" aria-labelledby="returnBooksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-info" id="returnBooksModalLabel"><i class="bi bi-box-arrow-in-right me-2"></i>Chọn truyện cần trả</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="returnForm" th:action="@{/borrow/request/return/{id}(id=${request.id})}" method="post">
+                    <div class="table-responsive mb-4">
+                        <table class="table table-dark table-hover align-middle mb-0 border-secondary">
+                            <thead class="table-dark text-secondary small">
+                                <tr>
+                                    <th scope="col" style="width: 50%;">Tên truyện</th>
+                                    <th scope="col" class="text-center" style="width: 25%;">Đã mượn</th>
+                                    <th scope="col" class="text-center" style="width: 25%;">Số lượng trả</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="item, stat : ${request.borrowRequestItems}">
+                                    <td class="py-3 border-secondary">
+                                        <div class="d-flex align-items-center">
+                                            <img th:src="${item.book.image}" alt="Cover" class="rounded me-3 shadow-sm book-cover-img">
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-light" th:text="${item.book.title}">Tên truyện</h6>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center border-secondary fw-medium text-warning" th:text="${item.quantity}">2</td>
+                                    <td class="text-center border-secondary">
+                                        <input type="number" th:name="'return_qty_' + ${item.book.id}" class="form-control form-control-sm bg-dark text-light border-secondary text-center return-qty return-qty-input" 
+                                               th:max="${item.quantity}" min="0" th:value="${item.quantity}">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h6 class="fw-bold mb-3 mt-2 text-info border-bottom border-secondary pb-2"><i class="bi bi-truck me-2"></i>Phương thức trả truyện</h6>
+                    <div class="mb-3">
+                        <div class="form-check custom-radio mb-2">
+                            <input class="form-check-input" type="radio" name="returnMethod" id="returnInPerson" value="IN_PERSON" checked onchange="toggleReturnShipping()">
+                            <label class="form-check-label ms-2" for="returnInPerson">
+                                <span class="fw-bold">Trả trực tiếp tại quầy thư viện</span>
+                                <small class="d-block text-secondary mt-1">Miễn phí giao dịch</small>
+                            </label>
+                        </div>
+                        <div class="form-check custom-radio">
+                            <input class="form-check-input" type="radio" name="returnMethod" id="returnShipping" value="SHIPPING" onchange="toggleReturnShipping()">
+                            <label class="form-check-label ms-2" for="returnShipping">
+                                <span class="fw-bold">Trả thông qua Ship</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="shippingInfoBox" class="p-3 bg-black rounded border border-secondary mt-3 d-none">
+                        <div class="mb-3">
+                            <label class="form-label small text-secondary fw-bold">Địa chỉ nhận hàng (Mặc định theo thông tin cá nhân)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-geo-alt"></i></span>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" id="returnAddress" th:value="${request.user.address}" placeholder="Nhập địa chỉ nhận sách...">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-secondary small">Phí vận chuyển dự kiến:</span>
+                            <span class="fw-bold text-warning" id="returnShippingFee">Đang tính...</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-info rounded-pill fw-bold text-dark px-4" onclick="document.getElementById('returnForm').submit();">Xác nhận Trả</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

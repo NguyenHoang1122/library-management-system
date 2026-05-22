@@ -7,6 +7,8 @@ document.querySelectorAll('.btn-edit-book').forEach(button => {
         const publishyear = this.getAttribute('data-publishyear');
         const quantity = this.getAttribute('data-quantity');
         const author = this.getAttribute('data-author');
+        const importprice = this.getAttribute('data-importprice');
+        const depositprice = this.getAttribute('data-depositprice');
         const categoriesStr = this.getAttribute('data-categories') || '';
         const cleanStr = categoriesStr.replace(/[\[\]\s]/g, '');
         const categoryIds = cleanStr ? cleanStr.split(',') : [];
@@ -22,6 +24,8 @@ document.querySelectorAll('.btn-edit-book').forEach(button => {
         document.getElementById('editBookPublishYear').value = publishyear || '';
         document.getElementById('editBookQuantity').value = quantity;
         document.getElementById('editBookAuthor').value = author || '';
+        document.getElementById('editBookImportPrice').value = importprice || '';
+        document.getElementById('editBookDepositPrice').value = depositprice || '';
         
         // Reset validation state
         document.getElementById('editBookIsbn').classList.remove('is-invalid');
@@ -38,14 +42,17 @@ document.querySelectorAll('.btn-edit-book').forEach(button => {
 });
 
 // Reset Add form validation state when opened
-document.getElementById('addBookModal')?.addEventListener('show.bs.modal', function () {
+const addBookModalEl = document.getElementById('addBookModal');
+if (addBookModalEl) {
+    addBookModalEl.addEventListener('show.bs.modal', function () {
     const form = document.getElementById('addBookForm');
     if (form) {
         form.reset();
         // Clear is-invalid styling
         form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
     }
-});
+    });
+}
 
 // Auto-open modals on validation failures
 window.addEventListener('DOMContentLoaded', () => {

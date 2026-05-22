@@ -6,6 +6,7 @@ import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.service.book.category.CategoryService;
 import com.librarymanagementsystem.service.notification.NotificationService;
 import com.librarymanagementsystem.service.user.UserService;
+import com.librarymanagementsystem.service.cart.CartService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ public class GlobalControllerAdvice {
     private final UserService userService;
     private final CategoryService categoryService;
     private final NotificationService notificationService;
+    private final CartService cartService;
 
     //thêm đối tượng user hiện tại vào Model
     @ModelAttribute("currentUser")
@@ -62,6 +64,17 @@ public class GlobalControllerAdvice {
             User user = userService.findByUserName(authentication.getName()).orElse(null);
             if (user != null) {
                 return notificationService.countUnreadNotifications(user.getId());
+            }
+        }
+        return 0;
+    }
+
+    @ModelAttribute("cartItemCount")
+    public Integer addCartItemCountToModel(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            User user = userService.findByUserName(authentication.getName()).orElse(null);
+            if (user != null) {
+                return cartService.getCartItemCount(user.getId());
             }
         }
         return 0;

@@ -36,47 +36,19 @@
             </div>
 
             <div th:if="${!activeBorrows.isEmpty()}" class="book-grid">
-                <div th:each="borrow : ${activeBorrows}" class="waka-card">
-                    <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="text-decoration-none text-white">
-                        <div class="waka-img-container">
-                            <!-- Giả định DTO có image, nếu không dùng placeholder -->
-                            <img th:src="${borrow.bookImage != null ? borrow.bookImage : 'https://via.placeholder.com/200x300?text=No+Image'}"
-                                 class="waka-img" th:alt="${borrow.bookName}">
-                            <div class="due-date-badge">
-                                <i class="bi bi-clock"></i> Hạn: <span th:text="${borrow.dueDate}"></span>
+                <div th:each="data : ${activeBorrows}" class="waka-card position-relative">
+                    <a th:href="@{/borrow/history(bookId=${data.get('book').id})}" class="text-decoration-none text-white d-block" title="Click để xem các đơn mượn truyện này">
+                        <div class="waka-img-container position-relative">
+                            <img th:src="${data.get('book').image != null ? data.get('book').image : 'https://via.placeholder.com/200x300?text=No+Image'}"
+                                 class="waka-img" th:alt="${data.get('book').title}">
+                            
+                            <!-- Quantity Badge like "Truyện Mới" -->
+                            <div class="position-absolute" style="top: 8px; right: 8px; background-color: #dc3545; color: white; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; border: 1px solid white; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.3);" 
+                                 th:text="${data.get('quantity')} + ' cuốn'">
                             </div>
                         </div>
-                        <div class="waka-card-title text-center mt-2 fw-bold text-light" th:text="${borrow.bookName}"></div>
+                        <div class="waka-card-title text-start mt-2 fw-bold text-light" th:text="${data.get('book').title}"></div>
                     </a>
-                    <div class="waka-card-actions">
-                        <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="btn btn-outline-light btn-action-sm">Chi tiết</a>
-                        
-                        <!-- Kiểm tra trạng thái -->
-                        <th:block th:if="${borrow.status == 'PENDING'}">
-                            <!-- Nếu yêu cầu đang chờ duyệt -->
-                            <button th:if="${borrow.returnRequestStatus == 'PENDING'}" 
-                                    class="btn btn-secondary btn-action-sm w-100 disabled" style="flex: 2;">
-                                <i class="bi bi-hourglass-split"></i> Chờ duyệt trả
-                            </button>
-                            <!-- Nếu yêu cầu đã được duyệt -->
-                            <button th:if="${borrow.returnRequestStatus == 'APPROVED'}" 
-                                    class="btn btn-info btn-action-sm w-100 disabled" style="flex: 2;">
-                                <i class="bi bi-check-circle"></i> Đã duyệt trả
-                            </button>
-                        </th:block>
-                        <th:block th:if="${borrow.status != 'PENDING'}">
-                            <button type="button" class="btn btn-info btn-action-sm w-100" 
-                                    style="flex: 2;"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#returnModal"
-                                    th:data-id="${borrow.id}"
-                                    th:data-name="${borrow.bookName}"
-                                    th:data-due-date="${borrow.dueDate}"
-                                    onclick="prepareReturnModal(this)">
-                                <i class="bi bi-arrow-return-left"></i> Trả truyện
-                            </button>
-                        </th:block>
-                    </div>
                 </div>
             </div>
 

@@ -1,103 +1,144 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
 <head>
-    <title>Lịch sử mượn truyện | Truyện 360</title>
+    <title>Lịch Sử Mượn Truyện | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" th:href="@{/css/borrow-history.css}">
+    <link rel="stylesheet" th:href="@{/css/borrow-active.css}">
+    <style th:replace="~{fragments/sidebar :: sidebar_styles}"></style>
 </head>
-<body>
-<div th:replace="~{layout :: header}"></div>
 
-<main class="container-fluid my-5 px-0">
-    <div class="row g-0">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2">
-            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='myborrows')}"></div>
-        </div>
+<body style="background-color: #121212; color: #e0e0e0;">
+    <header th:replace="~{layout :: header}"></header>
 
-        <!-- Main Content -->
-        <div class="col-md-9 col-lg-10 px-5">
-            <!-- Main Tabs -->
-            <div class="waka-tabs-main">
-                <a th:href="@{/borrow/active}" class="waka-tab-item">Đang mượn</a>
-                <a th:href="@{/wishlist}" class="waka-tab-item">Yêu thích</a>
-                <a href="#" class="waka-tab-item active">Lịch sử</a>
+    <main class="container-fluid my-5 px-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2">
+                <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='myborrows')}"></div>
             </div>
 
-            <!-- Stats Cards -->
-            <div class="row mb-5">
-                <div class="col-md-4 mb-3">
-                    <div class="stat-card-waka">
-                        <div class="small text-secondary mb-1">Đang mượn</div>
-                        <h2 class="mb-0" th:text="${totalActive}">0</h2>
-                    </div>
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-5">
+                <!-- Main Tabs -->
+                <div class="waka-tabs-main mb-4">
+                    <a th:href="@{/borrow/active}" class="waka-tab-item">Đang mượn</a>
+                    <a th:href="@{/wishlist}" class="waka-tab-item">Yêu thích</a>
+                    <a th:href="@{/borrow/history}" class="waka-tab-item active">Lịch sử</a>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <div class="stat-card-waka">
-                        <div class="small text-secondary mb-1">Tổng lịch sử mượn</div>
-                        <h2 class="mb-0" th:text="${totalBorrows}">0</h2>
+
+                <h3 class="mb-4 fw-bold text-info"><i class="bi bi-clock-history me-2"></i>Lịch Sử Mượn Truyện</h3>
+                <span class="badge bg-info text-dark px-3 py-2 rounded-pill fw-bold">Tổng số: <span th:text="${totalBorrows}"></span> đơn</span>
+            
+            <!-- Filter and Sort Bar (Global Theme) -->
+            <div class="card-body p-0 border-bottom" style="border-color: #2d2d2d !important;">
+                <form th:action="@{/borrow/history}" method="get" class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between p-3" style="background-color: #121212;">
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Sort Dropdown -->
+                        <div class="d-flex align-items-center rounded-pill px-3 py-1 border border-secondary" style="background: transparent;">
+                            <i class="bi bi-funnel text-secondary me-2"></i>
+                            <select name="sortOption" class="form-select form-select-sm bg-transparent text-light border-0 shadow-none p-0 pe-4" style="width: auto; cursor: pointer;">
+                                <option value="newest" th:selected="${sortOption == 'newest'}" class="bg-dark text-light">Mới nhất</option>
+                                <option value="return_date" th:selected="${sortOption == 'return_date'}" class="bg-dark text-light">Hạn trả gần nhất</option>
+                            </select>
+                        </div>
+
+                        <!-- Status Dropdown -->
+                        <div class="d-flex align-items-center rounded-pill px-3 py-1 border border-secondary" style="background: transparent;">
+                            <select name="statusFilter" class="form-select form-select-sm bg-transparent text-light border-0 shadow-none p-0 pe-4" style="width: auto; cursor: pointer;">
+                                <option value="" class="bg-dark text-light">Mọi trạng thái</option>
+                                <option value="Chờ xử lý" th:selected="${statusFilter == 'Chờ xử lý'}" class="bg-dark text-light">Chờ xử lý</option>
+                                <option value="Đang gửi hàng" th:selected="${statusFilter == 'Đang gửi hàng'}" class="bg-dark text-light">Đang gửi hàng</option>
+                                <option value="Đang mượn" th:selected="${statusFilter == 'Đang mượn'}" class="bg-dark text-light">Đang mượn</option>
+                                <option value="Đã trả" th:selected="${statusFilter == 'Đã trả'}" class="bg-dark text-light">Đã trả</option>
+                                <option value="Quá hạn" th:selected="${statusFilter == 'Quá hạn'}" class="bg-dark text-light">Quá hạn</option>
+                                <option value="Từ chối" th:selected="${statusFilter == 'Từ chối'}" class="bg-dark text-light">Từ chối</option>
+                                <option value="Đã hủy" th:selected="${statusFilter == 'Đã hủy'}" class="bg-dark text-light">Đã hủy</option>
+                            </select>
+                        </div>
                     </div>
+                    
+                    <!-- Search Input -->
+                    <div class="flex-grow-1" style="max-width: 600px;">
+                        <div class="search-box-waka">
+                            <i class="bi bi-search text-secondary me-2"></i>
+                            <input type="text" name="keyword" class="form-control" placeholder="Tìm kiếm theo tên truyện..." th:value="${keyword}">
+                            <button type="submit" class="btn btn-link text-info fw-bold text-decoration-none shadow-none pe-2">TÌM</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-waka align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="ps-4">Mã Đơn</th>
+                                <th scope="col">Danh sách truyện</th>
+                                <th scope="col">Ngày mượn</th>
+                                <th scope="col">Ngày trả</th>
+                                <th scope="col">Tổng tiền</th>
+                                <th scope="col">Trạng thái</th>
+                                <th scope="col" class="text-center pe-4">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${borrowHistory == null or borrowHistory.isEmpty()}">
+                                <td colspan="7" class="text-center py-4 text-muted">Bạn chưa có lịch sử giao dịch nào.</td>
+                            </tr>
+                            <tr th:each="item : ${borrowHistory}">
+                                <td class="ps-4 fw-bold text-info">#<span th:text="${item.requestId}">1</span></td>
+                                <td>
+                                    <span class="d-inline-block text-truncate" style="max-width: 250px;" th:text="${item.booksSummary}" th:title="${item.booksSummary}">Tên truyện</span>
+                                </td>
+                                <td th:text="${item.requestDate}">01/01/2023</td>
+                                <td th:text="${item.returnDate}">01/02/2023</td>
+                                <td class="fw-medium text-success" th:text="${#numbers.formatDecimal(item.totalAmount != null ? item.totalAmount : 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                <td>
+                                    <span class="badge" 
+                                          th:classappend="${item.status == 'Chờ xử lý' ? 'bg-warning text-dark' : 
+                                                         (item.status == 'Đang gửi hàng' ? 'bg-primary' : 
+                                                         (item.status == 'Đang mượn' ? 'bg-info' : 
+                                                         (item.status == 'Đã trả' ? 'bg-success' : 
+                                                         (item.status == 'Quá hạn' ? 'bg-danger' : 
+                                                         (item.status == 'Hoàn thành' ? 'bg-success' : 'bg-secondary')))))}"
+                                          th:text="${item.status}">
+                                        Trạng thái
+                                    </span>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <a th:href="@{/borrow/request/detail/{id}(id=${item.requestId})}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="bi bi-eye"></i> Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-            <!-- Content Area -->
-            <div th:if="${borrowHistory.isEmpty()}" class="text-center py-5">
-                <i class="bi bi-clock-history" style="font-size: 4rem; color: #333;"></i>
-                <p class="mt-3 text-secondary">Bạn chưa có lịch sử mượn truyện nào.</p>
-                <a th:href="@{/books}" class="btn btn-outline-info btn-sm rounded-pill px-4">Khám phá truyện</a>
+            <div class="card-footer border-top py-3" style="background-color: #181818; border-color: #2d2d2d !important;" th:if="${totalPages > 1}">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        <li class="page-item" th:classappend="${currentPage == 1 ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/borrow/history(page=${currentPage - 1})}">Trước</a>
+                        </li>
+                        <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${currentPage == i ? 'active' : ''}">
+                            <a class="page-link" th:href="@{/borrow/history(page=${i})}" th:text="${i}">1</a>
+                        </li>
+                        <li class="page-item" th:classappend="${currentPage == totalPages ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/borrow/history(page=${currentPage + 1})}">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
-
-            <div th:if="${!borrowHistory.isEmpty()}" class="table-responsive">
-                <table class="table table-waka">
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Tên truyện</th>
-                            <th>Ngày mượn</th>
-                            <th>Ngày phải trả</th>
-                            <th class="text-end">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="borrow, borrowStat : ${borrowHistory}">
-                            <td th:text="${(currentPage - 1) * 10 + borrowStat.count}">1</td>
-                            <td class="fw-bold">
-                                <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="text-info text-decoration-none" th:text="${borrow.bookName}">Tên truyện</a>
-                            </td>
-                            <td th:text="${borrow.borrowDate}">Ngày mượn</td>
-                            <td th:text="${borrow.dueDate}">Ngày phải trả</td>
-                            <td class="text-end">
-                                <a th:href="@{/books/{id}(id=${borrow.bookId})}" class="btn btn-outline-info btn-sm rounded-pill px-3">Chi tiết</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
-                <ul class="pagination">
-                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
-                        <a class="page-link" th:href="@{/borrow/history(page=${currentPage - 1})}">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
-                        <a class="page-link" th:text="${i}" th:href="@{/borrow/history(page=${i})}"></a>
-                    </li>
-                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
-                        <a class="page-link" th:href="@{/borrow/history(page=${currentPage + 1})}">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
         </div>
-    </div>
-</main>
+            </div>
+        </div>
+    </main>
 
-<div th:replace="~{layout :: footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div th:replace="~{layout :: footer}"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

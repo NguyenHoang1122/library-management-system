@@ -1,6 +1,6 @@
 package com.librarymanagementsystem.model.borrow;
 
-import com.librarymanagementsystem.model.book.Book;
+import com.librarymanagementsystem.model.book.BookCopy;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,8 +24,8 @@ public class BorrowItem {
     private BorrowTransaction transaction;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "book_id")
-    private Book book;
+    @JoinColumn(name = "book_copy_id")
+    private BookCopy bookCopy;
 
     private LocalDateTime returnDate;
 }

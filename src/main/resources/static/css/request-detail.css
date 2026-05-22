@@ -1,0 +1,29 @@
+/* Custom styles for Request Detail page */
+
+.bg-page {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+.min-h-60 {
+    min-height: 60vh;
+}
+
+.bg-transparent-header {
+    background-color: transparent !important;
+}
+
+.book-cover-img {
+    width: 40px; 
+    height: 55px; 
+    object-fit: cover;
+}
+
+.info-box-dark {
+    background-color: #222;
+}
+
+.return-qty-input {
+    max-width: 80px; 
+    margin: 0 auto;
+}

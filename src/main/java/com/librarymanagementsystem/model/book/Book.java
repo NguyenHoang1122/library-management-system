@@ -49,6 +49,11 @@ public class Book {
     @Column(nullable = false)
     private Integer quantity = 0;
 
+    @Column(name = "import_price")
+    private Double importPrice = 0.0;
+
+    @Column(name = "deposit_price")
+    private Double depositPrice = 0.0;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "book_categories",

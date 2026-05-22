@@ -1,6 +1,7 @@
 package com.librarymanagementsystem.repository.user;
 
 import com.librarymanagementsystem.model.user.User;
+import com.librarymanagementsystem.model.user.status.RoleStatus;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Tìm kiếm user theo địa chỉ email
     Optional<User> findByEmail(String email);
+
+    // Tìm kiếm list user theo Role
+    List<User> findByRoleRoleName(RoleStatus roleName);
 
     //Check user có hay chưa
     boolean existsByUserName(String userName);
@@ -65,4 +69,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Transactional
     @Query("DELETE FROM User u WHERE u.id = :id")
     void hardDeleteById(@Param("id") Long id);
+
+    @Query("SELECT COUNT(u) FROM User u")
+    long countTotalUsers();
+
+    @Query(value = "SELECT DATE(create_date) as date, COUNT(id) as count FROM users GROUP BY DATE(create_date) ORDER BY date DESC LIMIT 30", nativeQuery = true)
+    List<Object[]> countDailyNewUsers();
 }

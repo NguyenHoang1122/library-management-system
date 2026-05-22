@@ -13,6 +13,11 @@
             <!-- ========== MENU CHO ADMIN ========== -->
             <th:block sec:authorize="hasRole('ADMIN')">
                 <li class="nav-item">
+                    <a th:href="@{/admin/dashboard}" class="nav-link-waka" th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                        <i class="bi bi-speedometer2 me-3"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a th:href="@{/user/profile}" class="nav-link-waka" th:classappend="${activePage == 'profile' ? 'active' : ''}">
                         <i class="far fa-user me-3"></i> Thông tin người dùng
                     </a>
@@ -52,6 +57,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a th:href="@{/librarian/deliveries}" class="nav-link-waka" th:classappend="${activePage == 'deliveries' ? 'active' : ''}">
+                        <i class="bi bi-truck me-3"></i> Truyện đang gửi
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a th:href="@{/books}" class="nav-link-waka" th:classappend="${activePage == 'books' ? 'active' : ''}">
                         <i class="bi bi-book me-3"></i> Quản lý truyện
                     </a>
@@ -63,7 +73,7 @@
                 </li>
                 <li class="nav-item">
                     <a th:href="@{/librarian/active-borrows}" class="nav-link-waka" th:classappend="${activePage == 'activeborrows' ? 'active' : ''}">
-                        <i class="bi bi-journal-check me-3"></i> Sách đang được mượn
+                        <i class="bi bi-journal-check me-3"></i> Truyện đang được mượn
                     </a>
                 </li>
                 <li class="nav-item">
@@ -88,11 +98,6 @@
                 <li class="nav-item">
                     <a th:href="@{/wishlist}" class="nav-link-waka" th:classappend="${activePage == 'wishlist' ? 'active' : ''}">
                         <i class="bi bi-heart me-3"></i> Danh sách yêu thích
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a th:href="@{/borrow}" class="nav-link-waka" th:classappend="${activePage == 'borrow' ? 'active' : ''}">
-                        <i class="fa fa-book me-3"></i> Yêu cầu mượn truyện
                     </a>
                 </li>
                 <li class="nav-item">

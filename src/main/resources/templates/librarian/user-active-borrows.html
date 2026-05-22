@@ -75,18 +75,33 @@
                         th:classappend="${data.get('isOverdue') ? 'row-overdue' : ''}">
                         <td th:text="${(currentPage - 1) * 10 + iterStat.count}" class="text-secondary"></td>
                         <td>
-                            <div th:each="item : ${data.get('borrow').items}" class="d-flex align-items-center mb-1">
-                                <img th:if="${item.book.image != null}" th:src="${item.book.image}" class="rounded me-3"
+                            <div th:each="group : ${data.get('groupedItems')}" class="d-flex align-items-center mb-3">
+                                <!-- Hidden input storing all unreturned IDs for this book -->
+                                <input type="hidden" th:id="'unreturned-' + ${data.get('borrow').id} + '-' + ${group.get('book').id}" th:value="${#strings.listJoin(group.get('unreturnedIds'), ',')}">
+                                
+                                <img th:if="${group.get('book').image != null}" th:src="${group.get('book').image}" class="rounded me-3 shadow-sm"
                                      style="width: 45px; height: 65px; object-fit: cover;"/>
-                                <div th:unless="${item.book.image != null}"
-                                     class="bg-secondary bg-opacity-25 rounded me-3 d-flex align-items-center justify-content-center"
+                                <div th:unless="${group.get('book').image != null}"
+                                     class="bg-secondary bg-opacity-25 rounded me-3 d-flex align-items-center justify-content-center shadow-sm"
                                      style="width: 45px; height: 65px;">
                                     <i class="bi bi-book text-muted"></i>
                                 </div>
-                                <div>
-                                    <div class="fw-bold text-light" th:text="${item.book.title}"></div>
-                                    <small class="text-secondary"
-                                           th:text="'ISBN: ' + ${item.book.isbn ?: 'N/A'}"></small>
+                                
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-light" th:text="${group.get('book').title}"></div>
+                                    <small class="text-secondary" th:text="'Tác giả: ' + (${group.get('book').author != null ? group.get('book').author.name : 'N/A'})"></small>
+                                    <div class="mt-1">
+                                        <span class="badge bg-secondary me-2" th:text="'Tổng: ' + ${group.get('totalCount')}"></span>
+                                        <span class="badge bg-success me-2" th:if="${group.get('returnedCount') > 0}" th:text="'Đã trả: ' + ${group.get('returnedCount')}"></span>
+                                        <span class="badge border border-warning text-warning me-2" th:if="${group.get('totalCount') - group.get('returnedCount') > 0}" th:text="'Chưa trả: ' + ${group.get('totalCount') - group.get('returnedCount')}"></span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Quantity Selector for Returning -->
+                                <div th:if="${#lists.size(group.get('unreturnedIds')) > 0}" class="d-flex align-items-center ms-3 bg-dark border border-secondary rounded p-1">
+                                    <button type="button" class="btn btn-sm btn-dark text-secondary border-0 px-2" th:onclick="'decreaseQty(' + ${data.get('borrow').id} + ',' + ${group.get('book').id} + ')'"><i class="bi bi-dash"></i></button>
+                                    <input type="text" th:id="'qty-' + ${data.get('borrow').id} + '-' + ${group.get('book').id}" value="0" class="form-control form-control-sm bg-transparent text-light border-0 text-center fw-bold px-0" style="width: 30px;" readonly>
+                                    <button type="button" class="btn btn-sm btn-dark text-secondary border-0 px-2" th:onclick="'increaseQty(' + ${data.get('borrow').id} + ',' + ${group.get('book').id} + ',' + ${#lists.size(group.get('unreturnedIds'))} + ')'"><i class="bi bi-plus"></i></button>
                                 </div>
                             </div>
                         </td>
@@ -182,14 +197,68 @@
 </div>
 
 <script>
+    function increaseQty(borrowId, bookId, max) {
+        const input = document.getElementById('qty-' + borrowId + '-' + bookId);
+        let val = parseInt(input.value);
+        if (val < max) input.value = val + 1;
+    }
+    
+    function decreaseQty(borrowId, bookId) {
+        const input = document.getElementById('qty-' + borrowId + '-' + bookId);
+        let val = parseInt(input.value);
+        if (val > 0) input.value = val - 1;
+    }
+
     function openDirectReturnModal(transactionId, isOverdue) {
+        let selectedItemIds = [];
+        
+        // Find all qty inputs for this transaction
+        const qtyInputs = document.querySelectorAll('[id^="qty-' + transactionId + '-"]');
+        qtyInputs.forEach(input => {
+            const qty = parseInt(input.value);
+            if (qty > 0) {
+                const parts = input.id.split('-');
+                const bookId = parts[2];
+                const unreturnedStr = document.getElementById('unreturned-' + transactionId + '-' + bookId).value;
+                if (unreturnedStr) {
+                    const ids = unreturnedStr.split(',');
+                    for(let i=0; i<qty; i++) {
+                        selectedItemIds.push(ids[i]);
+                    }
+                }
+            }
+        });
+
+        if (selectedItemIds.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Chưa chọn số lượng',
+                text: 'Vui lòng chọn số lượng truyện để trả!',
+                background: '#181818',
+                color: '#e0e0e0'
+            });
+            return;
+        }
+
         const modal = new bootstrap.Modal(document.getElementById('directReturnModal'));
-        document.getElementById('directReturnForm').action = '/librarian/active-borrows/return/' + transactionId;
+        const form = document.getElementById('directReturnForm');
+        form.action = '/librarian/active-borrows/return/' + transactionId;
+        
+        // Add hidden inputs for selected itemIds
+        form.querySelectorAll('input[name="itemIds"]').forEach(el => el.remove());
+        selectedItemIds.forEach(id => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'itemIds';
+            hidden.value = id;
+            form.appendChild(hidden);
+        });
+
         const msgEl = document.getElementById('directReturnMsg');
         if (isOverdue) {
-            msgEl.innerHTML = '<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Truyện đã quá hạn!</span> Bạn có chắc chắn muốn xác nhận trả và ghi nhận phạt cho giao dịch này?';
+            msgEl.innerHTML = '<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Truyện đã quá hạn!</span> Bạn có chắc chắn muốn xác nhận trả ' + selectedItemIds.length + ' cuốn truyện này và ghi nhận phạt?';
         } else {
-            msgEl.textContent = 'Bạn có chắc chắn muốn xác nhận độc giả đã trả trực tiếp truyện này tại quầy?';
+            msgEl.textContent = 'Bạn có chắc chắn muốn xác nhận độc giả đã trả trực tiếp ' + selectedItemIds.length + ' cuốn truyện này tại quầy?';
         }
         modal.show();
     }

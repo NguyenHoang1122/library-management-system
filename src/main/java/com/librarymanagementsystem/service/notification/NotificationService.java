@@ -69,4 +69,7 @@ public interface NotificationService {
     // thông báo cảnh báo sách đã quá hạn
     void notifyBookOverdue(BorrowTransaction transaction);
 
+    // Gửi thông báo chung
+    void sendNotification(com.librarymanagementsystem.model.user.User user, String title, String content, String link);
+
 }

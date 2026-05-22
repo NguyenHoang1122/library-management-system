@@ -24,7 +24,7 @@
             <!-- Tabs Menu for USER -->
             <div sec:authorize="hasRole('USER')" class="waka-tabs-main">
                 <a href="#" class="waka-tab-item active">Hồ sơ cá nhân</a>
-                <a th:href="@{/borrow/active}" class="waka-tab-item">Truyện của tôi</a>
+                <a th:href="@{/borrow/history}" class="waka-tab-item">Lịch sử giao dịch</a>
             </div>
 
             <!-- Page Header for ADMIN and LIBRARIAN (styled like "Quản lý truyện") -->
@@ -61,6 +61,19 @@
                                     <div class="info-label">Tên đăng nhập</div>
                                     <div class="info-value" th:text="${user.userName}">username</div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="info-label">Số dư ví (VNĐ)</div>
+                                    <div class="info-value text-success fw-bold d-flex align-items-center">
+                                        <span th:if="${user.balance != null}" th:text="${#numbers.formatDecimal(user.balance, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                        <span th:unless="${user.balance != null}">0 đ</span>
+                                        <button type="button" class="btn btn-sm btn-outline-success ms-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#depositModal">
+                                            <i class="bi bi-wallet2 me-1"></i> Nạp tiền
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
                                 <div class="col-md-6">
                                     <div class="info-label">Email</div>
                                     <div class="info-value" th:text="${user.email}">email@example.com</div>
@@ -118,7 +131,7 @@
             </div>
             <form th:action="@{/user/profile/update}" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="userName" th:value="${user.userName}"/>
-                
+
                 <div class="modal-body p-4 p-md-5">
                     <div class="row">
                         <!-- Left: Avatar Section -->
@@ -126,9 +139,7 @@
                             <div class="mb-4">
                                 <img id="previewImage" th:src="${user.image != null ? user.image : 'https://ui-avatars.com/api/?name=' + user.fullName + '&background=16a085&color=fff'}" alt="Avatar" class="avatar-preview-waka mb-4 shadow" style="width: 140px; height: 140px; object-fit: cover; border-radius: 50%; border: 4px solid var(--waka-green, #14b4a0); padding: 4px; background: #222;" />
                                 <div class="px-2">
-                                    <!-- Ẩn input file mặc định của trình duyệt -->
                                     <input type="file" name="imageFile" id="imageFile" class="d-none" accept="image/*" />
-                                    <!-- Hiển thị nút tải ảnh thiết kế nét đứt cao cấp -->
                                     <button type="button" class="btn btn-waka-upload mb-2" onclick="document.getElementById('imageFile').click()">
                                         <i class="bi bi-cloud-arrow-up-fill me-2"></i>Chọn ảnh đại diện
                                     </button>
@@ -165,22 +176,47 @@
                                     <label class="form-label small text-secondary fw-bold">SỐ ĐIỆN THOẠI</label>
                                     <div class="input-group">
                                         <span class="input-group-text input-group-text-waka"><i class="bi bi-telephone"></i></span>
-                                        <input type="text" name="phoneNumber" th:value="${user.phoneNumber}" class="form-control form-control-waka" style="border-radius: 0 10px 10px 0;" placeholder="0xxx xxx xxx" />
+                                        <input type="text" id="phoneNumberInput" name="phoneNumber" th:value="${user.phoneNumber}" class="form-control form-control-waka" style="border-radius: 0 10px 10px 0;" placeholder="0xxx xxx xxx" pattern="[0-9]{10,11}" />
                                     </div>
+                                    <div id="phoneErrorMsg" class="text-danger small mt-1" style="display: none;">Số điện thoại không được để trống và phải là 10-11 chữ số</div>
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label small text-secondary fw-bold">ĐỊA CHỈ</label>
-                                <div class="input-group">
-                                    <span class="input-group-text input-group-text-waka"><i class="bi bi-geo-alt"></i></span>
-                                    <input type="text" name="address" th:value="${user.address}" class="form-control form-control-waka" style="border-radius: 0 10px 10px 0;" placeholder="Nhập địa chỉ của bạn..." />
+                                <div class="row g-2">
+                                    <div class="col-sm-4">
+                                        <label class="form-label small text-secondary fw-bold">TỈNH/THÀNH PHỐ</label>
+                                        <select id="province" class="form-select form-control-waka" >
+                                            <option value="" selected disabled>Chọn Tỉnh/Thành phố</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <label class="form-label small text-secondary fw-bold">QUẬN/HUYỆN</label>
+                                        <select id="district" class="form-select form-control-waka" >
+                                            <option value="" selected disabled>Chọn Quận/Huyện</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <label class="form-label small text-secondary fw-bold">PHƯỜNG/XÃ</label>
+                                        <select id="ward" class="form-select form-control-waka" >
+                                            <option value="" selected disabled>Chọn Phường/Xã</option>
+                                        </select>
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary fw-bold">ĐỊA CHỈ CỤ THỂ</label>
+                                <div class="input-group">
+                                    <span class="input-group-text input-group-text-waka"><i class="bi bi-house"></i></span>
+                                    <input type="text" id="specificAddress" class="form-control form-control-waka" style="border-radius: 0 10px 10px 0;" placeholder="Số nhà, Tên đường, Tòa nhà..." />
+                                </div>
+                                <div id="addressErrorMsg" class="text-danger small mt-1" style="display: none;">Vui lòng chọn đầy đủ Tỉnh/Thành, Quận/Huyện, Phường/Xã và nhập địa chỉ cụ thể</div>
+                                <input type="hidden" name="address" id="finalAddress" th:value="${user.address}" />
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer border-secondary border-opacity-25 py-3">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
                     <button type="submit" class="btn btn-info rounded-pill px-5 fw-bold">
@@ -192,8 +228,170 @@
     </div>
 </div>
 
+<!-- Modal Nạp tiền -->
+<div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+            <div class="modal-header bg-success text-white" style="border-radius: 16px 16px 0 0;">
+                <h5 class="modal-title fw-bold" id="depositModalLabel"><i class="bi bi-wallet2 me-2"></i>Nạp tiền vào ví</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="depositForm">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label fw-bold text-secondary">Số tiền cần nạp (VNĐ)</label>
+                        <input type="number" class="form-control form-control-lg" id="amount" name="amount" min="10000" step="10000" required placeholder="Ví dụ: 100000">
+                        <small class="text-muted mt-2 d-block">Mệnh giá nạp tối thiểu là 10.000 đ</small>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold" id="btnSubmitDeposit">
+                            <i class="bi bi-cash me-2"></i> Xác nhận nạp
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div th:replace="~{layout :: footer}"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/user-detail.js}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const depositForm = document.getElementById('depositForm');
+        if (depositForm) {
+            depositForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const amount = document.getElementById('amount').value;
+                if (!amount || amount < 10000) {
+                    Swal.fire('Lỗi', 'Số tiền phải lớn hơn 10.000đ', 'warning');
+                    return;
+                }
+
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+                const formData = new URLSearchParams();
+                formData.append('amount', amount);
+
+                const btn = document.getElementById('btnSubmitDeposit');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+                btn.disabled = true;
+
+                fetch('/user/deposit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: formData.toString()
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Thành công', 'Đã nạp tiền thành công!', 'success').then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Lỗi', data.message || 'Nạp tiền thất bại', 'error');
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                        }
+                    }) // SỬA LỖI: Thêm đóng ngoặc nhọn và tròn tại đây
+                    .catch(err => {
+                        Swal.fire('Lỗi', 'Có lỗi kết nối', 'error');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    });
+            });
+        }
+
+        // Logic Address Selects (Provinces API esgoo.net)
+        const provinceSelect = document.getElementById("province");
+        const districtSelect = document.getElementById("district");
+        const wardSelect = document.getElementById("ward");
+        const specificAddress = document.getElementById("specificAddress");
+        const finalAddress = document.getElementById("finalAddress");
+        const formProfile = finalAddress ? finalAddress.closest("form") : null;
+
+        // Fetch Provinces
+        fetch('https://esgoo.net/api-tinhthanh/1/0.htm')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error === 0) {
+                    let provinces = data.data;
+                    provinces.forEach(p => {
+                        let option = new Option(p.full_name, p.id);
+                        provinceSelect.add(option);
+                    });
+                }
+            });
+
+        // Fetch Districts on Province Change
+        provinceSelect.addEventListener("change", function() {
+            districtSelect.length = 1;
+            wardSelect.length = 1;
+            const provinceId = this.value;
+            if (provinceId) {
+                fetch(`https://esgoo.net/api-tinhthanh/2/${provinceId}.htm`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error === 0) {
+                            data.data.forEach(d => {
+                                let option = new Option(d.full_name, d.id);
+                                districtSelect.add(option);
+                            });
+                        }
+                    });
+            }
+        });
+
+        // Fetch Wards on District Change
+        districtSelect.addEventListener("change", function() {
+            wardSelect.length = 1;
+            const districtId = this.value;
+            if (districtId) {
+                fetch(`https://esgoo.net/api-tinhthanh/3/${districtId}.htm`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error === 0) {
+                            data.data.forEach(w => {
+                                let option = new Option(w.full_name, w.id);
+                                wardSelect.add(option);
+                            });
+                        }
+                    });
+            }
+        });
+
+        if (formProfile) {
+            formProfile.addEventListener("submit", function(e) {
+                const phoneInput = document.getElementById("phoneNumberInput");
+                const phoneErrorMsg = document.getElementById("phoneErrorMsg");
+                
+                if (!phoneInput.value.trim() || !phoneInput.value.match(/^[0-9]{10,11}$/)) {
+                    e.preventDefault();
+                    phoneErrorMsg.style.display = "block";
+                    return;
+                } else {
+                    phoneErrorMsg.style.display = "none";
+                }
+
+                const pName = provinceSelect.selectedIndex >= 0 ? provinceSelect.options[provinceSelect.selectedIndex].text : "";
+                const dName = districtSelect.selectedIndex >= 0 ? districtSelect.options[districtSelect.selectedIndex].text : "";
+                const wName = wardSelect.selectedIndex >= 0 ? wardSelect.options[wardSelect.selectedIndex].text : "";
+                const specific = specificAddress.value.trim();
+
+                if (pName && dName && wName && specific) {
+                    if (provinceSelect.value && districtSelect.value && wardSelect.value) {
+                        finalAddress.value = specific + ", " + wName + ", " + dName + ", " + pName;
+                    }
+                }
+            });
+        }
+    });
+</script>
 </body>
 </html>
