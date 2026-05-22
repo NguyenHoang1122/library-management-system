@@ -29,7 +29,7 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
     List<BorrowTransaction> findByStatusIn(List<TransactionStatus> statuses);
 
     // giao dịch mượn quá hạn của user
-   @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
+   @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.status = com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED AND bt.dueDate < CURRENT_TIMESTAMP")
     List<BorrowTransaction> findUserOverdueTransactions(@Param("userId") Long userId);
 
     //giao dịch mượn đang hoạt động của người dùng dựa trên đối tượng User và một trạng thái cụ thể
@@ -47,14 +47,14 @@ public interface BorrowTransactionRepository extends JpaRepository<BorrowTransac
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
             "AND bi.bookCopy.book.id = :bookId " +
-            "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
+            "AND bt.status IN (com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED, com.librarymanagementsystem.model.borrow.status.TransactionStatus.OVERDUE, com.librarymanagementsystem.model.borrow.status.TransactionStatus.PENDING)")
     boolean isBookBorrowedByUser(@Param("userId") Long userId, @Param("bookId") Long bookId);
 
     //các ID của sách đang được mượn or đang yêu cầu mượn bởi user
     @Query("SELECT DISTINCT bi.bookCopy.book.id FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
-            "AND bt.status IN ('BORROWED', 'OVERDUE', 'PENDING')")
+            "AND bt.status IN (com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED, com.librarymanagementsystem.model.borrow.status.TransactionStatus.OVERDUE, com.librarymanagementsystem.model.borrow.status.TransactionStatus.PENDING)")
     List<Long> findBorrowedBookIdsByUser(@Param("userId") Long userId);
 
     // Check user đã từng thuê/mượn truyện này hay chưa

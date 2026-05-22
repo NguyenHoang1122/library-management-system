@@ -220,12 +220,20 @@ public class BorrowServiceImpl implements BorrowService {
         User user = borrowRequest.getUser();
         double totalRefund = (borrowRequest.getTotalDeposit() != null ? borrowRequest.getTotalDeposit() : 0) +
                              (borrowRequest.getShippingFee() != null ? borrowRequest.getShippingFee() : 0);
+        double oldBalance = user.getBalance() != null ? user.getBalance() : 0.0;
         if (totalRefund > 0) {
-            user.setBalance((user.getBalance() != null ? user.getBalance() : 0) + totalRefund);
+            user.setBalance(oldBalance + totalRefund);
             userRepository.save(user);
         }
 
-        notificationService.notifyBorrowRequestCancelled(borrowRequest);
+        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        String notifContent = String.format("Đơn mượn truyện (Mã: %d) của bạn đã được hủy thành công. \n" +
+                "- Số tiền được hoàn lại: %s đ\n" +
+                "- Số dư ví cũ: %s đ\n" +
+                "- Số dư ví mới: %s đ\n",
+                borrowRequest.getId(), nf.format(totalRefund), nf.format(oldBalance), nf.format(user.getBalance()));
+        
+        notificationService.sendNotification(user, "Hoàn tiền hủy đơn mượn", notifContent, "/borrow/history");
     }
 
     // Phê duyệt yêu cầu mượn truyện (Chuyển sang trạng thái đang giao)
@@ -305,6 +313,136 @@ public class BorrowServiceImpl implements BorrowService {
         return transaction;
     }
 
+    @Override
+    public void createDirectBorrow(Long librarianId, Long userId, java.util.List<Long> bookIds, java.util.List<Integer> quantities) {
+        User librarian = userRepository.findById(librarianId).orElseThrow(() -> new RuntimeException("Thủ thư không tồn tại"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Độc giả không tồn tại"));
+
+        if (bookIds == null || bookIds.isEmpty() || quantities == null || quantities.size() != bookIds.size()) {
+            throw new RuntimeException("Danh sách sách không hợp lệ");
+        }
+
+        double totalDeposit = 0;
+        double totalBorrowFee = 0;
+        int totalBooks = 0;
+
+        for (int i = 0; i < bookIds.size(); i++) {
+            Long bookId = bookIds.get(i);
+            int qty = quantities.get(i);
+            if (qty <= 0) continue;
+
+            Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("Truyện không tồn tại"));
+            
+            if (book.getQuantity() < qty) {
+                throw new RuntimeException("Sách '" + book.getTitle() + "' không đủ số lượng (còn " + book.getQuantity() + ")");
+            }
+            
+            double deposit = book.getDepositPrice() != null ? book.getDepositPrice() : 0.0;
+            totalDeposit += deposit * qty;
+            totalBorrowFee += BORROW_FEE * qty;
+            totalBooks += qty;
+        }
+
+        if (totalBooks == 0) {
+            throw new RuntimeException("Chưa chọn sách nào để mượn");
+        }
+
+        double totalAmount = totalDeposit + totalBorrowFee;
+        double currentBalance = user.getBalance() != null ? user.getBalance() : 0.0;
+
+        if (currentBalance < totalAmount) {
+            throw new RuntimeException("Số dư ví không đủ. Cần " + totalAmount + "đ nhưng ví chỉ có " + currentBalance + "đ.");
+        }
+
+        // Trừ tiền
+        user.setBalance(currentBalance - totalAmount);
+        userRepository.save(user);
+
+        // 1. Tạo BorrowRequest
+        BorrowRequest request = new BorrowRequest();
+        request.setUser(user);
+        request.setRequestDate(LocalDateTime.now());
+        request.setRequestStatus(RequestStatus.COMPLETED);
+        request.setDeliveryMethod(DeliveryMethod.PICKUP);
+        request.setShippingAddress(null);
+        request.setNote("Đơn mượn trực tiếp tại quầy");
+        request.setTotalDeposit(totalDeposit);
+        request.setShippingFee(0.0);
+        request = borrowRequestRepository.save(request);
+
+        // 2. Tạo BorrowRequestItem và cập nhật tồn kho Book
+        for (int i = 0; i < bookIds.size(); i++) {
+            Long bookId = bookIds.get(i);
+            int qty = quantities.get(i);
+            if (qty <= 0) continue;
+
+            Book book = bookRepository.findById(bookId).get();
+            book.setQuantity(book.getQuantity() - qty);
+            bookRepository.save(book);
+
+            BorrowRequestItem reqItem = new BorrowRequestItem();
+            reqItem.setBorrowRequest(request);
+            reqItem.setBook(book);
+            reqItem.setQuantity(qty);
+            borrowRequestItemRepository.save(reqItem);
+        }
+
+        // 3. Tạo BorrowTransaction
+        BorrowTransaction transaction = new BorrowTransaction();
+        transaction.setUser(user);
+        transaction.setLibrarian(librarian);
+        transaction.setBorrowDate(LocalDateTime.now());
+        transaction.setDueDate(LocalDateTime.now().plusDays(DEFAULT_BORROW_DAYS));
+        transaction.setStatus(TransactionStatus.BORROWED);
+        transaction = borrowTransactionRepository.save(transaction);
+
+        // 4. Tạo BorrowItem và cập nhật BookCopy
+        for (int i = 0; i < bookIds.size(); i++) {
+            Long bookId = bookIds.get(i);
+            int qty = quantities.get(i);
+            if (qty <= 0) continue;
+
+            Book book = bookRepository.findById(bookId).get();
+
+            for (int j = 0; j < qty; j++) {
+                BorrowItem borrowItem = new BorrowItem();
+                borrowItem.setTransaction(transaction);
+
+                java.util.List<BookCopy> availableCopies = bookCopyRepository.findByBookIdAndStatus(bookId, BookCopyStatus.AVAILABLE);
+                BookCopy assignedCopy;
+                if (availableCopies.isEmpty()) {
+                    assignedCopy = new BookCopy();
+                    assignedCopy.setBook(book);
+                    assignedCopy.setBarcode(book.getIsbn() + "-" + System.currentTimeMillis() + "-" + j);
+                    assignedCopy.setStatus(BookCopyStatus.BORROWED);
+                    assignedCopy.setCreatedDate(LocalDateTime.now());
+                } else {
+                    assignedCopy = availableCopies.get(0);
+                    assignedCopy.setStatus(BookCopyStatus.BORROWED);
+                }
+                bookCopyRepository.save(assignedCopy);
+
+                borrowItem.setBookCopy(assignedCopy);
+                borrowItemRepository.save(borrowItem);
+            }
+        }
+
+        // 5. Gửi thông báo
+        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        String notifContent = String.format("Thủ thư đã tạo đơn mượn trực tiếp %d cuốn truyện. \n" +
+                "- Tổng cọc: %s đ\n" +
+                "- Tổng phí thuê: %s đ\n" +
+                "- Tổng tiền bị trừ: %s đ\n" +
+                "- Số dư cũ: %s đ\n" +
+                "- Số dư mới: %s đ\n" +
+                "Bạn cần trả truyện trước ngày %s.",
+                totalBooks, nf.format(totalDeposit), nf.format(totalBorrowFee), nf.format(totalAmount), 
+                nf.format(currentBalance), nf.format(user.getBalance()), 
+                transaction.getDueDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+        notificationService.sendNotification(user, "Tạo đơn mượn trực tiếp", notifContent, "/borrow/history");
+    }
+
     // Từ chối yêu cầu mượn sách: cập nhật trạng thái yêu cầu sang REJECTED, đính kèm lý do từ chối, trả lại số lượng sách vào kho và gửi thông báo từ chối cho người dùng
     @Override
     public void rejectBorrowRequest(Long requestId, String reason) {
@@ -327,8 +465,28 @@ public class BorrowServiceImpl implements BorrowService {
             bookRepository.save(book);
         }
 
+        // HOÀN LẠI TIỀN (CỌC + SHIP) CHO USER KHI BỊ TỪ CHỐI
+        User user = borrowRequest.getUser();
+        double totalRefund = (borrowRequest.getTotalDeposit() != null ? borrowRequest.getTotalDeposit() : 0) +
+                             (borrowRequest.getShippingFee() != null ? borrowRequest.getShippingFee() : 0);
+        double oldBalance = user.getBalance() != null ? user.getBalance() : 0.0;
+        if (totalRefund > 0) {
+            user.setBalance(oldBalance + totalRefund);
+            userRepository.save(user);
+        }
+
         // Thông báo
-        notificationService.notifyBorrowRejected(borrowRequest);
+        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        String notifContent = String.format("Đơn mượn truyện (Mã: %d) của bạn đã bị từ chối.\n" +
+                "- Lý do: %s\n" +
+                "- Số tiền được hoàn lại: %s đ\n" +
+                "- Số dư ví cũ: %s đ\n" +
+                "- Số dư ví mới: %s đ\n",
+                borrowRequest.getId(),
+                (reason != null && !reason.trim().isEmpty() ? reason : "Không có lý do"),
+                nf.format(totalRefund), nf.format(oldBalance), nf.format(user.getBalance()));
+        
+        notificationService.sendNotification(user, "Hoàn tiền từ chối đơn mượn", notifContent, "/borrow/history");
     }
 
     // Lấy toàn bộ lịch sử giao dịch mượn truyện của một người dùng và trả về dưới dạng danh sách DTO
@@ -547,10 +705,8 @@ public class BorrowServiceImpl implements BorrowService {
         if (refundAmount < 0) refundAmount = 0.0; // Không hoàn âm
         
         double oldBalance = user.getBalance() != null ? user.getBalance() : 0.0;
-        if (user.getBalance() != null) {
-            user.setBalance(user.getBalance() + refundAmount);
-            userRepository.save(user);
-        }
+        user.setBalance(oldBalance + refundAmount);
+        userRepository.save(user);
 
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
         String notifContent = String.format("Đã xử lý trả %d cuốn. Cọc: %s đ, Phí thuê: %s đ, Phạt: %s đ, Ship trả: %s đ. Thực lãnh: %s đ. Số dư cũ: %s đ, Số dư mới: %s đ.",
@@ -660,11 +816,15 @@ public class BorrowServiceImpl implements BorrowService {
         transaction.setDueDate(transaction.getDueDate().plusDays(DEFAULT_BORROW_DAYS));
         borrowTransactionRepository.save(transaction);
         
+        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
         notificationService.sendNotification(
                 user,
-                "Gia hạn thành công!",
-                "Bạn đã gia hạn thêm " + DEFAULT_BORROW_DAYS + " ngày cho giao dịch #" + transaction.getId() + ". Phí gia hạn: " + extensionFee + " đ đã được trừ vào ví.",
-                "/borrow/active"
+                "Gia hạn mượn sách",
+                "Bạn đã gia hạn mượn sách thành công. Thời gian mượn được cộng thêm 7 ngày.\n" +
+                "- Hạn trả mới: " + transaction.getDueDate().toLocalDate() + "\n" +
+                "- Phí gia hạn: " + nf.format(extensionFee) + " đ\n" +
+                "- Số dư ví mới: " + nf.format(user.getBalance()) + " đ",
+                "/borrow/history"
         );
     }
 
@@ -822,16 +982,21 @@ public class BorrowServiceImpl implements BorrowService {
 
     @Override
     public ReturnRequest getReturnRequestForBorrowRequest(Long requestId) {
-        BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId).orElse(null);
-        if (borrowRequest == null) return null;
-        BorrowTransaction transaction = findTransactionForRequest(borrowRequest);
-        if (transaction == null) return null;
-        
-        List<ReturnRequest> returns = returnRequestRepository.findByBorrowTransactionOrderByRequestDateDesc(transaction);
+        List<ReturnRequest> returns = getAllReturnRequestsForBorrowRequest(requestId);
         if (returns != null && !returns.isEmpty()) {
             return returns.get(0);
         }
         return null;
+    }
+
+    @Override
+    public List<ReturnRequest> getAllReturnRequestsForBorrowRequest(Long requestId) {
+        BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId).orElse(null);
+        if (borrowRequest == null) return java.util.Collections.emptyList();
+        BorrowTransaction transaction = findTransactionForRequest(borrowRequest);
+        if (transaction == null) return java.util.Collections.emptyList();
+        
+        return returnRequestRepository.findByBorrowTransactionOrderByRequestDateDesc(transaction);
     }
 
     @Override
@@ -955,5 +1120,22 @@ public class BorrowServiceImpl implements BorrowService {
         
         // Thông báo
         notificationService.notifyReturnRejected(request);
+    }
+
+    @Override
+    public void cancelReturnRequest(Long requestId, Long userId) {
+        ReturnRequest request = returnRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Yêu cầu trả không tồn tại"));
+        
+        if (!request.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền hủy yêu cầu này");
+        }
+        
+        if (request.getRequestStatus() != RequestStatus.PENDING && request.getRequestStatus() != RequestStatus.APPROVED) {
+            throw new RuntimeException("Chỉ có thể hủy yêu cầu trả truyện khi chưa giao cho shipper");
+        }
+
+        request.setRequestStatus(RequestStatus.CANCELLED);
+        returnRequestRepository.save(request);
     }
 }

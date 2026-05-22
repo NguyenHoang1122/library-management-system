@@ -80,11 +80,51 @@ body {
 }
 .waka-card-actions {
     display: flex;
-    gap: 5px;
+    gap: 8px;
 }
 .btn-action-sm {
     flex: 1;
     padding: 4px;
     font-size: 0.75rem;
     border-radius: 4px;
+}
+.btn-wishlist-cart {
+    flex: 3;
+    background-color: #16a085;
+    color: #fff;
+    border: none;
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+.btn-wishlist-cart:hover {
+    background-color: #12876f;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(22, 160, 133, 0.4);
+}
+.form-delete-wishlist {
+    flex: 1;
+    display: flex;
+}
+.btn-delete-wishlist {
+    flex: 1;
+    background: transparent;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+.btn-delete-wishlist:hover {
+    background-color: #dc3545;
+    color: #fff;
+}
+.btn-clear-all {
+    font-size: 0.75rem;
 }

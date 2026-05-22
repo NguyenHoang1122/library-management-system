@@ -53,6 +53,9 @@ public interface BorrowService {
     // Tính tiền phạt
     long calculateLateFine(Long transactionId);
 
+    // Thủ thư tạo đơn mượn trực tiếp tại quầy
+    void createDirectBorrow(Long librarianId, Long userId, java.util.List<Long> bookIds, java.util.List<Integer> quantities);
+
     // Danh sách đang mượn
     Page<BorrowHistoryDTO> getActiveBorrows(Long userId, Pageable pageable);
 
@@ -84,6 +87,7 @@ public interface BorrowService {
     void createPartialReturnRequest(Long userId, Long requestId, java.util.Map<Long, Integer> returnItems, String returnMethod, String returnAddress);
     void extendBorrowRequest(Long userId, Long requestId);
     ReturnRequest getReturnRequestForBorrowRequest(Long requestId);
+    List<ReturnRequest> getAllReturnRequestsForBorrowRequest(Long requestId);
     BorrowTransaction getTransactionForBorrowRequest(Long requestId);
 
     // Danh sách yêu cầu trả chờ duyệt
@@ -102,4 +106,7 @@ public interface BorrowService {
 
     // Thủ thư từ chối yêu cầu trả sách
     void rejectReturnRequest(Long requestId, String reason);
+    
+    // User hủy yêu cầu trả sách
+    void cancelReturnRequest(Long requestId, Long userId);
 }

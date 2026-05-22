@@ -56,7 +56,7 @@ public class AuthController {
                 Object lastException = session.getAttribute("SPRING_SECURITY_LAST_EXCEPTION");
                 if (lastException instanceof DisabledException) {
                     model.addAttribute("bannedError", true);
-                    model.addAttribute("errorMsg", "Tài khoản đã bị banner hãy liên hệ với admin để được hỗ trợ.");
+                    model.addAttribute("errorMsg", "Tài khoản đã bị khóa.");
                 }
             }
         }

@@ -1,16 +1,15 @@
 package com.librarymanagementsystem.controller.borrow;
 
 import com.librarymanagementsystem.model.book.Book;
-import com.librarymanagementsystem.model.borrow.BorrowItem;
-import com.librarymanagementsystem.model.borrow.BorrowRequest;
-import com.librarymanagementsystem.model.borrow.BorrowTransaction;
-import com.librarymanagementsystem.model.borrow.ReturnRequest;
+import com.librarymanagementsystem.model.borrow.*;
 import com.librarymanagementsystem.model.borrow.dto.BorrowHistoryDTO;
 import com.librarymanagementsystem.model.borrow.dto.CombinedHistoryDTO;
+import com.librarymanagementsystem.model.borrow.status.RequestStatus;
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.service.book.BookService;
 import com.librarymanagementsystem.service.borrow.BorrowService;
 import com.librarymanagementsystem.service.user.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -224,35 +223,64 @@ public class BorrowController {
         ReturnRequest returnRequest = borrowService.getReturnRequestForBorrowRequest(requestId);
         BorrowTransaction transaction = borrowService.getTransactionForBorrowRequest(requestId);
         
-        if (returnRequest != null && transaction != null) {
-            double originalDeposit = 0.0;
-            int returnQuantity = 0;
-            if (returnRequest.getReturnItems() != null) {
-                for (com.librarymanagementsystem.model.borrow.ReturnRequestItem item : returnRequest.getReturnItems()) {
-                    if (item.getBook() != null && item.getBook().getDepositPrice() != null) {
-                        originalDeposit += item.getBook().getDepositPrice() * item.getQuantity();
+        List<ReturnRequest> allReturnRequests = borrowService.getAllReturnRequestsForBorrowRequest(requestId);
+        List<Map<String, Object>> returnRequestDetails = new ArrayList<>();
+        
+        if (allReturnRequests != null && !allReturnRequests.isEmpty() && transaction != null) {
+            // allReturnRequests is descending (newest first). Let's process them in reverse so index 1 is oldest.
+            double currentTotalDeposit = request.getTotalDeposit() != null ? request.getTotalDeposit() : 0.0;
+            for (int i = 0; i < allReturnRequests.size(); i++) {
+                ReturnRequest rr = allReturnRequests.get(allReturnRequests.size() - 1 - i);
+                double originalDeposit = 0.0;
+                int returnQuantity = 0;
+                if (rr.getReturnItems() != null) {
+                    for (ReturnRequestItem item : rr.getReturnItems()) {
+                        if (item.getBook() != null && item.getBook().getDepositPrice() != null) {
+                            originalDeposit += item.getBook().getDepositPrice() * item.getQuantity();
+                        }
+                        returnQuantity += item.getQuantity();
                     }
-                    returnQuantity += item.getQuantity();
                 }
+                
+                double totalBorrowFee = returnQuantity * 30000.0;
+                // Late fine could be calculated, but it's hard to know historical late fines. Let's just use 0 for simplicity or what was there.
+                // We'll just show 0 or the current late fine for the latest pending one.
+                long lateFine = 0;
+                if (rr.getRequestStatus() != RequestStatus.COMPLETED) {
+                    lateFine = borrowService.calculateLateFine(transaction.getId());
+                }
+                
+                double returnShippingFee = rr.getShippingFee() != null ? rr.getShippingFee() : 0.0;
+                double refundAmount = originalDeposit - totalBorrowFee - lateFine - returnShippingFee;
+                if (refundAmount < 0) refundAmount = 0.0;
+                
+                double remainingDeposit = currentTotalDeposit - originalDeposit;
+                if (remainingDeposit < 0) remainingDeposit = 0.0;
+                currentTotalDeposit = remainingDeposit;
+                
+                Map<String, Object> detail = new HashMap<>();
+                detail.put("returnRequest", rr);
+                detail.put("originalDeposit", originalDeposit);
+                detail.put("borrowFee", totalBorrowFee);
+                detail.put("lateFine", lateFine);
+                detail.put("shippingFee", returnShippingFee);
+                detail.put("refundAmount", refundAmount);
+                detail.put("returnQuantity", returnQuantity);
+                detail.put("remainingDeposit", remainingDeposit);
+                detail.put("index", i + 1);
+                
+                returnRequestDetails.add(detail);
             }
-            
-            double totalBorrowFee = returnQuantity * 5000.0;
-            long lateFine = borrowService.calculateLateFine(transaction.getId());
-            double returnShippingFee = returnRequest.getShippingFee() != null ? returnRequest.getShippingFee() : 0.0;
-            
-            double refundAmount = originalDeposit - totalBorrowFee - lateFine - returnShippingFee;
-            if (refundAmount < 0) refundAmount = 0.0;
-            
-            model.addAttribute("returnOriginalDeposit", originalDeposit);
-            model.addAttribute("returnBorrowFee", totalBorrowFee);
-            model.addAttribute("returnLateFine", lateFine);
-            model.addAttribute("returnRefundAmount", refundAmount);
         }
         
-        java.util.Map<Long, Integer> returnedQuantities = new java.util.HashMap<>();
-        java.util.Map<Long, Integer> unreturnedQuantities = new java.util.HashMap<>();
+        // Reverse so that the newest return request appears first (or last? User says "thêm trường thông tin trả lần 1")
+        // Usually Lần 1, Lần 2 from top to bottom. The list is currently ascending (oldest first). We'll keep it ascending.
+        model.addAttribute("returnRequestDetails", returnRequestDetails);
+        
+        Map<Long, Integer> returnedQuantities = new HashMap<>();
+        Map<Long, Integer> unreturnedQuantities = new HashMap<>();
         if (transaction != null) {
-            for (com.librarymanagementsystem.model.borrow.BorrowItem bi : transaction.getItems()) {
+            for (BorrowItem bi : transaction.getItems()) {
                 Long bookId = bi.getBookCopy().getBook().getId();
                 if (bi.getReturnDate() != null) {
                     returnedQuantities.put(bookId, returnedQuantities.getOrDefault(bookId, 0) + 1);
@@ -345,7 +373,7 @@ public class BorrowController {
         for (BorrowItem item : transaction.getItems()) {
             Long bookId = item.getBookCopy().getBook().getId();
             if (!grouped.containsKey(bookId)) {
-                java.util.Map<String, Object> groupInfo = new java.util.HashMap<>();
+                Map<String, Object> groupInfo = new HashMap<>();
                 groupInfo.put("book", item.getBookCopy().getBook());
                 groupInfo.put("totalCount", 0);
                 groupInfo.put("returnedCount", 0);
@@ -423,7 +451,7 @@ public class BorrowController {
                     .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
             // Parse danh sách truyện và số lượng trả
-            java.util.Map<Long, Integer> returnItems = new java.util.HashMap<>();
+            Map<Long, Integer> returnItems = new HashMap<>();
             for (java.util.Map.Entry<String, String> entry : allParams.entrySet()) {
                 if (entry.getKey().startsWith("return_qty_")) {
                     Long bookId = Long.parseLong(entry.getKey().replace("return_qty_", ""));
@@ -473,5 +501,25 @@ public class BorrowController {
             redirectAttributes.addFlashAttribute("error", "Gia hạn thất bại: " + e.getMessage());
         }
         return "redirect:/borrow/active";
+    }
+
+    // Người dùng hủy yêu cầu trả truyện
+    @PostMapping("/return/cancel/{returnRequestId}")
+    public String cancelReturnRequest(@PathVariable Long returnRequestId,
+                                      Authentication authentication,
+                                      HttpServletRequest httpRequest,
+                                      RedirectAttributes redirectAttributes) {
+        try {
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+            
+            borrowService.cancelReturnRequest(returnRequestId, user.getId());
+            redirectAttributes.addFlashAttribute("message", "Đã hủy yêu cầu trả truyện thành công.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Hủy yêu cầu thất bại: " + e.getMessage());
+        }
+        
+        String referer = httpRequest.getHeader("Referer");
+        return "redirect:" + (referer != null ? referer : "/borrow");
     }
 }

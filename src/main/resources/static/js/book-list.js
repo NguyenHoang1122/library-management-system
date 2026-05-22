@@ -13,8 +13,8 @@ document.querySelectorAll('.btn-edit-book').forEach(button => {
         const cleanStr = categoriesStr.replace(/[\[\]\s]/g, '');
         const categoryIds = cleanStr ? cleanStr.split(',') : [];
 
-        // Set form action
-        document.getElementById('editBookForm').action = '/books/update/' + id;
+        // Set form action with current query parameters (page, sort, search)
+        document.getElementById('editBookForm').action = '/books/update/' + id + window.location.search;
 
         // Set inputs
         document.getElementById('editBookCurrentId').value = id;

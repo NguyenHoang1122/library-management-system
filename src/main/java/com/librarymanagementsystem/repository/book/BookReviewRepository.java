@@ -25,4 +25,8 @@ public interface BookReviewRepository extends JpaRepository<BookReview, Long> {
     // count đánh giá
     @Query("SELECT COUNT(br) FROM BookReview br WHERE br.book.id = :bookId")
     Long countReviewsForBook(@Param("bookId") Long bookId);
+
+    // Thống kê số lượng đánh giá theo từng mức sao
+    @Query("SELECT br.rating, COUNT(br) FROM BookReview br WHERE br.book.id = :bookId GROUP BY br.rating")
+    List<Object[]> getRatingSummary(@Param("bookId") Long bookId);
 }

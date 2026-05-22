@@ -29,13 +29,13 @@ public class AdminDashboardController {
 
     @GetMapping("/chart/revenue")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getRevenueChart() {
-        return ResponseEntity.ok(dashboardService.getRevenueChartData());
+    public ResponseEntity<Map<String, Object>> getRevenueChart(@org.springframework.web.bind.annotation.RequestParam(defaultValue = "day") String period) {
+        return ResponseEntity.ok(dashboardService.getRevenueChartData(period));
     }
 
     @GetMapping("/chart/users")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getUsersChart() {
-        return ResponseEntity.ok(dashboardService.getUserRegistrationChartData());
+    public ResponseEntity<Map<String, Object>> getUsersChart(@org.springframework.web.bind.annotation.RequestParam(defaultValue = "day") String period) {
+        return ResponseEntity.ok(dashboardService.getUserRegistrationChartData(period));
     }
 }

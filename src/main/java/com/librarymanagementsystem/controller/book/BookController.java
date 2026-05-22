@@ -1,7 +1,11 @@
 package com.librarymanagementsystem.controller.book;
 
 import com.librarymanagementsystem.model.book.Book;
+import com.librarymanagementsystem.model.book.BookComment;
+import com.librarymanagementsystem.model.book.BookReview;
 import com.librarymanagementsystem.model.book.dto.BookDTO;
+import com.librarymanagementsystem.model.borrow.BorrowRequestItem;
+import com.librarymanagementsystem.model.borrow.status.RequestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,11 +16,13 @@ import com.librarymanagementsystem.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.librarymanagementsystem.service.book.BookReviewService;
+import com.librarymanagementsystem.service.book.BookCommentService;
 import com.librarymanagementsystem.service.borrow.BorrowService;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import org.springframework.http.HttpStatus;
@@ -36,6 +42,7 @@ public class BookController {
     private final BookService bookService;
     private final UserService userService;
     private final BookReviewService bookReviewService;
+    private final BookCommentService bookCommentService;
     private final BorrowService borrowService;
 
     // Hỗ trợ điền danh sách truyện
@@ -152,6 +159,7 @@ public class BookController {
     //chi tiết sách
     @GetMapping("/{id}")
     public String viewBook(@PathVariable("id") Long id,
+                           @RequestParam(value = "commentPage", defaultValue = "0") int commentPage,
                            Model model,
                            Authentication authentication) {
         Book book = bookService.getBookById(id)
@@ -161,10 +169,22 @@ public class BookController {
         model.addAttribute("reviews", bookReviewService.getReviewsByBookId(id));
         model.addAttribute("averageRating", bookReviewService.getAverageRatingForBook(id));
         model.addAttribute("reviewCount", bookReviewService.countReviewsForBook(id));
+        model.addAttribute("ratingSummary", bookReviewService.getRatingSummary(id));
+
+        User currentUser = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            currentUser = userService.findByUserName(authentication.getName()).orElse(null);
+        }
+        boolean isAdminOrLibrarian = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_LIBRARIAN"));
+        
+        Page<BookComment> commentPageResult = bookCommentService.getCommentsForBook(id, isAdminOrLibrarian, currentUser, commentPage, 6);
+        model.addAttribute("commentsPage", commentPageResult);
+        model.addAttribute("comments", commentPageResult.getContent());
 
         boolean hasRented = false;
         boolean hasPendingRequest = false;
-        com.librarymanagementsystem.model.book.BookReview existingReview = null;
+        BookReview existingReview = null;
         // Check user đã mượn truyện này chưa
         if (authentication != null && authentication.isAuthenticated()) {
             String userName = authentication.getName();
@@ -175,8 +195,8 @@ public class BookController {
                 List<BorrowRequest> userRequests = borrowService.getUserBorrowRequests(user.getId());
                 if (userRequests != null) {
                     for (BorrowRequest req : userRequests) {
-                        if (req.getRequestStatus() == com.librarymanagementsystem.model.borrow.status.RequestStatus.PENDING) {
-                            for (com.librarymanagementsystem.model.borrow.BorrowRequestItem item : req.getBorrowRequestItems()) {
+                        if (req.getRequestStatus() == RequestStatus.PENDING) {
+                            for (BorrowRequestItem item : req.getBorrowRequestItems()) {
                                 if (item.getBook().getId().equals(id)) {
                                     hasPendingRequest = true;
                                     break;
@@ -199,12 +219,10 @@ public class BookController {
         return "book/book-detail";
     }
 
-    // Xử lý gửi bình luận cho truyện thông qua gọi AJAX
-    @PostMapping("/{id}/review")
+    @PostMapping("/{id}/rating")
     @ResponseBody
-    public ResponseEntity<?> submitReview(@PathVariable("id") Long bookId,
+    public ResponseEntity<?> submitRating(@PathVariable("id") Long bookId,
                                           @RequestParam("rating") Integer rating,
-                                          @RequestParam("comment") String comment,
                                           Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "message", "Bạn cần đăng nhập để đánh giá!"));
@@ -212,8 +230,87 @@ public class BookController {
         try {
             User user = userService.findByUserName(authentication.getName())
                     .orElseThrow(() -> new RuntimeException("User not found"));
-            bookReviewService.saveReview(bookId, user.getId(), rating, comment);
+            bookReviewService.saveReview(bookId, user.getId(), rating);
             return ResponseEntity.ok(Map.of("success", true, "message", "Cảm ơn bạn đã đánh giá truyện!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/comment")
+    @ResponseBody
+    public ResponseEntity<?> submitComment(@PathVariable("id") Long bookId,
+                                           @RequestParam("content") String content,
+                                           Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "message", "Bạn cần đăng nhập để bình luận!"));
+        }
+        try {
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            bookCommentService.addComment(bookId, user.getId(), content);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã gửi bình luận!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
+    @PostMapping("/comments/{commentId}/hide")
+    @ResponseBody
+    public ResponseEntity<?> hideComment(@PathVariable("commentId") Long commentId) {
+        try {
+            bookCommentService.hideComment(commentId);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã ẩn bình luận"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
+    @PostMapping("/comments/{commentId}/delete")
+    @ResponseBody
+    public ResponseEntity<?> deleteComment(@PathVariable("commentId") Long commentId) {
+        try {
+            bookCommentService.deleteComment(commentId);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã xóa bình luận"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/comments/{commentId}/edit")
+    @ResponseBody
+    public ResponseEntity<?> editCommentByUser(
+            @PathVariable("commentId") Long commentId,
+            @RequestParam("content") String content,
+            Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "Vui lòng đăng nhập"));
+            }
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            bookCommentService.editCommentByUser(commentId, user.getId(), content);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã cập nhật bình luận!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/comments/{commentId}/user-delete")
+    @ResponseBody
+    public ResponseEntity<?> deleteCommentByUser(
+            @PathVariable("commentId") Long commentId,
+            Authentication authentication) {
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "message", "Vui lòng đăng nhập"));
+            }
+            User user = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            bookCommentService.deleteCommentByUser(commentId, user.getId());
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đã xóa bình luận!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
@@ -258,9 +355,16 @@ public class BookController {
     // cập nhật truyện
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/update/{id}")
-    public String updateBook(@PathVariable Long id, @Valid @ModelAttribute("editBookDTO") BookDTO bookDTO, BindingResult bindingResult, Model model, Authentication authentication, RedirectAttributes redirectAttributes) {
+    public String updateBook(@PathVariable Long id, 
+                             @Valid @ModelAttribute("editBookDTO") BookDTO bookDTO, 
+                             BindingResult bindingResult, 
+                             @RequestParam(defaultValue = "1") int page,
+                             @RequestParam(required = false) String query,
+                             @RequestParam(required = false) Long category,
+                             @RequestParam(required = false) String sortBy,
+                             Model model, Authentication authentication, RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            populateListModel(model, null, null, 1, null, authentication);
+            populateListModel(model, query, category, page, sortBy, authentication);
             model.addAttribute("bookDTO", new BookDTO());
             model.addAttribute("showEditModal", true);
             model.addAttribute("editBookId", id);
@@ -270,14 +374,20 @@ public class BookController {
             bookService.updateBook(id, bookDTO);
             redirectAttributes.addFlashAttribute("message", "Cập nhật sách thành công");
         } catch (RuntimeException e) {
-            populateListModel(model, null, null, 1, null, authentication);
+            populateListModel(model, query, category, page, sortBy, authentication);
             model.addAttribute("bookDTO", new BookDTO());
             model.addAttribute("showEditModal", true);
             model.addAttribute("editBookId", id);
             bindingResult.rejectValue("isbn", "error.editBookDTO", e.getMessage());
             return "book/list";
         }
-        return "redirect:/books";
+        
+        redirectAttributes.addAttribute("page", page);
+        if (query != null && !query.isEmpty()) redirectAttributes.addAttribute("query", query);
+        if (category != null) redirectAttributes.addAttribute("category", category);
+        if (sortBy != null && !sortBy.isEmpty()) redirectAttributes.addAttribute("sortBy", sortBy);
+        
+        return "redirect:/books" + (query != null && !query.isEmpty() ? "/search" : "");
     }
 
     // Xóa truyện

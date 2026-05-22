@@ -53,3 +53,25 @@ function showExtendDialog() {
         }
     });
 }
+
+function confirmCancelReturn(buttonElement) {
+    Swal.fire({
+        title: 'Hủy Yêu Cầu Trả?',
+        text: 'Bạn có chắc chắn muốn hủy yêu cầu trả truyện này không?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Đồng ý hủy',
+        cancelButtonText: 'Không',
+        background: '#181818',
+        color: '#e0e0e0',
+        customClass: {
+            popup: 'border border-danger border-opacity-25 rounded-3'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            buttonElement.closest('form').submit();
+        }
+    });
+}

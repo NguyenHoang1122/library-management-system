@@ -75,4 +75,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = "SELECT DATE(create_date) as date, COUNT(id) as count FROM users GROUP BY DATE(create_date) ORDER BY date DESC LIMIT 30", nativeQuery = true)
     List<Object[]> countDailyNewUsers();
+
+    @Query(value = "SELECT DATE_FORMAT(create_date, '%Y') as date, COUNT(id) as count FROM users GROUP BY DATE_FORMAT(create_date, '%Y') ORDER BY date DESC LIMIT 5", nativeQuery = true)
+    List<Object[]> countYearlyNewUsers();
+
+    @Query(value = "SELECT DATE_FORMAT(create_date, '%Y-%m') as date, COUNT(id) as count FROM users GROUP BY DATE_FORMAT(create_date, '%Y-%m') ORDER BY date DESC LIMIT 12", nativeQuery = true)
+    List<Object[]> countMonthlyNewUsers();
 }

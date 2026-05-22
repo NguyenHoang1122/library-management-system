@@ -1,78 +1,77 @@
-let currentBorrowBookId = null;
-
-function prepareBorrowModal(button) {
-    currentBorrowBookId = button.getAttribute('data-id');
-    const bookName = button.getAttribute('data-name');
-    document.getElementById('modalBorrowBookName').innerText = bookName;
-    document.getElementById('borrowNote').value = '';
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-    const confirmBorrowBtn = document.getElementById('confirmBorrowBtn');
-    if (confirmBorrowBtn) {
-        confirmBorrowBtn.addEventListener('click', () => {
-            if (!currentBorrowBookId) return;
-            
-            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-            const note = document.getElementById('borrowNote').value;
-            
-            confirmBorrowBtn.disabled = true;
-            confirmBorrowBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang gửi...';
+    // Add to cart logic
+    document.querySelectorAll('.btn-add-to-cart').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const bookId = this.getAttribute('data-id');
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : '';
 
-            fetch(`/borrow/quick-request/${currentBorrowBookId}`, {
+            const formData = new URLSearchParams();
+            formData.append('bookId', bookId);
+            formData.append('quantity', 1);
+
+            const headers = {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            };
+            if (csrfHeader && csrfToken) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            const originalHtml = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>...';
+            this.disabled = true;
+
+            fetch('/cart/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    [csrfHeader]: csrfToken
-                },
-                body: `note=${encodeURIComponent(note)}`
+                headers: headers,
+                body: formData.toString()
             })
-            .then(res => res.json())
+            .then(res => {
+                if (res.redirected && res.url.includes('/login')) {
+                    window.location.href = res.url;
+                    return null;
+                }
+                if (res.status === 401) {
+                    window.location.href = '/login';
+                    return null;
+                }
+                return res.json();
+            })
             .then(data => {
+                if (!data) return;
                 if (data.success) {
-                    // Hide the modal
-                    const modalEl = document.getElementById('borrowModal');
-                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                    if (modalInstance) {
-                        modalInstance.hide();
-                    }
-
-                    // Dynamically update the borrow button to 'Đang chờ duyệt'
-                    const borrowBtn = document.querySelector(`.btn-borrow[data-id="${currentBorrowBookId}"]`);
-                    if (borrowBtn) {
-                        const newBtn = document.createElement('button');
-                        newBtn.className = 'btn btn-secondary btn-action-sm disabled';
-                        newBtn.style.flex = '2';
-                        newBtn.innerText = 'Đang chờ duyệt';
-                        borrowBtn.replaceWith(newBtn);
+                    let cartBadge = document.getElementById('cartBadge');
+                    if (cartBadge) {
+                        let currentCount = parseInt(cartBadge.innerText) || 0;
+                        cartBadge.innerText = currentCount + 1;
+                        cartBadge.style.display = 'inline-block';
                     }
 
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
                             title: 'Thành công',
-                            text: 'Đã gửi yêu cầu mượn thành công!',
+                            html: data.message || 'Đã thêm vào giỏ hàng!',
                             confirmButtonColor: '#00b074',
                             background: '#181818',
                             color: '#e0e0e0',
                             customClass: {
                                 popup: 'border border-success border-opacity-25 rounded-3'
                             }
-                        }).then(() => {
-                            location.reload();
                         });
                     } else {
-                        alert("Đã gửi yêu cầu mượn thành công!");
-                        location.reload();
+                        alert(data.message || 'Đã thêm vào giỏ hàng!');
                     }
                 } else {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Thất bại',
-                            text: data.message,
-                            confirmButtonColor: '#dc3545',
+                            title: 'Lỗi',
+                            html: data.message || 'Thêm vào giỏ hàng thất bại',
+                            confirmButtonColor: '#d33',
                             background: '#181818',
                             color: '#e0e0e0',
                             customClass: {
@@ -80,11 +79,11 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                         });
                     } else {
-                        alert("Lỗi: " + data.message);
+                        alert(data.message || 'Thêm vào giỏ hàng thất bại');
                     }
-                    confirmBorrowBtn.disabled = false;
-                    confirmBorrowBtn.innerText = 'Xác nhận mượn';
                 }
+                this.innerHTML = originalHtml;
+                this.disabled = false;
             })
             .catch(err => {
                 console.error(err);
@@ -92,19 +91,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     Swal.fire({
                         icon: 'error',
                         title: 'Lỗi',
-                        text: 'Đã có lỗi xảy ra khi gửi yêu cầu.',
-                        confirmButtonColor: '#dc3545',
+                        html: 'Không thể thêm vào giỏ hàng do lỗi mạng.',
+                        confirmButtonColor: '#d33',
                         background: '#181818',
                         color: '#e0e0e0'
                     });
                 } else {
-                    alert("Đã có lỗi xảy ra khi gửi yêu cầu.");
+                    alert('Lỗi mạng khi thêm vào giỏ hàng.');
                 }
-                confirmBorrowBtn.disabled = false;
-                confirmBorrowBtn.innerText = 'Xác nhận mượn';
+                this.innerHTML = originalHtml;
+                this.disabled = false;
             });
         });
-    }
+    });
     
     // Convert default delete prompt to SweetAlert2 for consistency
     document.querySelectorAll('.btn-delete-wishlist').forEach(button => {

@@ -12,7 +12,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/my-notifications")
@@ -71,8 +73,8 @@ public class NotificationController {
     // AJAX API để đánh dấu đã đọc một thông báo một cách nhanh chóng mà không cần tải lại toàn bộ trang web
     @PostMapping("/{notificationId}/mark-read-ajax")
     @ResponseBody
-    public java.util.Map<String, Object> markAsReadAjax(@PathVariable Long notificationId) {
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
+    public Map<String, Object> markAsReadAjax(@PathVariable Long notificationId) {
+        Map<String, Object> response = new HashMap<>();
         try {
             notificationService.markAsRead(notificationId);
             response.put("success", true);
@@ -102,8 +104,8 @@ public class NotificationController {
     // AJAX API để đánh dấu tất cả các thông báo của người dùng là đã đọc nhanh chóng không cần load lại trang
     @PostMapping("/mark-all-read-ajax")
     @ResponseBody
-    public java.util.Map<String, Object> markAllAsReadAjax(Authentication authentication) {
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
+    public Map<String, Object> markAllAsReadAjax(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
         try {
             User user = userService.findByUserName(authentication.getName())
                     .orElseThrow(() -> new RuntimeException("User không tồn tại"));
@@ -156,8 +158,8 @@ public class NotificationController {
     // AJAX API xóa toàn bộ các thông báo đã đọc giúp cập nhật nhanh giao diện mà không cần reload trang
     @PostMapping("/delete-read-ajax")
     @ResponseBody
-    public java.util.Map<String, Object> deleteReadNotificationsAjax(Authentication authentication) {
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
+    public Map<String, Object> deleteReadNotificationsAjax(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
         try {
             User user = userService.findByUserName(authentication.getName())
                     .orElseThrow(() -> new RuntimeException("User không tồn tại"));

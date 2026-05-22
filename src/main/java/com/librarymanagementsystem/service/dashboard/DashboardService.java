@@ -4,6 +4,6 @@ import java.util.Map;
 
 public interface DashboardService {
     Map<String, Object> getDashboardStatistics();
-    Map<String, Object> getRevenueChartData();
-    Map<String, Object> getUserRegistrationChartData();
+    Map<String, Object> getRevenueChartData(String period);
+    Map<String, Object> getUserRegistrationChartData(String period);
 }

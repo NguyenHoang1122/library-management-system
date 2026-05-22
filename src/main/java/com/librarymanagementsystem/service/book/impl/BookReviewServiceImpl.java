@@ -40,9 +40,9 @@ public class BookReviewServiceImpl implements BookReviewService {
 
     // Lưu hoặc cập nhật một đánh giá.
     @Override
-    public BookReview saveReview(Long bookId, Long userId, Integer rating, String comment) {
+    public BookReview saveReview(Long bookId, Long userId, Integer rating) {
         if (!hasUserRentedBook(userId, bookId)) {
-            throw new RuntimeException("Bạn chỉ có thể đánh giá và bình luận sau khi đã thuê truyện này!");
+            throw new RuntimeException("Bạn chỉ có thể đánh giá sau khi đã thuê truyện này!");
         }
         if (rating == null || rating < 1 || rating > 5) {
             throw new RuntimeException("Đánh giá phải từ 1 đến 5 sao!");
@@ -59,7 +59,6 @@ public class BookReviewServiceImpl implements BookReviewService {
         review.setBook(book);
         review.setUser(user);
         review.setRating(rating);
-        review.setComment(comment);
         review.setCreatedDate(LocalDateTime.now());
 
         return bookReviewRepository.save(review);
@@ -82,5 +81,20 @@ public class BookReviewServiceImpl implements BookReviewService {
     @Override
     public Long countReviewsForBook(Long bookId) {
         return bookReviewRepository.countReviewsForBook(bookId);
+    }
+
+    @Override
+    public java.util.Map<Integer, Long> getRatingSummary(Long bookId) {
+        List<Object[]> summary = bookReviewRepository.getRatingSummary(bookId);
+        java.util.Map<Integer, Long> map = new java.util.HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            map.put(i, 0L);
+        }
+        for (Object[] row : summary) {
+            Integer rating = ((Number) row[0]).intValue();
+            Long count = ((Number) row[1]).longValue();
+            map.put(rating, count);
+        }
+        return map;
     }
 }

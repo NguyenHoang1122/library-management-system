@@ -1,6 +1,8 @@
 package com.librarymanagementsystem.controller.wishlist;
 
 import com.librarymanagementsystem.model.book.Wishlist;
+import com.librarymanagementsystem.model.borrow.BorrowRequestItem;
+import com.librarymanagementsystem.model.borrow.status.RequestStatus;
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
 import com.librarymanagementsystem.service.user.UserService;
@@ -52,8 +54,8 @@ public class WishlistController {
         List<BorrowRequest> userRequests = borrowService.getUserBorrowRequests(userId);
         if (userRequests != null) {
             for (BorrowRequest req : userRequests) {
-                if (req.getRequestStatus() == com.librarymanagementsystem.model.borrow.status.RequestStatus.PENDING) {
-                    for (com.librarymanagementsystem.model.borrow.BorrowRequestItem item : req.getBorrowRequestItems()) {
+                if (req.getRequestStatus() == RequestStatus.PENDING) {
+                    for (BorrowRequestItem item : req.getBorrowRequestItems()) {
                         pendingBookIds.add(item.getBook().getId());
                     }
                 }

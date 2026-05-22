@@ -33,6 +33,7 @@ public class LibrarianController {
 
     private final BorrowService borrowService;
     private final UserService userService;
+    private final com.librarymanagementsystem.repository.book.BookRepository bookRepository;
 
     //danh sách các yêu cầu mượn truyện đang chờ duyệt
     @GetMapping("/borrows")
@@ -414,5 +415,32 @@ public class LibrarianController {
             return "redirect:/librarian/active-borrows/user/" + userId;
         }
         return "redirect:/librarian/active-borrows";
+    }
+
+    // ---------------- TẠO ĐƠN MƯỢN TRỰC TIẾP ----------------
+    @GetMapping("/direct-borrow")
+    public String showDirectBorrowForm(Model model) {
+        model.addAttribute("users", userService.getAllActiveUsers());
+        model.addAttribute("books", bookRepository.findAll());
+        return "librarian/direct-borrow";
+    }
+
+    @PostMapping("/direct-borrow")
+    public String processDirectBorrow(@RequestParam Long userId,
+                                      @RequestParam(required = false) List<Long> bookIds,
+                                      @RequestParam(required = false) List<Integer> quantities,
+                                      Authentication authentication,
+                                      RedirectAttributes redirectAttributes) {
+        try {
+            User librarian = userService.findByUserName(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("Librarian not found"));
+            
+            borrowService.createDirectBorrow(librarian.getId(), userId, bookIds, quantities);
+            redirectAttributes.addFlashAttribute("message", "Tạo đơn mượn trực tiếp thành công. Tiền đã được trừ từ ví độc giả.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/librarian/direct-borrow";
+        }
+        return "redirect:/librarian/active-borrows/user/" + userId;
     }
 }

@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const parentDiv = btn.parentElement;
                     if (parentDiv) {
                         parentDiv.innerHTML = `
-                            <span class="text-muted text-opacity-50" title="ﾄ静｣ ﾄ黛ｻ皇">
+                            <span class="text-muted text-opacity-50" title="Đã đọc">
                                 <i class="bi bi-check2-all fs-5"></i>
                             </span>
                         `;
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
-                            title: 'Thﾃnh cﾃｴng',
+                            title: 'Thành công',
                             html: data.message,
                             confirmButtonColor: '#00b074',
                             background: '#181818',
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const markReadBtnDiv = itemDiv.querySelector('.ms-2.px-2');
                                 if (markReadBtnDiv) {
                                     markReadBtnDiv.innerHTML = `
-                                        <span class="text-muted text-opacity-50" title="ﾄ静｣ ﾄ黛ｻ皇">
+                                        <span class="text-muted text-opacity-50" title="Đã đọc">
                                             <i class="bi bi-check2-all fs-5"></i>
                                         </span>
                                     `;
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Th蘯･t b蘯｡i',
+                            title: 'Thất bại',
                             html: data.message,
                             confirmButtonColor: '#dc3545',
                             background: '#181818',
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'success',
-                            title: 'Thﾃnh cﾃｴng',
+                            title: 'Thành công',
                             html: data.message,
                             confirmButtonColor: '#00b074',
                             background: '#181818',
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // If no notifications left, show empty placeholder
                         if (remainingCount === 0) {
                             dropdownMenu.innerHTML = `
-                                <li><a class="dropdown-item text-center py-3 text-secondary">Khﾃｴng cﾃｳ thﾃｴng bﾃ｡o</a></li>
+                                <li><a class="dropdown-item text-center py-3 text-secondary">Không có thông báo</a></li>
                             `;
                             // Also remove/hide badge if present
                             const badge = document.getElementById('notificationBadge');
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'info',
-                            title: 'Thﾃｴng bﾃ｡o',
+                            title: 'Thông báo',
                             html: data.message,
                             confirmButtonColor: '#00b074',
                             background: '#181818',
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (message) {
             Swal.fire({
                 icon: 'success',
-                title: 'Thﾃnh cﾃｴng',
+                title: 'Thành công',
                 html: message,
                 confirmButtonColor: '#00b074',
                 background: '#181818',
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (error) {
             Swal.fire({
                 icon: 'error',
-                title: 'Th蘯･t b蘯｡i',
+                title: 'Thất bại',
                 html: error,
                 confirmButtonColor: '#dc3545',
                 background: '#181818',

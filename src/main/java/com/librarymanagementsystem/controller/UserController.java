@@ -197,4 +197,26 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    // Rút tiền
+    @PostMapping("/withdraw")
+    @ResponseBody
+    public ResponseEntity<?> withdraw(@RequestParam Double amount, Authentication authentication) {
+        if (authentication == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+        if (amount == null || amount <= 0) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ"));
+        
+        try {
+            String userName = authentication.getName();
+            User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+            double currentBalance = user.getBalance() != null ? user.getBalance() : 0.0;
+            if (currentBalance < amount) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Số dư không đủ để rút"));
+            }
+            user.setBalance(currentBalance - amount);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("success", true, "newBalance", user.getBalance()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }

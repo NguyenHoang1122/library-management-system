@@ -10,14 +10,12 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "book_reviews", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"book_id", "user_id"})
-})
+@Table(name = "book_comments")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BookReview {
+public class BookComment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,8 +29,14 @@ public class BookReview {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content;
+
     @Column(nullable = false)
-    private Integer rating;
+    private boolean isHidden = false;
+
+    @Column(nullable = false)
+    private boolean isEdited = false;
 
     @Column(nullable = false)
     private LocalDateTime createdDate;

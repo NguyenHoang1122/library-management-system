@@ -25,8 +25,8 @@ public class DashboardServiceImpl implements DashboardService {
         Map<String, Object> stats = new HashMap<>();
         
         long totalUsers = userRepository.countTotalUsers();
-        Double totalRevenue = borrowRequestRepository.sumTotalRevenue();
-        Double totalCost = borrowRequestRepository.sumTotalCost();
+        Double totalRevenue = borrowRequestRepository.sumTotalRevenueCurrentMonth();
+        Double totalCost = borrowRequestRepository.sumTotalCostCurrentMonth();
         
         if (totalRevenue == null) totalRevenue = 0.0;
         if (totalCost == null) totalCost = 0.0;
@@ -41,15 +41,22 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public Map<String, Object> getRevenueChartData() {
-        List<Object[]> dailyRevenue = borrowRequestRepository.getDailyRevenue();
+    public Map<String, Object> getRevenueChartData(String period) {
+        List<Object[]> revenueData;
+        if ("year".equalsIgnoreCase(period)) {
+            revenueData = borrowRequestRepository.getYearlyRevenue();
+        } else if ("month".equalsIgnoreCase(period)) {
+            revenueData = borrowRequestRepository.getMonthlyRevenue();
+        } else {
+            revenueData = borrowRequestRepository.getDailyRevenue();
+        }
         
         List<String> labels = new ArrayList<>();
         List<Double> data = new ArrayList<>();
         
-        for (int i = dailyRevenue.size() - 1; i >= 0; i--) { // Reverse to show oldest to newest
-            Object[] row = dailyRevenue.get(i);
-            labels.add(row[0].toString());
+        for (int i = revenueData.size() - 1; i >= 0; i--) { // Reverse to show oldest to newest
+            Object[] row = revenueData.get(i);
+            labels.add(row[0] != null ? row[0].toString() : "N/A");
             data.add(row[1] != null ? ((Number) row[1]).doubleValue() : 0.0);
         }
         
@@ -61,15 +68,22 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public Map<String, Object> getUserRegistrationChartData() {
-        List<Object[]> dailyUsers = userRepository.countDailyNewUsers();
+    public Map<String, Object> getUserRegistrationChartData(String period) {
+        List<Object[]> usersData;
+        if ("year".equalsIgnoreCase(period)) {
+            usersData = userRepository.countYearlyNewUsers();
+        } else if ("month".equalsIgnoreCase(period)) {
+            usersData = userRepository.countMonthlyNewUsers();
+        } else {
+            usersData = userRepository.countDailyNewUsers();
+        }
         
         List<String> labels = new ArrayList<>();
         List<Long> data = new ArrayList<>();
         
-        for (int i = dailyUsers.size() - 1; i >= 0; i--) {
-            Object[] row = dailyUsers.get(i);
-            labels.add(row[0].toString());
+        for (int i = usersData.size() - 1; i >= 0; i--) {
+            Object[] row = usersData.get(i);
+            labels.add(row[0] != null ? row[0].toString() : "N/A");
             data.add(row[1] != null ? ((Number) row[1]).longValue() : 0L);
         }
         
