@@ -403,6 +403,19 @@ public class BookController {
         return "redirect:/books";
     }
 
+    // Nhập thêm truyện
+    @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
+    @PostMapping("/import/{id}")
+    public String importBooks(@PathVariable Long id, @RequestParam("addedQuantity") int addedQuantity, RedirectAttributes redirectAttributes) {
+        try {
+            bookService.importBooks(id, addedQuantity);
+            redirectAttributes.addFlashAttribute("message", "Nhập thêm truyện thành công");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/books";
+    }
+
     // Check isbn
     @GetMapping("/api/check-isbn")
     @ResponseBody

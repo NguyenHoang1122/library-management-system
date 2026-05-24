@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Danh sách truyện | Truyện 360</title>
@@ -116,6 +116,12 @@
                                             th:data-depositprice="${book.depositPrice}"
                                             th:data-author="${book.author?.name}"
                                             th:data-categories="${book.categoryIds}">Sửa</button>
+                                    <button sec:authorize="hasAnyRole('ADMIN','LIBRARIAN')"
+                                            type="button"
+                                            class="btn btn-outline-success btn-sm rounded-pill px-3 btn-import-book text-nowrap"
+                                            th:data-id="${book.id}"
+                                            th:data-title="${book.title}"
+                                            th:data-quantity="${book.quantity}">Nhập</button>
                                     <a sec:authorize="hasRole('ADMIN')"
                                        th:href="@{/books/delete/{id}(id=${book.id})}"
                                        class="btn btn-outline-danger btn-sm rounded-pill px-3 text-nowrap btn-delete-book">Xóa</a>
@@ -335,6 +341,44 @@
                 <div class="modal-footer" style="border-top: 1px solid #2d2d2d;">
                     <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-bold" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn btn-warning px-4 py-2 fw-bold text-dark rounded-pill">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Book Modal -->
+<div class="modal fade" id="importBookModal" tabindex="-1" aria-labelledby="importBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #181818; border: 1px solid #2d2d2d; border-radius: 12px; color: #e0e0e0;">
+            <div class="modal-header" style="border-bottom: 1px solid #2d2d2d; background-color: #202020; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                <h5 class="modal-title text-white" id="importBookModalLabel">
+                    <i class="bi bi-box-arrow-in-down me-2 text-success"></i>Nhập Thêm Truyện
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="importBookForm" method="post">
+                <div class="modal-body p-4">
+                    <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    
+                    <div class="mb-3">
+                        <label class="fw-bold text-secondary small mb-2">TÊN TRUYỆN</label>
+                        <input type="text" id="importBookTitle" class="form-control file-input-dark" readonly style="background-color: #2a2a2a !important; border: none;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold text-secondary small mb-2">TỒN KHO HIỆN TẠI</label>
+                        <input type="text" id="importBookCurrentQuantity" class="form-control file-input-dark text-info fw-bold" readonly style="background-color: #2a2a2a !important; border: none;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold text-secondary small mb-2">SỐ LƯỢNG NHẬP THÊM <span class="text-danger">*</span></label>
+                        <input type="number" name="addedQuantity" id="importBookAddedQuantity" class="form-control" min="1" required placeholder="Nhập số lượng...">
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #2d2d2d;">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-bold" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success px-4 py-2 fw-bold rounded-pill text-dark">Nhập ngay</button>
                 </div>
             </form>
         </div>

@@ -18,6 +18,8 @@ public interface BookService {
 
     Book updateBook(Long id, BookDTO bookDTO);
 
+    void importBooks(Long bookId, int addedQuantity);
+
     void deleteBook(Long id);
 
     Page<Book> searchBooks(String query, Pageable pageable);

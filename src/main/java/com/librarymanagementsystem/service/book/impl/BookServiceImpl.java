@@ -10,8 +10,13 @@ import com.librarymanagementsystem.repository.book.BookRepository;
 import com.librarymanagementsystem.repository.book.BookCopyRepository;
 import com.librarymanagementsystem.model.book.BookCopy;
 import com.librarymanagementsystem.model.book.status.BookCopyStatus;
+import com.librarymanagementsystem.model.book.BookImportHistory;
+import com.librarymanagementsystem.model.user.User;
+import com.librarymanagementsystem.model.user.status.RoleStatus;
 import com.librarymanagementsystem.repository.book.category.CategoryRepository;
 import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
+import com.librarymanagementsystem.repository.book.BookImportHistoryRepository;
+import com.librarymanagementsystem.repository.user.UserRepository;
 import com.librarymanagementsystem.service.book.BookService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +43,8 @@ public class BookServiceImpl implements BookService {
     private final CategoryRepository categoryRepository;
     private final AuthorRepository authorRepository;
     private final BorrowTransactionRepository borrowTransactionRepository;
+    private final BookImportHistoryRepository bookImportHistoryRepository;
+    private final UserRepository userRepository;
 
     @Value("${file.upload-dir}")
     private String upload;
@@ -72,9 +79,35 @@ public class BookServiceImpl implements BookService {
                 copy.setCreatedDate(LocalDateTime.now());
                 bookCopyRepository.save(copy);
             }
+            
+            // Deduct admin money and save history
+            double totalPrice = savedBook.getQuantity() * (savedBook.getImportPrice() != null ? savedBook.getImportPrice() : 0.0);
+            deductAdminWallet(totalPrice);
+            saveImportHistory(savedBook, savedBook.getQuantity(), savedBook.getImportPrice(), totalPrice);
         }
         
         return savedBook;
+    }
+
+    private void deductAdminWallet(double amount) {
+        if (amount <= 0) return;
+        List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
+        if (!admins.isEmpty()) {
+            User admin = admins.get(0);
+            double currentBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
+            admin.setBalance(currentBalance - amount);
+            userRepository.save(admin);
+        }
+    }
+
+    private void saveImportHistory(Book book, int quantity, Double importPrice, double totalPrice) {
+        BookImportHistory history = new BookImportHistory();
+        history.setBook(book);
+        history.setImportQuantity(quantity);
+        history.setImportPrice(importPrice);
+        history.setTotalPrice(totalPrice);
+        history.setImportDate(LocalDateTime.now());
+        bookImportHistoryRepository.save(history);
     }
 
     @Override
@@ -106,6 +139,12 @@ public class BookServiceImpl implements BookService {
                 copy.setCreatedDate(LocalDateTime.now());
                 bookCopyRepository.save(copy);
             }
+            
+            // Deduct admin money and save history for added books
+            double importPrice = bookDTO.getImportPrice() != null ? bookDTO.getImportPrice() : 0.0;
+            double totalPrice = diff * importPrice;
+            deductAdminWallet(totalPrice);
+            saveImportHistory(book, diff, importPrice, totalPrice);
         } else if (newQuantity < currentQuantity) {
             int diff = currentQuantity - newQuantity;
             List<BookCopy> availableCopies = bookCopyRepository.findByBookIdAndStatus(book.getId(), BookCopyStatus.AVAILABLE);
@@ -171,6 +210,36 @@ public class BookServiceImpl implements BookService {
 
         book.setUpdatedDate(LocalDateTime.now());
         return bookRepository.save(book);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void importBooks(Long bookId, int addedQuantity) {
+        if (addedQuantity <= 0) {
+            throw new RuntimeException("Số lượng nhập phải lớn hơn 0");
+        }
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("Sách không tồn tại"));
+
+        // Tạo book copies
+        for (int i = 0; i < addedQuantity; i++) {
+            BookCopy copy = new BookCopy();
+            copy.setBook(book);
+            copy.setBarcode(book.getIsbn() + "-" + System.currentTimeMillis() + "-" + i);
+            copy.setStatus(BookCopyStatus.AVAILABLE);
+            copy.setCreatedDate(LocalDateTime.now());
+            bookCopyRepository.save(copy);
+        }
+
+        // Cập nhật số lượng sách
+        int currentQuantity = book.getQuantity() != null ? book.getQuantity() : 0;
+        book.setQuantity(currentQuantity + addedQuantity);
+        bookRepository.save(book);
+
+        // Deduct admin money and save history
+        double importPrice = book.getImportPrice() != null ? book.getImportPrice() : 0.0;
+        double totalPrice = addedQuantity * importPrice;
+        deductAdminWallet(totalPrice);
+        saveImportHistory(book, addedQuantity, importPrice, totalPrice);
     }
 
     @Override

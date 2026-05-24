@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import com.librarymanagementsystem.model.borrow.status.RequestStatus;
 import com.librarymanagementsystem.model.borrow.status.TransactionStatus;
 import com.librarymanagementsystem.model.user.User;
+import com.librarymanagementsystem.model.user.status.RoleStatus;
 import com.librarymanagementsystem.repository.book.BookRepository;
 import com.librarymanagementsystem.repository.book.BookCopyRepository;
 import com.librarymanagementsystem.repository.user.UserRepository;
@@ -707,6 +708,18 @@ public class BorrowServiceImpl implements BorrowService {
         double oldBalance = user.getBalance() != null ? user.getBalance() : 0.0;
         user.setBalance(oldBalance + refundAmount);
         userRepository.save(user);
+
+        // Cộng tiền sinh lời (phí thuê + phí trễ hạn) vào ví Admin
+        double profit = totalBorrowFee + lateFine;
+        if (profit > 0) {
+            List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
+            if (!admins.isEmpty()) {
+                User admin = admins.get(0);
+                double adminBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
+                admin.setBalance(adminBalance + profit);
+                userRepository.save(admin);
+            }
+        }
 
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
         String notifContent = String.format("Đã xử lý trả %d cuốn. Cọc: %s đ, Phí thuê: %s đ, Phạt: %s đ, Ship trả: %s đ. Thực lãnh: %s đ. Số dư cũ: %s đ, Số dư mới: %s đ.",

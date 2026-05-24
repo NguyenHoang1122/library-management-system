@@ -38,6 +38,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a th:href="@{/admin/import-history}" class="nav-link-waka" th:classappend="${activePage == 'importhistory' ? 'active' : ''}">
+                        <i class="bi bi-clock-history me-3"></i> Lịch sử nhập truyện
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a th:href="@{/user/trash}" class="nav-link-waka" th:classappend="${activePage == 'trash' ? 'active' : ''}">
                         <i class="bi bi-trash me-3"></i> Thùng rác
                     </a>
@@ -67,13 +72,13 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a th:href="@{/librarian/returns}" class="nav-link-waka" th:classappend="${activePage == 'returns' ? 'active' : ''}">
-                        <i class="bi bi-arrow-counterclockwise me-3"></i> Yêu cầu trả truyện
+                    <a th:href="@{/librarian/active-borrows}" class="nav-link-waka" th:classappend="${activePage == 'activeborrows' ? 'active' : ''}">
+                        <i class="bi bi-journal-check me-3"></i> Truyện đang được mượn
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a th:href="@{/librarian/active-borrows}" class="nav-link-waka" th:classappend="${activePage == 'activeborrows' ? 'active' : ''}">
-                        <i class="bi bi-journal-check me-3"></i> Truyện đang được mượn
+                    <a th:href="@{/admin/import-history}" class="nav-link-waka" th:classappend="${activePage == 'importhistory' ? 'active' : ''}">
+                        <i class="bi bi-clock-history me-3"></i> Lịch sử nhập truyện
                     </a>
                 </li>
                 <li class="nav-item">

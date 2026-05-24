@@ -1,148 +1,105 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
-<head th:replace="~{layout :: header_head}"></head>
-<body class="bg-light">
-    <header th:replace="~{layout :: header}"></header>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Thống kê thư viện | Truyện 360</title>
+    <div th:replace="~{layout :: header_head}"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+<div th:replace="~{layout :: header}"></div>
 
-    <!-- Nhúng CSS sidebar tương tự các trang khác -->
-    <style th:replace="~{fragments/sidebar :: sidebar_styles}"></style>
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='dashboard')}"></div>
+        </div>
 
-    <div class="container-fluid my-4">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2">
-                <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='dashboard')}"></div>
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <div class="admin-header-waka">
+                <h3 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i> Thống Kê Thư Viện</h3>
             </div>
-
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10">
-                <h3 class="mb-4 fw-bold text-dark"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Thống Kê Thư Viện</h3>
-                
-                <!-- KPI Cards -->
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <div class="card shadow-sm border-0 bg-primary text-white rounded-3 h-100">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div>
-                                    <h6 class="text-uppercase mb-2 opacity-75">Tổng doanh thu dự kiến</h6>
-                                    <h3 class="fw-bold mb-0" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</h3>
-                                </div>
-                                <i class="bi bi-cash-stack fs-1 opacity-50"></i>
+            
+            <!-- KPI Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm card-waka border-start border-primary border-4 rounded-3 h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold">Tổng doanh thu dự kiến chưa trừ chi phí</h6>
+                                <h3 class="fw-bold mb-0 text-primary" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</h3>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card shadow-sm border-0 bg-success text-white rounded-3 h-100">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div>
-                                    <h6 class="text-uppercase mb-2 opacity-75">Doanh thu thực tế</h6>
-                                    <h3 class="fw-bold mb-0" th:text="${#numbers.formatDecimal(actualRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</h3>
-                                </div>
-                                <i class="bi bi-wallet2 fs-1 opacity-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card shadow-sm border-0 bg-warning text-dark rounded-3 h-100">
-                            <div class="card-body d-flex align-items-center justify-content-between">
-                                <div>
-                                    <h6 class="text-uppercase mb-2 opacity-75">Tổng Users Đăng ký</h6>
-                                    <h3 class="fw-bold mb-0" th:text="${totalUsers}">0</h3>
-                                </div>
-                                <i class="bi bi-people fs-1 opacity-50"></i>
-                            </div>
+                            <i class="bi bi-cash-stack fs-1 text-primary opacity-50"></i>
                         </div>
                     </div>
                 </div>
-
-                <!-- Charts -->
-                <div class="row">
-                    <div class="col-lg-6 mb-4">
-                        <div class="card shadow-sm border-0 rounded-3 h-100">
-                            <div class="card-header bg-white py-3 border-0">
-                                <h6 class="fw-bold mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Biểu đồ Doanh Thu Hàng Ngày</h6>
+                <div class="col-md-4">
+                    <div class="card shadow-sm card-waka border-start border-success border-4 rounded-3 h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold">Doanh thu thực tế đã trừ chi phí</h6>
+                                <h3 class="fw-bold mb-0 text-success" th:text="${#numbers.formatDecimal(actualRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</h3>
                             </div>
-                            <div class="card-body">
-                                <canvas id="revenueChart" height="250"></canvas>
-                            </div>
+                            <i class="bi bi-wallet2 fs-1 text-success opacity-50"></i>
                         </div>
                     </div>
-                    <div class="col-lg-6 mb-4">
-                        <div class="card shadow-sm border-0 rounded-3 h-100">
-                            <div class="card-header bg-white py-3 border-0">
-                                <h6 class="fw-bold mb-0"><i class="bi bi-person-lines-fill text-success me-2"></i>Biểu đồ User Đăng Ký Mới</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm card-waka border-start border-warning border-4 rounded-3 h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold">Tổng Users Đăng ký</h6>
+                                <h3 class="fw-bold mb-0 text-warning" th:text="${totalUsers}">0</h3>
                             </div>
-                            <div class="card-body">
-                                <canvas id="usersChart" height="250"></canvas>
-                            </div>
+                            <i class="bi bi-people fs-1 text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow-sm card-waka rounded-3 h-100">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Biểu đồ Doanh Thu</h6>
+                            <select id="revenuePeriod" class="form-select form-select-sm w-auto">
+                                <option value="day">Theo Ngày</option>
+                                <option value="month">Theo Tháng</option>
+                                <option value="year">Theo Năm</option>
+                            </select>
+                        </div>
+                        <div class="card-body rounded-bottom" style="background: #121212;">
+                            <canvas id="revenueChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow-sm card-waka rounded-3 h-100">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0"><i class="bi bi-person-lines-fill text-success me-2"></i>Biểu đồ User Đăng Ký Mới</h6>
+                            <select id="usersPeriod" class="form-select form-select-sm w-auto">
+                                <option value="day">Theo Ngày</option>
+                                <option value="month">Theo Tháng</option>
+                                <option value="year">Theo Năm</option>
+                            </select>
+                        </div>
+                        <div class="card-body rounded-bottom" style="background: #121212;">
+                            <canvas id="usersChart" height="250"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</main>
 
-    <footer th:replace="~{layout :: footer}"></footer>
+<div th:replace="~{layout :: footer}"></div>
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Load Revenue Chart
-            fetch('/admin/dashboard/chart/revenue')
-                .then(response => response.json())
-                .then(data => {
-                    const ctx = document.getElementById('revenueChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: data.labels,
-                            datasets: [{
-                                label: 'Doanh thu (VNĐ)',
-                                data: data.data,
-                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                borderWidth: 1,
-                                borderRadius: 4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: { beginAtZero: true }
-                            }
-                        }
-                    });
-                });
-
-            // Load Users Chart
-            fetch('/admin/dashboard/chart/users')
-                .then(response => response.json())
-                .then(data => {
-                    const ctx = document.getElementById('usersChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: data.labels,
-                            datasets: [{
-                                label: 'Số lượng đăng ký mới',
-                                data: data.data,
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                borderWidth: 2,
-                                tension: 0.3,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            scales: {
-                                y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                            }
-                        }
-                    });
-                });
-        });
-    </script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:src="@{/js/dashboard.js}"></script>
 </body>
 </html>

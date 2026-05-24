@@ -41,6 +41,23 @@ document.querySelectorAll('.btn-edit-book').forEach(button => {
     });
 });
 
+// Import Book Modal logic
+document.querySelectorAll('.btn-import-book').forEach(button => {
+    button.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        const title = this.getAttribute('data-title');
+        const quantity = this.getAttribute('data-quantity');
+
+        document.getElementById('importBookForm').action = '/books/import/' + id;
+        document.getElementById('importBookTitle').value = title;
+        document.getElementById('importBookCurrentQuantity').value = quantity;
+        document.getElementById('importBookAddedQuantity').value = ''; // Reset
+
+        const importModal = new bootstrap.Modal(document.getElementById('importBookModal'));
+        importModal.show();
+    });
+});
+
 // Reset Add form validation state when opened
 const addBookModalEl = document.getElementById('addBookModal');
 if (addBookModalEl) {
