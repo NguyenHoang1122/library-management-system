@@ -2,7 +2,10 @@ package com.librarymanagementsystem.controller;
 
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.model.user.dto.UserDTO;
-import com.librarymanagementsystem.service.UserService;
+import com.librarymanagementsystem.service.user.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -11,15 +14,22 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
+import com.librarymanagementsystem.repository.user.UserRepository;
+
+import java.util.Map;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
 
+    // Hiển thị thông tin hồ sơ chi tiết (Profile) của người dùng đang đăng nhập hiện tại
     @GetMapping("/profile")
     public String showUserDetail(Authentication authentication, Model model) {
         String userName = authentication.getName();
@@ -30,25 +40,29 @@ public class UserController {
 
     @GetMapping("/profile/edit")
     public String showProfileForm(Authentication authentication, Model model) {
-        String userName = authentication.getName();
-        User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-        UserDTO userDTO = new UserDTO();
-        userDTO.setFullName(user.getFullName());
-        userDTO.setUserName(user.getUserName());
-        userDTO.setEmail(user.getEmail());
-        userDTO.setPhoneNumber(user.getPhoneNumber());
-        userDTO.setAddress(user.getAddress());
-        model.addAttribute("userDTO", userDTO);
-        model.addAttribute("user", user);
-        return "user/edit-profile";
+        return "redirect:/user/profile";
     }
 
+    // Xử lý cập nhật thông tin cá nhân
     @PostMapping("/profile/update")
     public String updateProfile(Authentication authentication, @ModelAttribute UserDTO userDTO,
                                 RedirectAttributes redirectAttributes, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("error", "Dữ liệu không hợp lệ");
-            return "redirect:/user/profile/edit";
+            return "redirect:/user/profile";
+        }
+        
+        if (userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Số điện thoại không được để trống");
+            return "redirect:/user/profile";
+        }
+        if (!userDTO.getPhoneNumber().matches("^[0-9]{10,11}$")) {
+            redirectAttributes.addFlashAttribute("error", "Số điện thoại phải là 10-11 chữ số");
+            return "redirect:/user/profile";
+        }
+        if (userDTO.getAddress() == null || userDTO.getAddress().trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Địa chỉ không được để trống");
+            return "redirect:/user/profile";
         }
 
         String userName = authentication.getName();
@@ -61,22 +75,59 @@ public class UserController {
         }
         return "redirect:/user/profile";
     }
+
+    //danh sách user
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public String listActiveUsers(Model model) {
-        List<User> users = userService.getAllActiveUsers();
-        model.addAttribute("users", users);
+    public String listActiveUsers(@RequestParam(defaultValue = "1") int page, Model model) {
+        return searchActiveUsers(null, page, model);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/search")
+    public String searchActiveUsers(@RequestParam(required = false) String query,
+                                    @RequestParam(defaultValue = "1") int page,
+                                    Model model) {
+        if (page < 1) page = 1;
+        Pageable pageable = PageRequest.of(page - 1, 10);
+        Page<User> userPage = userService.getActiveUsers(query, pageable);
+
+        model.addAttribute("users", userPage.getContent());
+        model.addAttribute("currentPage", userPage.getNumber() + 1);
+        model.addAttribute("totalPages", userPage.getTotalPages() > 0 ? userPage.getTotalPages() : 1);
+        model.addAttribute("totalItems", userPage.getTotalElements());
+        model.addAttribute("searchQuery", query);
         model.addAttribute("isTrash", false);
         return "user/list-users";
     }
+
+    // Các user bị xóa mềm
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/trash")
-    public String listDeletedUsers(Model model) {
-        List<User> deletedUsers = userService.getAllDeletedUsers();
-        model.addAttribute("users", deletedUsers);
+    public String listDeletedUsers(@RequestParam(defaultValue = "1") int page, Model model) {
+        return searchDeletedUsers(null, page, model);
+    }
+
+    // Tìm kiếm trong danh sách user bị xóa mềm
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/trash/search")
+    public String searchDeletedUsers(@RequestParam(required = false) String query,
+                                     @RequestParam(defaultValue = "1") int page,
+                                     Model model) {
+        if (page < 1) page = 1;
+        Pageable pageable = PageRequest.of(page - 1, 10);
+        Page<User> userPage = userService.getDeletedUsers(query, pageable);
+
+        model.addAttribute("users", userPage.getContent());
+        model.addAttribute("currentPage", userPage.getNumber() + 1);
+        model.addAttribute("totalPages", userPage.getTotalPages() > 0 ? userPage.getTotalPages() : 1);
+        model.addAttribute("totalItems", userPage.getTotalElements());
+        model.addAttribute("searchQuery", query);
         model.addAttribute("isTrash", true);
         return "user/trash";
     }
+
+    //Đổi vai trò
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/change-role")
     public String changeUserRole(@PathVariable Long id, @RequestParam String roleName,
@@ -89,6 +140,8 @@ public class UserController {
         }
         return "redirect:/user";
     }
+
+    // xóa mềm
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/soft-delete")
     public String softDeleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
@@ -100,6 +153,8 @@ public class UserController {
         }
         return "redirect:/user";
     }
+
+    // Khôi phục user
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/restore")
     public String restoreUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
@@ -111,6 +166,8 @@ public class UserController {
         }
         return "redirect:/user/trash";
     }
+
+    // Xóa vĩnh viễn user
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/permanently-delete")
     public String permanentlyDeleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
@@ -121,5 +178,45 @@ public class UserController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/user/trash";
+    }
+
+    // Nạp tiền
+    @PostMapping("/deposit")
+    @ResponseBody
+    public ResponseEntity<?> deposit(@RequestParam Double amount, Authentication authentication) {
+        if (authentication == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+        if (amount == null || amount <= 0) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ"));
+        
+        try {
+            String userName = authentication.getName();
+            User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+            user.setBalance((user.getBalance() != null ? user.getBalance() : 0.0) + amount);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("success", true, "newBalance", user.getBalance()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Rút tiền
+    @PostMapping("/withdraw")
+    @ResponseBody
+    public ResponseEntity<?> withdraw(@RequestParam Double amount, Authentication authentication) {
+        if (authentication == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+        if (amount == null || amount <= 0) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ"));
+        
+        try {
+            String userName = authentication.getName();
+            User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+            double currentBalance = user.getBalance() != null ? user.getBalance() : 0.0;
+            if (currentBalance < amount) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Số dư không đủ để rút"));
+            }
+            user.setBalance(currentBalance - amount);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("success", true, "newBalance", user.getBalance()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 }

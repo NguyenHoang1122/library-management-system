@@ -1,0 +1,60 @@
+.waka-sidebar {
+    background-color: #121212;
+    padding: 10px;
+    min-height: 100vh;
+}
+.profile-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+}
+.profile-avatar {
+    width: 45px;
+    height: 45px;
+    border: 2px solid #16a085;
+    object-fit: cover;
+}
+.profile-stats {
+    font-size: 0.85rem;
+    color: #888;
+}
+.btn-nap-soi {
+    background: #2c2c2c;
+    color: #f39c12;
+    border: none;
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+.btn-hoi-vien {
+    background: #16a085;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+.nav-link-waka {
+    color: #888;
+    padding: 10px 15px;
+    border-radius: 8px;
+    display: block;
+    text-decoration: none;
+    transition: all 0.3s;
+    font-size: 0.95rem;
+}
+.nav-link-waka:hover {
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+}
+.nav-link-waka.active {
+    background: rgba(255,255,255,0.1);
+    color: #16a085;
+    font-weight: 600;
+}
+.nav-link-waka i {
+    font-size: 1.1rem;
+    width: 20px;
+}

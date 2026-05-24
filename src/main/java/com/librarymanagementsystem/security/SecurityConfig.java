@@ -27,6 +27,7 @@ public class SecurityConfig {
                                 "/register",
                                 "/users/register",
                                 "/login",
+                                "/books/**",
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
@@ -40,7 +41,7 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/perform_login")
-                        .defaultSuccessUrl("/", true)
+                        .successHandler(new CustomAuthenticationSuccessHandler())
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )

@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -31,6 +32,7 @@ public class Book {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(unique = true)
     private String isbn;
 
     @Column(length = 500)
@@ -47,6 +49,11 @@ public class Book {
     @Column(nullable = false)
     private Integer quantity = 0;
 
+    @Column(name = "import_price")
+    private Double importPrice = 0.0;
+
+    @Column(name = "deposit_price")
+    private Double depositPrice = 0.0;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "book_categories",
@@ -57,4 +64,11 @@ public class Book {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
     private Author author;
+    
+    //phương pháp trung gian trả về id của danh mục.
+    @Transient
+    public List<Long> getCategoryIds() {
+        if (categories == null) return java.util.Collections.emptyList();
+        return categories.stream().map(Category::getId).toList();
+    }
 }

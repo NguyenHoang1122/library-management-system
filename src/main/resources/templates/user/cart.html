@@ -1,0 +1,125 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+    <div th:replace="~{layout :: header_head}"></div>
+    <title>Giỏ Mượn Truyện | Truyện 360</title>
+    <link rel="stylesheet" th:href="@{/css/cart.css}">
+</head>
+
+<body>
+    <header th:replace="~{layout :: header}"></header>
+
+    <div class="container my-5 cart-container">
+        <h2 class="mb-4 text-center fw-bold text-success"><i class="bi bi-cart-check me-2"></i>Giỏ Mượn Truyện</h2>
+
+        <div th:if="${cart == null or cart.items.isEmpty()}" class="text-center py-5 shadow-sm rounded-3 empty-cart-box">
+            <img th:src="@{/image/empty-cart.png}" alt="Giỏ hàng trống" onerror="this.src='https://cdn-icons-png.flaticon.com/512/11329/11329060.png'" class="mb-3 empty-cart-img">
+            <h4 class="text-secondary">Giỏ hàng của bạn đang trống</h4>
+            <p class="text-secondary">Hãy tìm vài cuốn truyện thú vị để đọc nhé!</p>
+            <a th:href="@{/}" class="btn btn-outline-success mt-2 rounded-pill px-4"><i class="bi bi-book me-2"></i>Xem truyện ngay</a>
+        </div>
+
+        <div th:if="${cart != null and !cart.items.isEmpty()}" class="row">
+            <!-- Danh sách sản phẩm -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 rounded-3 mb-4 cart-card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-waka table-dark table-hover align-middle mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th scope="col" class="ps-4">Truyện</th>
+                                        <th scope="col" class="text-center">Số lượng</th>
+                                        <th scope="col" class="text-center">Tạm tính cọc</th>
+                                        <th scope="col" class="text-center pe-4">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="item : ${cart.items}">
+                                        <td class="ps-4 py-3">
+                                            <div class="d-flex align-items-center">
+                                                <img th:src="${item.book.image}" alt="Book Cover" class="rounded me-3 shadow-sm book-cover-img">
+                                                <div>
+                                                    <h6 class="mb-1 text-info fw-bold" th:text="${item.book.title}">Tên truyện</h6>
+                                                    <span class="badge bg-secondary mb-1" th:text="${item.book.author?.name ?: 'Đang cập nhật'}">Tác giả</span>
+                                                    <div class="text-light small">
+                                                        Giá cọc: <span th:text="${#numbers.formatDecimal(item.book.depositPrice != null ? item.book.depositPrice : 0, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="input-group input-group-sm mx-auto quantity-input-group">
+                                                <button class="btn btn-outline-secondary btn-decrease" type="button" th:attr="data-id=${item.book.id}">
+                                                    <i class="bi bi-dash"></i>
+                                                </button>
+                                                <input type="number" class="form-control text-center quantity-input" th:value="${item.quantity}" min="1" th:max="${item.book.quantity}" th:attr="data-id=${item.book.id}">
+                                                <button class="btn btn-outline-secondary btn-increase" type="button" th:attr="data-id=${item.book.id}">
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                            </div>
+                                            <small class="text-danger d-block mt-1" th:if="${item.quantity > item.book.quantity}">Quá số lượng kho!</small>
+                                        </td>
+                                        <td class="text-center fw-medium text-success">
+                                            <span th:text="${#numbers.formatDecimal((item.book.depositPrice != null ? item.book.depositPrice : 0) * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                        </td>
+                                        <td class="text-center pe-4">
+                                            <form th:action="@{/cart/remove}" method="post" class="d-inline">
+                                                <input type="hidden" name="bookId" th:value="${item.book.id}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tổng kết giỏ hàng -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 rounded-3 sticky-top summary-card">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold border-bottom border-secondary border-opacity-25 pb-3 mb-3 text-white">Tóm tắt đơn mượn</h5>
+                        
+                        <div class="d-flex justify-content-between mb-2 text-light">
+                            <span>Số lượng truyện:</span>
+                            <span th:text="${totalQuantity != null ? totalQuantity : 0} + ' quyển'">0</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-3 text-light">
+                            <span class="fw-medium">Tiền truyện: </span>
+                            <span class="fw-bold text-success fs-5" th:text="${#numbers.formatDecimal(totalDeposit, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-3 text-light">
+                            <span class="fw-medium">Phí ship: </span>
+                            <span class="fw-bold text-warning fs-5" th:text="${#numbers.formatDecimal(shippingFee != null ? shippingFee : 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                        </div>
+
+                        <hr class="border-secondary border-opacity-25">
+                        
+                        <div class="d-flex justify-content-between mb-4">
+                            <span class="fw-bold fs-5 text-white">Tổng cộng:</span>
+                            <span class="fw-bold text-danger fs-4" th:text="${#numbers.formatDecimal(totalAmount != null ? totalAmount : 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                        </div>
+                        <p class="small text-secondary mb-4"><i class="bi bi-info-circle me-1"></i> Tiền cọc sau khi trừ đi phí mượn truyện sẽ được hoàn trả đầy đủ khi bạn trả sách đúng hạn và không làm hỏng sách.</p>
+
+                        <a th:href="@{/checkout}" class="btn btn-success w-100 py-2 fw-bold text-uppercase rounded-pill shadow-sm">
+                            Tiến hành thanh toán <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                        <a th:href="@{/}" class="btn btn-outline-info w-100 mt-3 rounded-pill fw-medium">Tiếp tục chọn sách <i class="bi bi-search ms-1"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{layout :: footer}"></div>
+    <script th:src="@{/js/cart.js}"></script>
+</body>
+</html>

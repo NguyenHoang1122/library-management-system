@@ -1,0 +1,48 @@
+/* cart.css */
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+.cart-container {
+    min-height: 60vh;
+}
+
+.empty-cart-box {
+    background-color: #181818;
+}
+
+.empty-cart-img {
+    width: 150px;
+    opacity: 0.5;
+}
+
+.cart-card {
+    background-color: #181818;
+}
+
+.book-cover-img {
+    width: 60px;
+    height: 85px;
+    object-fit: cover;
+}
+
+.quantity-input-group {
+    width: 110px;
+}
+
+.summary-card {
+    top: 100px;
+    background-color: #181818;
+}
+
+/* Hide arrows in number inputs */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+
+input[type=number] {
+    -moz-appearance: textfield; /* Firefox */
+}

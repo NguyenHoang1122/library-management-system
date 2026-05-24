@@ -26,12 +26,9 @@ public class UserDTO {
     @Email(message = "Email không hợp lệ")
     private String email;
 
-    @NotBlank(message = "Số điện thoại không được để trống")
-    @Pattern(regexp = "^[0-9]{10,11}$", message = "Số điện thoại phải là 10-11 chữ số")
+    @Pattern(regexp = "^$|^[0-9]{10,11}$", message = "Số điện thoại phải là 10-11 chữ số")
     private String phoneNumber;
 
-    @NotBlank(message = "Địa chỉ không được để trống")
-    @Size(min = 5, max = 255, message = "Địa chỉ phải từ 5 đến 255 ký tự")
     private String address;
 
     @NotBlank(message = "Mật khẩu không được để trống")

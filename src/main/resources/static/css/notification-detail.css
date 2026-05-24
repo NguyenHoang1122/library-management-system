@@ -1,0 +1,25 @@
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+.breadcrumb-item a {
+    color: var(--waka-green, #14b4a0) !important;
+    text-decoration: none;
+}
+.breadcrumb-item.active {
+    color: #888 !important;
+}
+.notification-content-dark {
+    background-color: #151515;
+    padding: 24px;
+    border-radius: 12px;
+    border-left: 4px solid var(--waka-green, #14b4a0);
+    line-height: 1.8;
+    color: #ccc;
+    font-size: 1rem;
+}
+.card-detail-waka {
+    background: #1a1a1a;
+    border: 1px solid #2d2d2d;
+    border-radius: 16px;
+}

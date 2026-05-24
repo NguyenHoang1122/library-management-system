@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-
-
+import java.util.List;
+import com.librarymanagementsystem.model.borrow.status.DeliveryMethod;
 @Entity
 @Data
 @Table(name = "return_requests")
@@ -37,9 +37,22 @@ public class ReturnRequest {
     private String note;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "request_status")
+    @Column(name = "request_status", columnDefinition = "VARCHAR(255)")
     private RequestStatus requestStatus;
 
     @Column(name = "rejection_reason")
     private String rejectionReason;  // Lý do từ chối từ librarian
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "return_method")
+    private DeliveryMethod returnMethod;
+
+    @Column(name = "shipping_fee")
+    private Double shippingFee = 0.0;
+
+    @Column(name = "shipping_address", columnDefinition = "TEXT")
+    private String shippingAddress;
+
+    @OneToMany(mappedBy = "returnRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ReturnRequestItem> returnItems;
 }

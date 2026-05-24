@@ -1,64 +1,94 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <title>Yêu cầu mượn truyện</title>
+    <title>Yêu cầu mượn truyện | Truyện 360</title>
     <div th:replace="~{layout :: header_head}"></div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/borrows.css}">
 </head>
 <body>
 <div th:replace="~{layout :: header}"></div>
 
-<main class="container-fluid my-5 px-4">
-    <div class="row">
-        <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 mb-4">
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
             <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='borrows')}"></div>
         </div>
 
-        <!-- CONTENT -->
-        <div class="col-md-9 col-lg-10">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h3 class="mb-0 text-primary">
-                        <i class="bi bi-list-check"></i> Yêu cầu mượn truyện
-                    </h3>
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <div class="admin-header-waka">
+                <h3 class="mb-0"><i class="bi bi-arrow-left-right me-2 text-warning"></i> Duyệt yêu cầu mượn truyện</h3>
+            </div>
+
+            <!-- Search Area -->
+            <form th:action="@{/librarian/borrows/search}" method="get" class="mb-4">
+                <div class="search-box-waka">
+                    <i class="bi bi-search text-secondary me-2"></i>
+                    <input type="text" name="query" class="form-control" placeholder="Tìm kiếm theo tên thành viên, email hoặc truyện..." th:value="${searchQuery}">
+                    <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold">TÌM</button>
                 </div>
-                <div class="card-body p-4">
-                    <table class="table table-striped">
-                        <thead>
+            </form>
+
+            <!-- Table Area -->
+            <div class="table-responsive">
+                <table class="table table-waka align-middle">
+                    <thead>
                         <tr>
                             <th>ID</th>
                             <th>Người dùng</th>
                             <th>Truyện</th>
+                            <th>Ghi chú</th>
                             <th>Ngày yêu cầu</th>
-                            <th>Hành động</th>
+                            <th class="text-end">Thao tác</th>
                         </tr>
-                        </thead>
-                        <tbody>
+                    </thead>
+                    <tbody>
                         <tr th:each="request : ${pendingRequests}">
-                            <td th:text="${request.id}"></td>
-                            <td th:text="${request.user.fullName}"></td>
-                            <td th:text="${request.borrowRequestItems[0].book.title}"></td>
-                            <td th:text="${#temporals.format(request.requestDate, 'dd/MM/yyyy')}"></td>
+                            <td th:text="${request.id}" class="text-secondary"></td>
+                            <td class="fw-bold text-light" th:text="${request.user.fullName}"></td>
                             <td>
-                                <form th:action="@{/librarian/borrows/{id}/approve(id=${request.id})}" method="post" style="display:inline;">
-                                    <input type="number" name="borrowDays" value="14" min="1" class="form-control d-inline w-auto">
-                                    <button type="submit" class="btn btn-success btn-sm">Duyệt</button>
-                                </form>
-                                <form th:action="@{/librarian/borrows/{id}/reject(id=${request.id})}" method="post" style="display:inline;">
-                                    <button type="submit" class="btn btn-danger btn-sm">Từ chối</button>
-                                </form>
+                                <div class="text-truncate" style="max-width: 200px;" th:text="${request.borrowRequestItems[0].book.title}"></div>
+                            </td>
+                            <td th:text="${request.note != null ? request.note : '-'}" class="small"></td>
+                            <td th:text="${#temporals.format(request.requestDate, 'dd/MM/yyyy')}"></td>
+                            <td class="text-end">
+                                <a th:href="@{/librarian/borrows/detail/{id}(id=${request.id})}" class="btn btn-outline-info btn-sm rounded-pill px-3">
+                                    <i class="bi bi-eye me-1"></i> Chi tiết
+                                </a>
                             </td>
                         </tr>
-                        </tbody>
-                    </table>
-                </div>
+                        <tr th:if="${#lists.isEmpty(pendingRequests)}">
+                            <td colspan="6" class="text-center py-5 text-secondary">Hiện không có yêu cầu nào đang chờ duyệt.</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/librarian/borrows/search' : '/librarian/borrows'}(query=${searchQuery}, page=${currentPage - 1})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{${searchQuery != null ? '/librarian/borrows/search' : '/librarian/borrows'}(query=${searchQuery}, page=${i})}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/librarian/borrows/search' : '/librarian/borrows'}(query=${searchQuery}, page=${currentPage + 1})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </main>
 
 <div th:replace="~{layout :: footer}"></div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/librarian-borrows.js}"></script>
 </body>
 </html>

@@ -3,64 +3,77 @@ package com.librarymanagementsystem.repository.borrow;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
 import com.librarymanagementsystem.model.borrow.status.TransactionStatus;
 import com.librarymanagementsystem.model.user.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface BorrowTransactionRepository extends JpaRepository<BorrowTransaction, Long> {
-    // Lấy danh sách giao dịch mượn của user
-    List<BorrowTransaction> findByUser(User user);
 
-    // Lấy danh sách giao dịch mượn theo trạng thái
-    List<BorrowTransaction> findByStatus(TransactionStatus status);
+    //giao dịch mượn theo user
+    List<BorrowTransaction> findByUserOrderByBorrowDateDesc(User user);
 
-    // Lấy danh sách giao dịch mượn quá hạn
-    @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
-    List<BorrowTransaction> findOverdueTransactions();
+    Page<BorrowTransaction> findByUser(User user, Pageable pageable);
 
-    // Lấy danh sách giao dịch mượn quá hạn của user
-    @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
+    // mượn theo trạng thái giao dịch
+//    List<BorrowTransaction> findByStatus(TransactionStatus status);
+    
+    List<BorrowTransaction> findByStatusAndDueDateBetween(TransactionStatus status, java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    //giao dịch mượn có trạng thái nằm trong danh sách các trạng thái truyền vào
+    List<BorrowTransaction> findByStatusIn(List<TransactionStatus> statuses);
+
+    // giao dịch mượn quá hạn của user
+   @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.status = com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED AND bt.dueDate < CURRENT_TIMESTAMP")
     List<BorrowTransaction> findUserOverdueTransactions(@Param("userId") Long userId);
 
-    // Lấy giao dịch mượn đang hoạt động
-    List<BorrowTransaction> findByUserAndStatus(User user, TransactionStatus status);
+    //giao dịch mượn đang hoạt động của người dùng dựa trên đối tượng User và một trạng thái cụ thể
+//    List<BorrowTransaction> findByUserAndStatus(User user, TransactionStatus status);
 
-    // Lấy giao dịch theo ngày mượn
-    @Query("SELECT bt FROM BorrowTransaction bt WHERE bt.user.id = :userId AND bt.borrowDate BETWEEN :startDate AND :endDate ORDER BY bt.borrowDate DESC")
-    List<BorrowTransaction> findByUserAndDateRange(@Param("userId") Long userId,
-                                                   @Param("startDate") LocalDateTime startDate,
-                                                   @Param("endDate") LocalDateTime endDate);
+    //giao dịch mượn đang hoạt động của user
+    List<BorrowTransaction> findByUserAndStatusInOrderByBorrowDateDesc(User user, List<TransactionStatus> statuses);
 
-    // Count giao dịch đang mượn
-    long countByStatus(TransactionStatus status);
-
-    // Count giao dịch quá hạn
-    @Query("SELECT COUNT(bt) FROM BorrowTransaction bt WHERE bt.status = 'BORROWED' AND bt.dueDate < CURRENT_TIMESTAMP")
-    long countOverdueTransactions();
+    Page<BorrowTransaction> findByUserAndStatusIn(User user, List<TransactionStatus> statuses, Pageable pageable);
 
 
-    // Kiểm tra xem user có đang mượn sách này hay không (chỉ trạng thái BORROWED)
+
+    // check user có đang mượn truyện or không
     @Query("SELECT COUNT(bi) > 0 FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
-            "AND bi.book.id = :bookId " +
-            "AND bt.status = 'BORROWED'")
+            "AND bi.bookCopy.book.id = :bookId " +
+            "AND bt.status IN (com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED, com.librarymanagementsystem.model.borrow.status.TransactionStatus.OVERDUE, com.librarymanagementsystem.model.borrow.status.TransactionStatus.PENDING)")
     boolean isBookBorrowedByUser(@Param("userId") Long userId, @Param("bookId") Long bookId);
 
-    // Kiểm tra xem user có bất kỳ sách nào đang mượn hay không
-    @Query("SELECT COUNT(bt) > 0 FROM BorrowTransaction bt " +
-            "WHERE bt.user.id = :userId " +
-            "AND bt.status = 'BORROWED'")
-    boolean hasAnyBorrowedBooks(@Param("userId") Long userId);
-
-    @Query("SELECT DISTINCT bi.book.id FROM BorrowTransaction bt " +
+    //các ID của sách đang được mượn or đang yêu cầu mượn bởi user
+    @Query("SELECT DISTINCT bi.bookCopy.book.id FROM BorrowTransaction bt " +
             "JOIN bt.items bi " +
             "WHERE bt.user.id = :userId " +
-            "AND bt.status = 'BORROWED'")
+            "AND bt.status IN (com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED, com.librarymanagementsystem.model.borrow.status.TransactionStatus.OVERDUE, com.librarymanagementsystem.model.borrow.status.TransactionStatus.PENDING)")
     List<Long> findBorrowedBookIdsByUser(@Param("userId") Long userId);
+
+    // Check user đã từng thuê/mượn truyện này hay chưa
+    @Query("SELECT COUNT(bi) > 0 FROM BorrowTransaction bt " +
+            "JOIN bt.items bi " +
+            "WHERE bt.user.id = :userId " +
+            "AND bi.bookCopy.book.id = :bookId")
+    boolean hasUserRentedBook(@Param("userId") Long userId, @Param("bookId") Long bookId);
+
+    @Query("SELECT bt.user.id AS userId, bt.user.fullName AS fullName, bt.user.userName AS userName, bt.user.email AS email, COUNT(bi.id) AS borrowCount " +
+           "FROM BorrowTransaction bt " +
+           "JOIN bt.items bi " +
+           "WHERE bt.status IN (com.librarymanagementsystem.model.borrow.status.TransactionStatus.BORROWED, com.librarymanagementsystem.model.borrow.status.TransactionStatus.OVERDUE, com.librarymanagementsystem.model.borrow.status.TransactionStatus.PENDING) " +
+           "AND bi.returnDate IS NULL " +
+           "AND (:query IS NULL OR :query = '' OR " +
+           "     LOWER(bt.user.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "     LOWER(bt.user.userName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "     LOWER(bt.user.email) LIKE LOWER(CONCAT('%', :query, '%')))" +
+           "GROUP BY bt.user.id, bt.user.fullName, bt.user.userName, bt.user.email " +
+           "ORDER BY COUNT(bi.id) DESC")
+    Page<Object[]> findActiveBorrowers(@Param("query") String query, Pageable pageable);
 }

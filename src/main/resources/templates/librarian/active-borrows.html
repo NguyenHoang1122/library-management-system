@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Người dùng đang mượn truyện | Truyện 360</title>
+    <div th:replace="~{layout :: header_head}"></div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/active-borrows.css}">
+</head>
+<body>
+<div th:replace="~{layout :: header}"></div>
+
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='activeborrows')}"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <div class="admin-header-waka">
+                <h3 class="mb-0"><i class="bi bi-journal-check me-2 text-warning"></i> Danh sách người dùng đang mượn</h3>
+            </div>
+
+            <!-- Alerts for messages -->
+            <div th:if="${message}" class="alert alert-success alert-dismissible fade show bg-success bg-opacity-10 text-success border-success border-opacity-25" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${message}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show bg-danger bg-opacity-10 text-danger border-danger border-opacity-25" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Search Area -->
+            <form th:action="@{/librarian/active-borrows/search}" method="get" class="mb-4">
+                <div class="search-box-waka">
+                    <i class="bi bi-search text-secondary me-2"></i>
+                    <input type="text" name="query" class="form-control" placeholder="Tìm kiếm theo tên thành viên, email hoặc username..." th:value="${searchQuery}">
+                    <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold">TÌM</button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-waka align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">STT</th>
+                            <th>Thành viên</th>
+                            <th>Email</th>
+                            <th class="text-center">Số lượng truyện đang mượn</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="member, iterStat : ${memberBorrows}">
+                            <td th:text="${iterStat.count + (currentPage - 1) * 10}" class="text-secondary"></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-waka me-3 bg-secondary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-person-fill text-info" style="font-size: 1.2rem;"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-light" th:text="${member.fullName != null ? member.fullName : 'N/A'}"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-secondary" th:text="${member.email != null ? member.email : 'N/A'}"></span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-dark border border-secondary text-info px-3 py-2" th:text="${member.borrowCount} + ' cuốn'"></span>
+                            </td>
+                            <td class="text-end">
+                                <a th:href="@{/librarian/active-borrows/user/{userId}(userId=${member.userId})}" class="btn btn-info btn-sm rounded-pill px-4 fw-bold">
+                                    <i class="bi bi-eye-fill me-1"></i> CHI TIẾT
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(memberBorrows)}">
+                            <td colspan="5" class="text-center py-5 text-secondary">
+                                <i class="bi bi-folder-x display-4 text-secondary mb-3 d-block"></i>
+                                Không có thành viên nào đang mượn truyện.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <nav th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/librarian/active-borrows/search' : '/librarian/active-borrows'}(query=${searchQuery}, page=${currentPage - 1})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{${searchQuery != null ? '/librarian/active-borrows/search' : '/librarian/active-borrows'}(query=${searchQuery}, page=${i})}"></a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{${searchQuery != null ? '/librarian/active-borrows/search' : '/librarian/active-borrows'}(query=${searchQuery}, page=${currentPage + 1})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{layout :: footer}"></div>
+</body>
+</html>

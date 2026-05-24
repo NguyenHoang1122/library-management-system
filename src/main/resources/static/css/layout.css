@@ -5,7 +5,8 @@
 }
 
 html, body {
-    height: 100%;
+    min-height: 100%;
+    height: auto !important;
 }
 
 body {
@@ -58,4 +59,340 @@ main, .content-wrapper {
 
 .footer-links a:hover {
     color: var(--waka-green);
+}
+
+/* Giữ header luôn nổi lên trên cùng khi cuộn trang */
+.header-waka {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 9999 !important;
+}
+
+/* Kính mờ trong suốt cho thanh điều hướng (Navbar Glassmorphism) */
+.bg-waka-navbar {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    /*backdrop-filter: blur(15px);*/
+    /*-webkit-backdrop-filter: blur(15px);*/
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background-color 0.3s ease;
+}
+
+/* Fix Bootstrap Tables in Dark Theme */
+.table-waka {
+    --bs-table-bg: #1a1a1a !important;
+    --bs-table-color: #ccc !important;
+    color: #ccc !important;
+}
+
+.table-waka th, 
+.table-waka td {
+    background-color: #1a1a1a !important;
+    color: #ccc !important;
+    border-color: #333 !important;
+}
+
+.table-waka thead th {
+    background-color: #252525 !important;
+    color: var(--waka-green) !important;
+    border-bottom: 2px solid #333 !important;
+}
+
+.table-waka tbody tr:hover td {
+    background-color: rgba(20, 180, 160, 0.08) !important; /* Soft green hover */
+}
+
+/* Fix Bootstrap Form Controls in Dark Theme */
+.form-control-waka {
+    background-color: #1e1e1e !important;
+    color: #fff !important;
+    border: 1px solid #333 !important;
+}
+
+.search-box-waka {
+    background: #1e1e1e !important;
+    border: 1px solid #333 !important;
+    border-radius: 25px !important;
+    padding: 5px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.search-box-waka input,
+.search-box-waka input.form-control {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: none !important;
+}
+
+.search-box-waka input:focus,
+.search-box-waka input.form-control:focus {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: none !important;
+}
+
+/* Fix generic form-control and form-select inside dark sections */
+.form-control, .form-select {
+    background-color: #1e1e1e !important;
+    color: #fff !important;
+    border: 1px solid #333 !important;
+}
+.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+.form-control:focus, .form-select:focus {
+    background-color: #252525 !important;
+    color: #fff !important;
+    border-color: var(--waka-green) !important;
+    box-shadow: 0 0 0 0.25rem rgba(20, 180, 160, 0.25) !important;
+}
+
+/* Ensure pagination in dark theme */
+.pagination .page-link {
+    background-color: #1e1e1e !important;
+    color: #ccc !important;
+    border-color: #333 !important;
+}
+.pagination .page-item.active .page-link {
+    background-color: var(--waka-green) !important;
+    border-color: var(--waka-green) !important;
+    color: #fff !important;
+}
+.pagination .page-link:hover {
+    background-color: #252525 !important;
+    color: var(--waka-green) !important;
+}
+
+/* Placeholder styling for search box and form controls in dark theme */
+.search-box-waka input::placeholder,
+.search-box-waka input.form-control::placeholder,
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+    opacity: 1 !important; /* Overrides default opacity in Firefox */
+}
+
+.search-box-waka input::-webkit-input-placeholder,
+.form-control::-webkit-input-placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.search-box-waka input::-moz-placeholder,
+.form-control::-moz-placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+    opacity: 1 !important;
+}
+
+.search-box-waka input:-ms-input-placeholder,
+.form-control:-ms-input-placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Dropdown and Notification Styles */
+.notification-list {
+    max-height: 350px;
+    overflow-y: auto;
+    min-width: 300px;
+}
+.notification-list::-webkit-scrollbar {
+    width: 6px;
+}
+.notification-list::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 10px;
+}
+.notification-header {
+    padding: 8px 16px;
+    border-bottom: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.no-caret::after {
+    display: none !important;
+}
+.notification-wrapper {
+    position: relative;
+    display: inline-block;
+}
+.notification-badge-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid #1a1a1a;
+}
+.waka-dropdown-menu {
+    background: linear-gradient(135deg, #1f1f1f 0%, #121212 100%) !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 24px !important;
+    min-width: 280px !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6) !important;
+    margin-top: 12px !important;
+}
+.waka-dropdown-item {
+    color: #ccc !important;
+    padding: 10px 15px !important;
+    border-radius: 8px !important;
+    font-size: 0.95rem !important;
+    display: flex !important;
+    align-items: center !important;
+    transition: 0.3s !important;
+    text-decoration: none !important;
+    background: transparent !important;
+    font-weight: 500;
+    white-space: nowrap !important;
+}
+.waka-dropdown-item:hover {
+    color: #16a085 !important;
+    background: rgba(22, 160, 133, 0.08) !important;
+    transform: translateX(4px) !important;
+}
+.waka-btn-pill-green {
+    background: #16a085 !important;
+    color: #fff !important;
+    border-radius: 25px !important;
+    padding: 10px !important;
+    font-weight: 600 !important;
+    border: none !important;
+    transition: 0.3s !important;
+    font-size: 0.9rem;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+.waka-btn-pill-green:hover {
+    background: #1abc9c !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(22, 160, 133, 0.3) !important;
+}
+.btn-waka-primary {
+    background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 30px !important;
+    border-radius: 30px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    box-shadow: 0 4px 15px rgba(22, 160, 133, 0.3) !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    text-decoration: none !important;
+}
+.btn-waka-primary:hover {
+    background: linear-gradient(135deg, #1eecbf 0%, #1abc9c 100%) !important;
+    box-shadow: 0 6px 20px rgba(22, 160, 133, 0.5) !important;
+    transform: translateY(-2px) !important;
+    color: white !important;
+}
+.hover-scale {
+    transition: transform 0.2s ease-in-out;
+}
+.hover-scale:hover {
+    transform: scale(1.2) !important;
+}
+
+/* Multi-column categories dropdown styles */
+.dropdown-menu-categories-multi {
+    display: none !important; /* Hide by default */
+    grid-auto-flow: column !important; /* Flow items vertically then wrap horizontally */
+    grid-template-rows: repeat(10, minmax(0, auto)) !important; /* Limit to 10 rows per column */
+    grid-gap: 4px !important;
+    min-width: 180px !important;
+    width: max-content !important; /* Automatically expand width of container */
+    padding: 16px !important;
+    background: linear-gradient(135deg, #1f1f1f 0%, #121212 100%) !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6) !important;
+    margin-top: 12px !important;
+}
+.dropdown-menu-categories-multi.show {
+    display: grid !important; /* Show when Bootstrap active class is present */
+}
+.dropdown-menu-categories-multi li {
+    display: block !important;
+    width: 170px !important; /* Uniform width for each column */
+}
+.dropdown-menu-categories-multi .dropdown-item {
+    color: #ccc !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    transition: 0.2s ease-in-out !important;
+    background: transparent !important;
+}
+.dropdown-menu-categories-multi .dropdown-item:hover {
+    color: #16a085 !important;
+    background: rgba(22, 160, 133, 0.08) !important;
+    transform: translateX(4px) !important;
+}
+
+/* Open navbar dropdowns on hover on larger screens */
+@media (min-width: 992px) {
+    .navbar-nav .nav-item.dropdown:hover .dropdown-menu {
+        display: block !important;
+        margin-top: 0 !important;
+    }
+    .navbar-nav .nav-item.dropdown:hover .dropdown-menu-categories-multi {
+        display: grid !important;
+    }
+}
+
+/* Active Category Highlight Styles */
+.nav-link.active {
+    color: var(--waka-green) !important;
+    font-weight: 700 !important;
+    position: relative;
+}
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 8px;
+    right: 8px;
+    height: 3px;
+    background-color: var(--waka-green);
+    border-radius: 2px;
+}
+
+.dropdown-menu-categories-multi .dropdown-item.active-category {
+    color: #16a085 !important;
+    background: rgba(22, 160, 133, 0.12) !important;
+    font-weight: 700 !important;
+    border-left: 3px solid #16a085 !important;
+    padding-left: 13px !important; /* Adjust padding due to border */
+}
+
+/* Enhancing Notification Text Visibility/Contrast */
+.notification-list .dropdown-item {
+    color: #e0e0e0 !important;
+}
+.notification-list .notification-title {
+    color: #ffffff !important;
+}
+.notification-list .notification-title.text-secondary {
+    color: #b0b3b8 !important;
+}
+.notification-list .notification-content {
+    color: #b0b3b8 !important;
+}
+.notification-list .notification-time {
+    color: #90949c !important;
 }

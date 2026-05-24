@@ -1,0 +1,128 @@
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+/* Đồng bộ Tabs với trang Active/Wishlist/Update */
+.waka-tabs-main {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+.waka-tab-item {
+    color: #888;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: color 0.3s;
+}
+.waka-tab-item:hover, .waka-tab-item.active {
+    color: #16a085;
+}
+.waka-tab-item.active {
+    position: relative;
+}
+.waka-tab-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -11px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #16a085;
+}
+
+/* Page Header style for admin roles */
+.admin-header-waka {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+/* Profile Card Styling đồng bộ Dark Mode */
+.profile-card-waka {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.avatar-preview-waka {
+    width: 160px;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid #16a085;
+    padding: 4px;
+    background: #222;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+.info-label {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+.info-value {
+    color: #fff;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    padding: 8px 0;
+    border-bottom: 1px solid #252525;
+}
+.badge-status {
+    background: #16a085;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+}
+
+/* Styles cho Form trong Modal */
+.form-control-waka {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 10px;
+    padding: 12px 15px;
+}
+.form-control-waka:focus {
+    background-color: #252525;
+    border-color: #16a085;
+    color: #fff;
+    box-shadow: none;
+}
+.form-control-waka:disabled {
+    background-color: #121212;
+    border-color: #222;
+    color: #666;
+}
+.input-group-text-waka {
+    background-color: #252525;
+    border: 1px solid #333;
+    color: #16a085;
+    border-radius: 10px 0 0 10px;
+}
+
+/* Premium Dashed Upload Button */
+.btn-waka-upload {
+    background: transparent;
+    border: 1px dashed #16a085;
+    color: #16a085;
+    border-radius: 10px;
+    padding: 10px 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+.btn-waka-upload:hover {
+    background: rgba(22, 160, 133, 0.1);
+    color: #1abc9c;
+    border-color: #1abc9c;
+}

@@ -1,9 +1,12 @@
 package com.librarymanagementsystem.controller.auth;
 
 import com.librarymanagementsystem.model.user.dto.UserDTO;
-import com.librarymanagementsystem.service.impl.UserServiceImpl;
+import com.librarymanagementsystem.service.user.impl.UserServiceImpl;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -43,9 +46,19 @@ public class AuthController {
     }
 
     @GetMapping("/login")
-    public String showLoginPage(@RequestParam(value = "error", required = false) String error, Model model) {
+    public String showLoginPage(@RequestParam(value = "error", required = false) String error,
+                                HttpServletRequest request,
+                                Model model) {
         if (error != null) {
             model.addAttribute("error", true);
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                Object lastException = session.getAttribute("SPRING_SECURITY_LAST_EXCEPTION");
+                if (lastException instanceof DisabledException) {
+                    model.addAttribute("bannedError", true);
+                    model.addAttribute("errorMsg", "Tài khoản đã bị khóa.");
+                }
+            }
         }
         return "auth/login";
     }
