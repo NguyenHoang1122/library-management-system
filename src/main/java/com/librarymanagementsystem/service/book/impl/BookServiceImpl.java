@@ -18,6 +18,7 @@ import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository
 import com.librarymanagementsystem.repository.book.BookImportHistoryRepository;
 import com.librarymanagementsystem.repository.user.UserRepository;
 import com.librarymanagementsystem.service.book.BookService;
+import com.librarymanagementsystem.service.notification.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +46,7 @@ public class BookServiceImpl implements BookService {
     private final BorrowTransactionRepository borrowTransactionRepository;
     private final BookImportHistoryRepository bookImportHistoryRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Value("${file.upload-dir}")
     private String upload;
@@ -82,14 +84,14 @@ public class BookServiceImpl implements BookService {
             
             // Deduct admin money and save history
             double totalPrice = savedBook.getQuantity() * (savedBook.getImportPrice() != null ? savedBook.getImportPrice() : 0.0);
-            deductAdminWallet(totalPrice);
+            deductAdminWallet(totalPrice, savedBook.getTitle(), savedBook.getQuantity());
             saveImportHistory(savedBook, savedBook.getQuantity(), savedBook.getImportPrice(), totalPrice);
         }
         
         return savedBook;
     }
 
-    private void deductAdminWallet(double amount) {
+    private void deductAdminWallet(double amount, String bookTitle, int quantity) {
         if (amount <= 0) return;
         List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
         if (!admins.isEmpty()) {
@@ -97,6 +99,10 @@ public class BookServiceImpl implements BookService {
             double currentBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
             admin.setBalance(currentBalance - amount);
             userRepository.save(admin);
+
+            java.text.NumberFormat nfAdmin = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+            String notifContent = String.format("Tài khoản của bạn đã bị trừ %s đ để thanh toán phí nhập %d cuốn truyện '%s'.", nfAdmin.format(amount), quantity, bookTitle);
+            notificationService.sendNotification(admin, "Trừ tiền nhập truyện", notifContent, null);
         }
     }
 
@@ -143,7 +149,7 @@ public class BookServiceImpl implements BookService {
             // Deduct admin money and save history for added books
             double importPrice = bookDTO.getImportPrice() != null ? bookDTO.getImportPrice() : 0.0;
             double totalPrice = diff * importPrice;
-            deductAdminWallet(totalPrice);
+            deductAdminWallet(totalPrice, book.getTitle(), diff);
             saveImportHistory(book, diff, importPrice, totalPrice);
         } else if (newQuantity < currentQuantity) {
             int diff = currentQuantity - newQuantity;
@@ -238,7 +244,7 @@ public class BookServiceImpl implements BookService {
         // Deduct admin money and save history
         double importPrice = book.getImportPrice() != null ? book.getImportPrice() : 0.0;
         double totalPrice = addedQuantity * importPrice;
-        deductAdminWallet(totalPrice);
+        deductAdminWallet(totalPrice, book.getTitle(), addedQuantity);
         saveImportHistory(book, addedQuantity, importPrice, totalPrice);
     }
 

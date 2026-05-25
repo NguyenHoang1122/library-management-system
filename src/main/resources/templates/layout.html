@@ -171,12 +171,15 @@
                                 </a>
                                 <div class="dropdown-menu waka-dropdown-menu dropdown-menu-end">
                                     <!-- Ví tiền -->
-                                    <div sec:authorize="hasRole('USER')" class="px-3 py-2 mb-1 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
-                                        <div class="text-light fw-bold" id="headerWalletBalanceContainer">
-                                            <i class="bi bi-wallet2 text-success me-2"></i>
+                                    <div sec:authorize="isAuthenticated()" class="px-3 py-2 mb-1 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center gap-2">
+                                        <div class="text-light fw-bold text-nowrap text-truncate" id="headerWalletBalanceContainer" style="font-size: 0.85rem;" title="Số dư ví">
+                                            <i class="bi bi-wallet2 text-success me-1"></i>
                                             <span id="headerWalletBalance" th:text="|${#numbers.formatDecimal(currentUser != null and currentUser.balance != null ? currentUser.balance : 0, 0, 'COMMA', 0, 'POINT')} đ|">0 đ</span>
                                         </div>
-                                        <a th:href="@{/user/profile}" class="btn btn-sm btn-outline-success rounded-pill px-3" style="font-size: 0.75rem;">Nạp</a>
+                                        <div class="d-flex gap-1">
+                                            <a th:href="@{/user/profile}" class="btn btn-sm btn-outline-success rounded-pill px-2 text-nowrap" style="font-size: 0.7rem;">Nạp</a>
+                                            <a th:href="@{/user/profile}" class="btn btn-sm btn-outline-warning rounded-pill px-2 text-nowrap" style="font-size: 0.7rem;">Rút</a>
+                                        </div>
                                     </div>
                                     <!-- Menu Links -->
                                     <div class="d-flex flex-column gap-1">
@@ -204,9 +207,6 @@
                                         <th:block sec:authorize="hasRole('LIBRARIAN')">
                                             <a class="waka-dropdown-item" th:href="@{/librarian/borrows}">
                                                 <i class="bi bi-journal-plus me-3 text-secondary"></i>Yêu cầu mượn
-                                            </a>
-                                            <a class="waka-dropdown-item" th:href="@{/librarian/returns}">
-                                                <i class="bi bi-journal-arrow-down me-3 text-secondary"></i>Yêu cầu trả truyện
                                             </a>
                                             <a class="waka-dropdown-item" th:href="@{/librarian/active-borrows}">
                                                 <i class="bi bi-journal-bookmark me-3 text-secondary"></i>Sách đang được mượn

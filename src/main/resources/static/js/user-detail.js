@@ -113,6 +113,101 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    const withdrawForm = document.getElementById('withdrawForm');
+    if (withdrawForm) {
+        withdrawForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const amount = document.getElementById('withdrawAmount').value;
+            if (!amount || amount < 10000) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Lỗi',
+                    html: 'Số tiền rút phải lớn hơn 10.000đ',
+                    confirmButtonColor: '#f39c12',
+                    background: '#181818',
+                    color: '#e0e0e0',
+                    customClass: {
+                        popup: 'border border-warning border-opacity-25 rounded-3'
+                    }
+                });
+                return;
+            }
+
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+            const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : '';
+
+            const formData = new URLSearchParams();
+            formData.append('amount', amount);
+
+            const btn = document.getElementById('btnSubmitWithdraw');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+            btn.disabled = true;
+
+            const headers = {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            };
+            if (csrfHeader && csrfToken) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            fetch('/user/withdraw', {
+                method: 'POST',
+                headers: headers,
+                body: formData.toString()
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành công',
+                            html: 'Đã rút tiền thành công!',
+                            confirmButtonColor: '#00b074',
+                            background: '#181818',
+                            color: '#e0e0e0',
+                            customClass: {
+                                popup: 'border border-success border-opacity-25 rounded-3'
+                            }
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            html: data.message || 'Rút tiền thất bại',
+                            confirmButtonColor: '#d33',
+                            background: '#181818',
+                            color: '#e0e0e0',
+                            customClass: {
+                                popup: 'border border-danger border-opacity-25 rounded-3'
+                            }
+                        });
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi',
+                        html: 'Có lỗi kết nối',
+                        confirmButtonColor: '#d33',
+                        background: '#181818',
+                        color: '#e0e0e0',
+                        customClass: {
+                            popup: 'border border-danger border-opacity-25 rounded-3'
+                        }
+                    });
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        });
+    }
+
     // Logic Address Selects
     const provinceSelect = document.getElementById("province");
     const districtSelect = document.getElementById("district");

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Truyện đang mượn | Truyện 360</title>
@@ -21,14 +21,10 @@
 
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 px-5">
-            <!-- Main Tabs -->
-            <div class="waka-tabs-main">
-                <a href="#" class="waka-tab-item active">Đang mượn</a>
-                <a th:href="@{/wishlist}" class="waka-tab-item">Yêu thích</a>
-                <a th:href="@{/borrow/history}" class="waka-tab-item">Lịch sử</a>
-            </div>
-
-            <!-- Content Area -->
+            <!-- Page Header -->
+            <div class="mb-4 pb-3 border-bottom border-secondary d-flex align-items-center">
+                <h3 class="mb-0 text-light fw-bold"><i class="bi bi-book me-2 text-warning"></i> Truyện đang mượn</h3>
+            </div>            <!-- Content Area -->
             <div th:if="${activeBorrows.isEmpty()}" class="text-center py-5">
                 <i class="bi bi-journal-x" style="font-size: 4rem; color: #333;"></i>
                 <p class="mt-3 text-secondary">Bạn chưa mượn truyện nào trong danh sách này.</p>

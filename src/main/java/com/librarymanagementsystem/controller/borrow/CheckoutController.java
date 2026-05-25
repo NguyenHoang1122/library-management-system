@@ -114,7 +114,8 @@ public class CheckoutController {
     public String processCheckout(
             @RequestParam String deliveryMethod,
             @RequestParam(required = false) String shippingAddress,
-            @RequestParam(required = false) String note) {
+            @RequestParam(required = false) String note,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         
         User currentUser = getCurrentUser();
         if (currentUser == null) return "redirect:/login";
@@ -124,7 +125,12 @@ public class CheckoutController {
             BorrowRequest request = borrowService.checkout(currentUser.getId(), method, shippingAddress, note);
             return "redirect:/borrow/history?success=checkout";
         } catch (Exception e) {
-            return "redirect:/checkout?error=" + e.getMessage();
+            try {
+                String encodedError = java.net.URLEncoder.encode(e.getMessage() != null ? e.getMessage() : "Lỗi hệ thống", "UTF-8");
+                return "redirect:/checkout?error=" + encodedError;
+            } catch (Exception ex) {
+                return "redirect:/checkout?error=error_processing_checkout";
+            }
         }
     }
 }

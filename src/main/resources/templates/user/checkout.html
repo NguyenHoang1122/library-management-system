@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 
 <head>
@@ -13,8 +13,6 @@
     <div class="container my-5" style="min-height: 60vh;">
         <h2 class="mb-4 text-center fw-bold text-success"><i class="bi bi-credit-card me-2"></i>Thanh Toán Đơn Mượn</h2>
 
-        <div th:if="${param.error}" class="alert alert-danger" th:text="${param.error}">Lỗi xảy ra</div>
-
         <form th:action="@{/checkout}" method="post" id="checkoutForm">
             <div class="row">
                 <!-- Cột trái: Thông tin giao hàng -->
@@ -26,15 +24,7 @@
                         <div class="card-body text-light">
                             
                             <div class="form-check border border-secondary p-3 rounded mb-3" style="background-color: #222;">
-                                <input class="form-check-input" type="radio" name="deliveryMethod" id="deliveryPickup" value="PICKUP" checked>
-                                <label class="form-check-label fw-medium w-100 cursor-pointer" for="deliveryPickup">
-                                    Nhận trực tiếp tại thư viện
-                                    <small class="d-block text-secondary mt-1">Đến địa chỉ Thư viện Truyện 360 để nhận sách. (Không mất phí vận chuyển)</small>
-                                </label>
-                            </div>
-
-                            <div class="form-check border border-secondary p-3 rounded mb-3" style="background-color: #222;">
-                                <input class="form-check-input" type="radio" name="deliveryMethod" id="deliveryShipping" value="SHIPPING">
+                                <input class="form-check-input" type="radio" name="deliveryMethod" id="deliveryShipping" value="SHIPPING" checked>
                                 <label class="form-check-label fw-medium w-100 cursor-pointer" for="deliveryShipping">
                                     Giao hàng tận nơi
                                     <small class="d-block text-secondary mt-1">Sách sẽ được giao đến địa chỉ của bạn. Phí ship tính theo khoảng cách.</small>
@@ -151,7 +141,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const deliveryPickup = document.getElementById('deliveryPickup');
             const deliveryShipping = document.getElementById('deliveryShipping');
             const addressSection = document.getElementById('addressSection');
             
@@ -219,9 +208,11 @@
                 }
             }
 
-            deliveryPickup.addEventListener('change', toggleAddressSection);
             deliveryShipping.addEventListener('change', toggleAddressSection);
             useDifferentAddress.addEventListener('change', toggleAddressSection);
+            
+            // Run on load
+            toggleAddressSection();
 
             function updateTotal() {
                 let total = depositAmount + currentShippingFee;
@@ -352,6 +343,31 @@
                     }
                 }
             });
+            
+            // Check for errors in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorMsg = urlParams.get('error');
+            if (errorMsg) {
+                if (errorMsg.toLowerCase().includes("số dư")) {
+                    Swal.fire({
+                        title: 'Số dư không đủ',
+                        text: errorMsg,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="bi bi-wallet2"></i> Nạp tiền ngay',
+                        cancelButtonText: 'Đóng',
+                        confirmButtonColor: '#198754'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/user/profile';
+                        }
+                    });
+                } else {
+                    Swal.fire('Lỗi', errorMsg, 'error');
+                }
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
         });
     </script>
 </body>

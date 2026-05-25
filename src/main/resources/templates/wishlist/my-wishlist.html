@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Danh sách yêu thích | Truyện 360</title>
@@ -20,14 +20,10 @@
 
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 px-5">
-            <!-- Main Tabs - Đồng bộ giao diện tab -->
-            <div class="waka-tabs-main">
-                <a th:href="@{/borrow/active}" class="waka-tab-item">Đang mượn</a>
-                <a href="#" class="waka-tab-item active">Yêu thích</a>
-                <a th:href="@{/borrow/history}" class="waka-tab-item">Lịch sử</a>
+            <!-- Page Header -->
+            <div class="mb-4 pb-3 border-bottom border-secondary d-flex align-items-center">
+                <h3 class="mb-0 text-light fw-bold"><i class="bi bi-heart-fill me-2 text-warning"></i> Truyện yêu thích</h3>
             </div>
-
-            <!-- Action Bar -->
             <div class="filter-btns">
                 <span class="text-secondary small">Bạn có <span class="text-light fw-bold" th:text="${totalWishlists}">0</span> truyện trong danh sách</span>
                 <form th:if="${totalWishlists > 0}" th:action="@{/wishlist/clear-all}" method="post">

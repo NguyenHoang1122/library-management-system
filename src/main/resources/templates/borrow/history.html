@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 
 <head>
@@ -20,52 +20,42 @@
 
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 px-5">
-                <!-- Main Tabs -->
-                <div class="waka-tabs-main mb-4">
-                    <a th:href="@{/borrow/active}" class="waka-tab-item">Đang mượn</a>
-                    <a th:href="@{/wishlist}" class="waka-tab-item">Yêu thích</a>
-                    <a th:href="@{/borrow/history}" class="waka-tab-item active">Lịch sử</a>
+                <!-- Page Header -->
+                <div class="admin-header-waka mb-4 pb-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <h3 class="mb-0 text-light fw-bold"><i class="bi bi-clock-history me-2 text-warning"></i> Lịch Sử Mượn Truyện</h3>
+                        <span class="badge bg-warning text-dark ms-3 px-3 py-2 rounded-pill fw-bold" style="font-size: 0.9rem;">Tổng số: <span th:text="${totalBorrows}"></span> đơn</span>
+                    </div>
                 </div>
-
-                <h3 class="mb-4 fw-bold text-info"><i class="bi bi-clock-history me-2"></i>Lịch Sử Mượn Truyện</h3>
-                <span class="badge bg-info text-dark px-3 py-2 rounded-pill fw-bold">Tổng số: <span th:text="${totalBorrows}"></span> đơn</span>
             
             <!-- Filter and Sort Bar (Global Theme) -->
-            <div class="card-body p-0 border-bottom" style="border-color: #2d2d2d !important;">
-                <form th:action="@{/borrow/history}" method="get" class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between p-3" style="background-color: #121212;">
-                    
-                    <div class="d-flex align-items-center gap-2">
-                        <!-- Sort Dropdown -->
-                        <div class="d-flex align-items-center rounded-pill px-3 py-1 border border-secondary" style="background: transparent;">
-                            <i class="bi bi-funnel text-secondary me-2"></i>
-                            <select name="sortOption" class="form-select form-select-sm bg-transparent text-light border-0 shadow-none p-0 pe-4" style="width: auto; cursor: pointer;">
-                                <option value="newest" th:selected="${sortOption == 'newest'}" class="bg-dark text-light">Mới nhất</option>
-                                <option value="return_date" th:selected="${sortOption == 'return_date'}" class="bg-dark text-light">Hạn trả gần nhất</option>
-                            </select>
-                        </div>
-
-                        <!-- Status Dropdown -->
-                        <div class="d-flex align-items-center rounded-pill px-3 py-1 border border-secondary" style="background: transparent;">
-                            <select name="statusFilter" class="form-select form-select-sm bg-transparent text-light border-0 shadow-none p-0 pe-4" style="width: auto; cursor: pointer;">
-                                <option value="" class="bg-dark text-light">Mọi trạng thái</option>
-                                <option value="Chờ xử lý" th:selected="${statusFilter == 'Chờ xử lý'}" class="bg-dark text-light">Chờ xử lý</option>
-                                <option value="Đang gửi hàng" th:selected="${statusFilter == 'Đang gửi hàng'}" class="bg-dark text-light">Đang gửi hàng</option>
-                                <option value="Đang mượn" th:selected="${statusFilter == 'Đang mượn'}" class="bg-dark text-light">Đang mượn</option>
-                                <option value="Đã trả" th:selected="${statusFilter == 'Đã trả'}" class="bg-dark text-light">Đã trả</option>
-                                <option value="Quá hạn" th:selected="${statusFilter == 'Quá hạn'}" class="bg-dark text-light">Quá hạn</option>
-                                <option value="Từ chối" th:selected="${statusFilter == 'Từ chối'}" class="bg-dark text-light">Từ chối</option>
-                                <option value="Đã hủy" th:selected="${statusFilter == 'Đã hủy'}" class="bg-dark text-light">Đã hủy</option>
-                            </select>
-                        </div>
+            <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill dropdown-toggle px-3 text-light border-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding-top: 6px; padding-bottom: 6px;">
+                            <span th:if="${statusFilter != null and statusFilter != ''}" th:text="${statusFilter}"></span>
+                            <span th:if="${statusFilter == null or statusFilter == ''}"><i class="bi bi-funnel me-1"></i> Mặc định</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" th:href="@{/borrow/history(statusFilter='', keyword=${keyword})}">Mọi trạng thái</a></li>
+                            <li><a class="dropdown-item" th:href="@{/borrow/history(statusFilter='Chờ xử lý', keyword=${keyword})}">Chờ xử lý</a></li>
+                            <li><a class="dropdown-item" th:href="@{/borrow/history(statusFilter='Đang gửi hàng', keyword=${keyword})}">Đang gửi hàng</a></li>
+                            <li><a class="dropdown-item" th:href="@{/borrow/history(statusFilter='Đang mượn', keyword=${keyword})}">Đang mượn</a></li>
+                            <li><a class="dropdown-item" th:href="@{/borrow/history(statusFilter='Đã trả', keyword=${keyword})}">Đã trả</a></li>
+                            <li><a class="dropdown-item" th:href="@{/borrow/history(statusFilter='Quá hạn', keyword=${keyword})}">Quá hạn</a></li>
+                            <li><a class="dropdown-item" th:href="@{/borrow/history(statusFilter='Từ chối', keyword=${keyword})}">Từ chối</a></li>
+                            <li><a class="dropdown-item" th:href="@{/borrow/history(statusFilter='Đã hủy', keyword=${keyword})}">Đã hủy</a></li>
+                        </ul>
                     </div>
-                    
-                    <!-- Search Input -->
-                    <div class="flex-grow-1" style="max-width: 600px;">
-                        <div class="search-box-waka">
-                            <i class="bi bi-search text-secondary me-2"></i>
-                            <input type="text" name="keyword" class="form-control" placeholder="Tìm kiếm theo tên truyện..." th:value="${keyword}">
-                            <button type="submit" class="btn btn-link text-info fw-bold text-decoration-none shadow-none pe-2">TÌM</button>
-                        </div>
+                </div>
+                
+                <!-- Search Input -->
+                <form th:action="@{/borrow/history}" method="get" class="flex-grow-1 mb-0">
+                    <input type="hidden" name="statusFilter" th:value="${statusFilter}" />
+                    <div class="search-box-waka">
+                        <i class="bi bi-search text-secondary me-2"></i>
+                        <input type="text" name="keyword" class="form-control" placeholder="Tìm kiếm theo tên truyện..." th:value="${keyword}">
+                        <button type="submit" class="btn btn-link text-info p-0 ms-2 text-decoration-none fw-bold">TÌM</button>
                     </div>
                 </form>
             </div>

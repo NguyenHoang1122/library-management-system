@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title th:text="${book.title + ' | Truyện 360'}"></title>
@@ -103,67 +103,105 @@
             <div class="comment-section">
                 <h3 class="comment-section-title">Độc giả nói gì về "<span th:text="${book.title}"></span>"</h3>
 
-                <div class="comment-tabs">
-                    <a href="#" class="comment-tab active">Đánh giá & Bình luận</a>
+                <div class="comment-tabs d-flex gap-4 border-bottom border-secondary border-opacity-25 mb-4">
+                    <a href="javascript:void(0)" class="comment-tab pb-2 text-decoration-none active fw-bold" id="tab-rating" style="border-bottom: 2px solid #00d2d3; color: #00d2d3;">Đánh giá</a>
+                    <a href="javascript:void(0)" class="comment-tab pb-2 text-decoration-none fw-bold" id="tab-comment" style="color: #aaa;">Bình luận</a>
                 </div>
 
-                <!-- Form viết đánh giá dành cho user đã thuê sách -->
-                <div th:if="${hasRented}" class="review-form-container mb-5 p-4 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05);">
-                    <h4 class="mb-3 text-light">
-                        <i class="bi bi-pencil-square me-2 text-info"></i>
-                        <span th:text="${existingReview != null ? 'Chỉnh sửa đánh giá của bạn' : 'Viết đánh giá của bạn'}">Viết đánh giá của bạn</span>
-                    </h4>
-                    <form id="reviewForm" th:attr="data-book-id=${book.id}">
-                        <!-- Chọn sao -->
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">ĐÁNH GIÁ CỦA BẠN (1-5 SAO)</label>
-                            <div class="star-rating-select fs-3 d-flex gap-2">
-                                <i class="bi bi-star-fill star-select" data-value="1" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
-                                <i class="bi bi-star-fill star-select" data-value="2" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
-                                <i class="bi bi-star-fill star-select" data-value="3" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
-                                <i class="bi bi-star-fill star-select" data-value="4" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
-                                <i class="bi bi-star-fill star-select" data-value="5" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                <!-- Tab: Đánh giá -->
+                <div id="rating-content">
+                    
+                    <!-- Tóm tắt bài đánh giá -->
+                    <div class="rating-summary mb-5 p-4 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05);">
+                        <h4 class="mb-4 text-light">Tóm tắt bài đánh giá</h4>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="d-flex align-items-center" th:each="i : ${ {5, 4, 3, 2, 1} }">
+                                <span class="text-secondary fw-bold fs-5 me-3" style="width: 20px; text-align: center;" th:text="${i}"></span>
+                                <div class="progress flex-grow-1" style="height: 12px; background-color: rgba(255, 255, 255, 0.1); border-radius: 6px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         th:style="'background-color: #f39c12; width: ' + (${reviewCount > 0 ? (ratingSummary.get(i) * 100.0 / reviewCount) : 0}) + '%; border-radius: 6px;'"
+                                         th:attr="aria-valuenow=${reviewCount > 0 ? (ratingSummary.get(i) * 100.0 / reviewCount) : 0}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <span class="text-secondary ms-3 fs-6" style="width: 30px; text-align: right;" th:text="${ratingSummary.get(i)}"></span>
                             </div>
-                            <input type="hidden" name="rating" id="selectedRating" th:value="${existingReview != null ? existingReview.rating : 5}">
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="reviewComment" class="form-label text-secondary small fw-bold">BÌNH LUẬN CHI TIẾT</label>
-                            <textarea class="form-control bg-black text-light border-secondary" id="reviewComment" name="comment" rows="3" required placeholder="Chia sẻ cảm nhận của bạn về cuốn truyện này..." th:text="${existingReview != null ? existingReview.comment : ''}"></textarea>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-waka-primary px-4" id="submitReviewBtn" th:text="${existingReview != null ? 'Cập nhật đánh giá' : 'Gửi đánh giá'}">
-                            Gửi đánh giá
-                        </button>
-                    </form>
-                </div>
-                <div th:if="${!hasRented}" class="alert alert-secondary bg-dark bg-opacity-50 border-secondary text-secondary mb-5">
-                    <span sec:authorize="isAnonymous()">
-                        <i class="bi bi-info-circle me-2 text-info"></i> Bạn cần <a th:href="@{/login}" class="text-info fw-bold">Đăng nhập</a> và mượn truyện này để có thể đánh giá và bình luận.
-                    </span>
-                    <span sec:authorize="isAuthenticated()">
-                        <i class="bi bi-info-circle me-2 text-warning"></i> Bạn chỉ có thể đánh giá và bình luận sau khi đã được duyệt mượn truyện này.
-                    </span>
+                    </div>
+
+                    <!-- Form viết đánh giá dành cho user đã thuê sách -->
+                    <div th:if="${hasRented}" class="review-form-container mb-5 p-4 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05);">
+                        <h4 class="mb-3 text-light">
+                            <i class="bi bi-star-half me-2 text-warning"></i>
+                            <span th:text="${existingReview != null ? 'Chỉnh sửa đánh giá của bạn' : 'Viết đánh giá của bạn'}">Viết đánh giá của bạn</span>
+                        </h4>
+                        <form id="ratingForm" th:attr="data-book-id=${book.id}">
+                            <!-- Chọn sao -->
+                            <div class="mb-4">
+                                <label class="form-label text-secondary small fw-bold">ĐÁNH GIÁ CỦA BẠN (1-5 SAO)</label>
+                                <div class="star-rating-select fs-3 d-flex gap-2">
+                                    <i class="bi bi-star-fill star-select" data-value="1" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                    <i class="bi bi-star-fill star-select" data-value="2" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                    <i class="bi bi-star-fill star-select" data-value="3" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                    <i class="bi bi-star-fill star-select" data-value="4" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                    <i class="bi bi-star-fill star-select" data-value="5" style="cursor: pointer; color: #f39c12; transition: all 0.2s;"></i>
+                                </div>
+                                <input type="hidden" name="rating" id="selectedRating" th:value="${existingReview != null ? existingReview.rating : 5}">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-waka-primary px-4" id="submitRatingBtn" th:text="${existingReview != null ? 'Cập nhật đánh giá' : 'Gửi đánh giá'}">
+                                Gửi đánh giá
+                            </button>
+                        </form>
+                    </div>
+                    <div th:if="${!hasRented}" class="alert alert-secondary bg-dark bg-opacity-50 border-secondary text-secondary mb-5">
+                        <span sec:authorize="isAnonymous()">
+                            <i class="bi bi-info-circle me-2 text-info"></i> Bạn cần <a th:href="@{/login}" class="text-info fw-bold">Đăng nhập</a> và mượn truyện này để có thể đánh giá.
+                        </span>
+                        <span sec:authorize="isAuthenticated()">
+                            <i class="bi bi-info-circle me-2 text-warning"></i> Bạn chỉ có thể đánh giá sau khi đã được duyệt mượn truyện này.
+                        </span>
+                    </div>
+
                 </div>
 
-                <div class="comment-list">
-                    <div th:each="review : ${reviews}" class="comment-item">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <div class="d-flex align-items-center">
-                                <img th:src="${review.user.image != null ? review.user.image : 'https://ui-avatars.com/api/?name=' + review.user.fullName + '&background=random'}" class="user-avatar" alt="Avatar">
+                <!-- Tab: Bình luận -->
+                <div id="comment-content" style="display: none;">
+                    <div class="review-form-container mb-5 p-4 rounded" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.05);">
+                        <h4 class="mb-3 text-light">
+                            <i class="bi bi-chat-left-text me-2 text-info"></i>
+                            <span>Viết bình luận</span>
+                        </h4>
+                        
+                        <div sec:authorize="isAuthenticated()">
+                            <form id="commentForm" th:attr="data-book-id=${book.id}">
+                                <div class="mb-3">
+                                    <label for="commentContent" class="form-label text-secondary small fw-bold">BÌNH LUẬN CHI TIẾT</label>
+                                    <textarea class="form-control bg-black text-light border-secondary" id="commentContent" name="content" rows="3" required placeholder="Chia sẻ cảm nhận của bạn về cuốn truyện này..."></textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-waka-primary px-4" id="submitCommentBtn">
+                                    Gửi bình luận
+                                </button>
+                            </form>
+                        </div>
+                        <div sec:authorize="isAnonymous()" class="alert alert-secondary bg-dark bg-opacity-50 border-secondary text-secondary mb-0">
+                            <i class="bi bi-info-circle me-2 text-info"></i> Bạn cần <a th:href="@{/login}" class="text-info fw-bold">Đăng nhập</a> để có thể viết bình luận.
+                        </div>
+                    </div>
+
+                    <div class="comment-list">
+                        <div th:each="comment : ${comments}" class="comment-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <img th:src="${comment.user.image != null ? comment.user.image : 'https://ui-avatars.com/api/?name=' + comment.user.fullName + '&background=random'}" class="user-avatar" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;" alt="Avatar">
                                 <div>
-                                    <div class="fw-bold text-light" th:text="${review.user.fullName}"></div>
-                                    <small class="text-muted" th:text="${#temporals.format(review.createdDate, 'dd/MM/yyyy HH:mm')}"></small>
+                                    <div class="fw-bold text-light" th:text="${comment.user.fullName}"></div>
+                                    <small class="text-muted" th:text="${#temporals.format(comment.createdDate, 'dd/MM/yyyy HH:mm')}"></small>
                                 </div>
                             </div>
-                            <div class="rating-stars">
-                                <i th:each="i : ${#numbers.sequence(1, 5)}" class="bi bi-star-fill" th:classappend="${review.rating >= i} ? 'text-warning' : 'text-secondary'"></i>
-                            </div>
+                            <p class="mb-0 text-light mt-2" th:text="${comment.content}">Nội dung bình luận...</p>
                         </div>
-                        <p class="mb-0 text-light" th:text="${review.comment}">Nội dung bình luận...</p>
-                    </div>
-                    <div th:if="${#lists.isEmpty(reviews)}" class="text-center py-4 text-secondary">
-                        Chưa có đánh giá nào cho cuốn truyện này. Hãy là người đầu tiên đánh giá!
+                        <div th:if="${#lists.isEmpty(comments)}" class="text-center py-4 text-secondary">
+                            Chưa có bình luận nào cho cuốn truyện này. Hãy là người đầu tiên bình luận!
+                        </div>
                     </div>
                 </div>
             </div>

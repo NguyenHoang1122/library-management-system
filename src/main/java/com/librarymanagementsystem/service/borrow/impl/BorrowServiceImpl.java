@@ -28,10 +28,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -718,10 +720,17 @@ public class BorrowServiceImpl implements BorrowService {
                 double adminBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
                 admin.setBalance(adminBalance + profit);
                 userRepository.save(admin);
+                
+                NumberFormat nfAdmin = NumberFormat.getInstance(new Locale("vi", "VN"));
+                String adminNotifContent = String.format("Nhận tiền sinh lời từ đơn hoàn trả truyện của user %s. " +
+                    "Phí thuê: %s đ, Phạt: %s đ. Tổng cộng: %s đ. Số dư mới: %s đ.",
+                    user.getFullName() != null ? user.getFullName() : user.getUserName(),
+                    nfAdmin.format(totalBorrowFee), nfAdmin.format(lateFine), nfAdmin.format(profit), nfAdmin.format(admin.getBalance()));
+                notificationService.sendNotification(admin, "Cộng tiền hoàn thành đơn", adminNotifContent, null);
             }
         }
 
-        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
         String notifContent = String.format("Đã xử lý trả %d cuốn. Cọc: %s đ, Phí thuê: %s đ, Phạt: %s đ, Ship trả: %s đ. Thực lãnh: %s đ. Số dư cũ: %s đ, Số dư mới: %s đ.",
             itemsToReturn.size(), nf.format(originalDeposit), nf.format(totalBorrowFee), nf.format(lateFine), nf.format(shippingDeduction), nf.format(refundAmount), nf.format(oldBalance), nf.format(user.getBalance()));
             
