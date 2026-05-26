@@ -9,6 +9,7 @@ import com.librarymanagementsystem.repository.book.BookRepository;
 import com.librarymanagementsystem.repository.book.SensitiveWordRepository;
 import com.librarymanagementsystem.repository.user.UserRepository;
 import com.librarymanagementsystem.service.book.BookCommentService;
+import com.librarymanagementsystem.service.notification.NotificationService;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class BookCommentServiceImpl implements BookCommentService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final SensitiveWordRepository sensitiveWordRepository;
+    private final NotificationService notificationService;
 
     @PostConstruct
     public void initSensitiveWords() {
@@ -143,5 +145,21 @@ public class BookCommentServiceImpl implements BookCommentService {
         }
 
         bookCommentRepository.deleteById(commentId);
+    }
+
+    @Override
+    public void deleteCommentByAdmin(Long commentId, String reason) {
+        BookComment comment = bookCommentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Bình luận không tồn tại"));
+        User user = comment.getUser();
+        String bookTitle = comment.getBook().getTitle();
+
+        bookCommentRepository.deleteById(commentId);
+
+        if (reason != null && !reason.trim().isEmpty()) {
+            String title = "Bình luận bị xóa";
+            String content = "Bình luận của bạn tại truyện '" + bookTitle + "' đã bị quản trị viên xóa với lý do: " + reason;
+            notificationService.sendNotification(user, title, content, "/books/" + comment.getBook().getId());
+        }
     }
 }

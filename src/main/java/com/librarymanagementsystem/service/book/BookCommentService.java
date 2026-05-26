@@ -14,4 +14,5 @@ public interface BookCommentService {
     void deleteComment(Long commentId);
     void editCommentByUser(Long commentId, Long userId, String newContent);
     void deleteCommentByUser(Long commentId, Long userId);
+    void deleteCommentByAdmin(Long commentId, String reason);
 }

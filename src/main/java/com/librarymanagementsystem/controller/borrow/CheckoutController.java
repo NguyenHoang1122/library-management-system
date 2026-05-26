@@ -15,7 +15,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.net.URLEncoder;
 import java.util.Map;
 
 @Controller
@@ -49,7 +51,7 @@ public class CheckoutController {
 
         // Yêu cầu cập nhật địa chỉ trước khi thanh toán
         if (currentUser.getAddress() == null || currentUser.getAddress().trim().isEmpty()) {
-            return "redirect:/user/profile?error=address_required";
+            return "redirect:/cart?error=address_required";
         }
 
         Cart cart = cartService.getCartByUserId(currentUser.getId());
@@ -115,7 +117,7 @@ public class CheckoutController {
             @RequestParam String deliveryMethod,
             @RequestParam(required = false) String shippingAddress,
             @RequestParam(required = false) String note,
-            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+           RedirectAttributes redirectAttributes) {
         
         User currentUser = getCurrentUser();
         if (currentUser == null) return "redirect:/login";
@@ -126,7 +128,7 @@ public class CheckoutController {
             return "redirect:/borrow/history?success=checkout";
         } catch (Exception e) {
             try {
-                String encodedError = java.net.URLEncoder.encode(e.getMessage() != null ? e.getMessage() : "Lỗi hệ thống", "UTF-8");
+                String encodedError = URLEncoder.encode(e.getMessage() != null ? e.getMessage() : "Lỗi hệ thống", "UTF-8");
                 return "redirect:/checkout?error=" + encodedError;
             } catch (Exception ex) {
                 return "redirect:/checkout?error=error_processing_checkout";

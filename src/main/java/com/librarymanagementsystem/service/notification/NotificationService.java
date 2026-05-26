@@ -1,9 +1,11 @@
 package com.librarymanagementsystem.service.notification;
 
 import com.librarymanagementsystem.model.Notification;
+import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
 import com.librarymanagementsystem.model.borrow.ReturnRequest;
+import com.librarymanagementsystem.model.user.User;
 
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +72,9 @@ public interface NotificationService {
     void notifyBookOverdue(BorrowTransaction transaction);
 
     // Gửi thông báo chung
-    void sendNotification(com.librarymanagementsystem.model.user.User user, String title, String content, String link);
+    void sendNotification(User user, String title, String content, String link);
+
+    // Thông báo sách sắp hết
+    void notifyLowStock(Book book);
 
 }

@@ -270,9 +270,10 @@ public class BookController {
     @PreAuthorize("hasAnyRole('ADMIN','LIBRARIAN')")
     @PostMapping("/comments/{commentId}/delete")
     @ResponseBody
-    public ResponseEntity<?> deleteComment(@PathVariable("commentId") Long commentId) {
+    public ResponseEntity<?> deleteComment(@PathVariable("commentId") Long commentId,
+                                           @RequestParam(value = "reason", required = false) String reason) {
         try {
-            bookCommentService.deleteComment(commentId);
+            bookCommentService.deleteCommentByAdmin(commentId, reason);
             return ResponseEntity.ok(Map.of("success", true, "message", "Đã xóa bình luận"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));

@@ -4,6 +4,7 @@ import com.librarymanagementsystem.model.Notification;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
 import com.librarymanagementsystem.model.borrow.ReturnRequest;
+import com.librarymanagementsystem.model.borrow.dto.CombinedHistoryDTO;
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.model.user.status.RoleStatus;
 import com.librarymanagementsystem.repository.notification.NotificationRepository;
@@ -85,10 +86,11 @@ public class NotificationServiceImpl implements NotificationService {
                 .filter(user -> user.getRole().getRoleName() == RoleStatus.ROLE_LIBRARIAN)
                 .toList();
         for (User librarian : librarians) {
+            CombinedHistoryDTO combinedHistoryDTO = new CombinedHistoryDTO();
             Notification notification = new Notification();
             notification.setUser(librarian);
             notification.setTitle("Yêu cầu mượn truyện mới");
-            notification.setContent("Có một yêu cầu mượn truyện mới từ user " + borrowRequest.getUser().getFullName() +
+            notification.setContent("Có một yêu cầu mượn truyện mới (Mã đơn: #" + combinedHistoryDTO.getRequestId()  + ") từ user " + borrowRequest.getUser().getFullName() +
                     " vào ngày " + borrowRequest.getRequestDate().toLocalDate() +
                     ". Vui lòng kiểm tra và duyệt yêu cầu.");
             notification.setRead(false);
@@ -103,7 +105,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = new Notification();
         notification.setUser(transaction.getUser());
         notification.setTitle("Yêu cầu mượn truyện được duyệt");
-        notification.setContent("Yêu cầu mượn truyện của bạn đã được thủ thư duyệt. " +
+        notification.setContent("Yêu cầu mượn truyện (Mã đơn: #" + transaction.getId() + ") của bạn đã được thủ thư duyệt. " +
                  "Vui lòng đến thư viện để nhận truyện. " +
                  "Hạn trả: " + transaction.getDueDate().toLocalDate());
         notification.setRead(false);
@@ -117,7 +119,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = new Notification();
         notification.setUser(borrowRequest.getUser());
         notification.setTitle("Yêu cầu mượn truyện bị từ chối");
-        String content = "Yêu cầu mượn truyện của bạn đã bị từ chối.";
+        String content = "Yêu cầu mượn truyện (Mã đơn: #" + borrowRequest.getId() + ") của bạn đã bị từ chối.";
         if (borrowRequest.getRejectionReason() != null && !borrowRequest.getRejectionReason().trim().isEmpty()) {
             content += " Lý do: " + borrowRequest.getRejectionReason();
         } else {
@@ -147,7 +149,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = new Notification();
         notification.setUser(borrowRequest.getUser());
         notification.setTitle("Yêu cầu mượn truyện bị hủy");
-        notification.setContent("Yêu cầu mượn truyện của bạn đã bị hủy.");
+        notification.setContent("Yêu cầu mượn truyện (Mã đơn: #" + borrowRequest.getId() + ") của bạn đã bị hủy.");
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
@@ -159,7 +161,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = new Notification();
         notification.setUser(transaction.getUser());
         notification.setTitle("Nhắc nhở: truyện sắp hết hạn");
-        notification.setContent("Bạn còn " + daysLeft + " ngày để trả truyện. " +
+        notification.setContent("Truyện thuộc giao dịch #" + transaction.getId() + " của bạn còn " + daysLeft + " ngày để trả. " +
                  "Vui lòng trả truyện trước ngày " + transaction.getDueDate().toLocalDate());
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
@@ -172,7 +174,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = new Notification();
         notification.setUser(transaction.getUser());
         notification.setTitle("⚠️ Cảnh báo: Truyện quá hạn");
-        notification.setContent("Truyện của bạn đã quá hạn trả từ ngày " + transaction.getDueDate().toLocalDate() +
+        notification.setContent("Truyện thuộc giao dịch #" + transaction.getId() + " của bạn đã quá hạn trả từ ngày " + transaction.getDueDate().toLocalDate() +
                  ". Vui lòng trả truyện tại thư viện ngay lập tức");
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
@@ -189,7 +191,7 @@ public class NotificationServiceImpl implements NotificationService {
             Notification notification = new Notification();
             notification.setUser(librarian);
             notification.setTitle("Yêu cầu trả truyện mới");
-            notification.setContent("Có một yêu cầu trả truyện mới từ user " + returnRequest.getUser().getFullName() +
+            notification.setContent("Có một yêu cầu trả truyện mới cho giao dịch #" + returnRequest.getBorrowTransaction().getId() + " từ user " + returnRequest.getUser().getFullName() +
                      " vào ngày " + returnRequest.getRequestDate().toLocalDate() +
                      ". Thời gian trả dự kiến: " + returnRequest.getReturnDateTime().toLocalDate() +
                      ". Vui lòng kiểm tra và duyệt yêu cầu.");
@@ -239,5 +241,22 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);
+    }
+
+    @Override
+    public void notifyLowStock(com.librarymanagementsystem.model.book.Book book) {
+        List<User> targetUsers = userService.getAllActiveUsers().stream()
+                .filter(user -> user.getRole().getRoleName() == RoleStatus.ROLE_ADMIN || user.getRole().getRoleName() == RoleStatus.ROLE_LIBRARIAN)
+                .toList();
+        
+        for (User u : targetUsers) {
+            Notification notification = new Notification();
+            notification.setUser(u);
+            notification.setTitle("⚠️ Cảnh báo: Sách sắp hết");
+            notification.setContent("Sách '" + book.getTitle() + "' hiện tại chỉ còn " + book.getQuantity() + " quyển trong kho. Vui lòng kiểm tra và nhập thêm để đảm bảo đủ số lượng phục vụ độc giả.");
+            notification.setRead(false);
+            notification.setCreatedAt(LocalDateTime.now());
+            notificationRepository.save(notification);
+        }
     }
 }

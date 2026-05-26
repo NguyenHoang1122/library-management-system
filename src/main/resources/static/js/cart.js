@@ -105,4 +105,26 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     });
+
+    // Handle address required error redirect from CheckoutController
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('error') === 'address_required') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Chưa cập nhật địa chỉ',
+            html: 'Bạn cần cập nhật địa chỉ giao hàng trước khi tiến hành thanh toán.',
+            confirmButtonText: 'Đồng ý',
+            confirmButtonColor: '#198754',
+            background: '#181818',
+            color: '#e0e0e0',
+            allowOutsideClick: false,
+            customClass: {
+                popup: 'border border-warning border-opacity-25 rounded-3'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '/user/profile';
+            }
+        });
+    }
 });

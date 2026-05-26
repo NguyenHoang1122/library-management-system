@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.Map;
@@ -29,13 +30,13 @@ public class AdminDashboardController {
 
     @GetMapping("/chart/revenue")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getRevenueChart(@org.springframework.web.bind.annotation.RequestParam(defaultValue = "day") String period) {
+    public ResponseEntity<Map<String, Object>> getRevenueChart(@RequestParam(defaultValue = "day") String period) {
         return ResponseEntity.ok(dashboardService.getRevenueChartData(period));
     }
 
     @GetMapping("/chart/users")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getUsersChart(@org.springframework.web.bind.annotation.RequestParam(defaultValue = "day") String period) {
+    public ResponseEntity<Map<String, Object>> getUsersChart(@RequestParam(defaultValue = "day") String period) {
         return ResponseEntity.ok(dashboardService.getUserRegistrationChartData(period));
     }
 }

@@ -72,25 +72,24 @@
             </div>
 
             <!-- Nút hành động -->
-            <div class="action-btns">
+            <div class="action-btns d-flex align-items-center gap-3">
                 <button th:if="${book.quantity > 0}" class="btn btn-waka-primary btn-add-to-cart px-4 rounded-pill fw-bold shadow-sm" th:attr="data-id=${book.id}">
                     <i class="bi bi-cart-plus me-2"></i> Thêm vào giỏ hàng
                 </button>
                 <button th:if="${book.quantity <= 0}" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm disabled">
                     <i class="bi bi-x-circle me-2"></i> Tạm hết hàng
                 </button>
-                
-                <!-- Cảnh báo thuê truyện -->
-                <div class="mt-3 text-muted small fst-italic" style="width: 100%; display: block; max-width: 400px; line-height: 1.4;">
-                    <i class="bi bi-info-circle me-1 text-warning"></i>
-                    <span class="text-secondary">Lưu ý: Thời gian mượn mặc định là 7 ngày. Phí thuê là 30,000 đ/truyện. Nếu quá hạn, bạn sẽ bị phạt 7,000 đ cho mỗi ngày trễ. Tiền cọc sẽ hoàn lại sau khi trừ phí thuê và phí phạt (nếu có).</span>
-                </div>
 
                 <!-- Wishlist -->
                 <button class="btn-circle" id="wishlistBtn" th:attr="data-book-id=${book.id}" title="Yêu thích">
                     <i class="fas fa-heart"></i>
                 </button>
+            </div>
 
+            <!-- Cảnh báo thuê truyện -->
+            <div class="mt-4 p-3 rounded bg-warning bg-opacity-10 border border-warning border-opacity-50" style="max-width: 600px;">
+                <i class="bi bi-exclamation-triangle-fill me-2 text-warning fs-5"></i>
+                <span class="text-warning fw-medium" style="line-height: 1.5;">Lưu ý: Thời gian mượn mặc định là 7 ngày. Phí thuê là 30,000 đ/truyện. Nếu quá hạn, bạn sẽ bị phạt 7,000 đ cho mỗi ngày trễ. Tiền cọc sẽ hoàn lại sau khi trừ phí thuê và phí phạt (nếu có).</span>
             </div>
 
 
@@ -189,15 +188,30 @@
                     </div>
 
                     <div class="comment-list">
-                        <div th:each="comment : ${comments}" class="comment-item">
-                            <div class="d-flex align-items-center mb-2">
-                                <img th:src="${comment.user.image != null ? comment.user.image : 'https://ui-avatars.com/api/?name=' + comment.user.fullName + '&background=random'}" class="user-avatar" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;" alt="Avatar">
-                                <div>
-                                    <div class="fw-bold text-light" th:text="${comment.user.fullName}"></div>
-                                    <small class="text-muted" th:text="${#temporals.format(comment.createdDate, 'dd/MM/yyyy HH:mm')}"></small>
+                        <div th:each="comment : ${comments}" class="comment-item position-relative">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center">
+                                    <img th:src="${comment.user.image != null ? comment.user.image : 'https://ui-avatars.com/api/?name=' + comment.user.fullName + '&background=random'}" class="user-avatar" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;" alt="Avatar">
+                                    <div class="ms-2">
+                                        <div class="fw-bold text-light" th:text="${comment.user.fullName}"></div>
+                                        <div>
+                                            <small class="text-muted" th:text="${#temporals.format(comment.createdDate, 'dd/MM/yyyy HH:mm')}"></small>
+                                            <small th:if="${comment.isEdited}" class="text-muted ms-2 fst-italic">(Đã chỉnh sửa)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown" th:if="${(userId != null and userId == comment.user.id) or #authorization.expression('hasAnyRole(''ADMIN'',''LIBRARIAN'')')}">
+                                    <button class="btn btn-link text-secondary p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+                                        <li th:if="${userId != null and userId == comment.user.id}"><a class="dropdown-item edit-comment-btn" href="javascript:void(0)" th:attr="data-id=${comment.id}"><i class="bi bi-pencil-square me-2 text-warning"></i> Sửa bình luận</a></li>
+                                        <li th:if="${userId != null and userId == comment.user.id}"><a class="dropdown-item user-delete-comment-btn" href="javascript:void(0)" th:attr="data-id=${comment.id}"><i class="bi bi-trash me-2 text-danger"></i> Xóa bình luận</a></li>
+                                        <li th:if="${#authorization.expression('hasAnyRole(''ADMIN'',''LIBRARIAN'')') and (userId == null or userId != comment.user.id)}"><a class="dropdown-item admin-delete-comment-btn" href="javascript:void(0)" th:attr="data-id=${comment.id}"><i class="bi bi-shield-x me-2 text-danger"></i> Quản trị xóa</a></li>
+                                    </ul>
                                 </div>
                             </div>
-                            <p class="mb-0 text-light mt-2" th:text="${comment.content}">Nội dung bình luận...</p>
+                            <p class="mb-0 text-light mt-2" th:id="'comment-content-' + ${comment.id}" th:text="${comment.content}">Nội dung bình luận...</p>
                         </div>
                         <div th:if="${#lists.isEmpty(comments)}" class="text-center py-4 text-secondary">
                             Chưa có bình luận nào cho cuốn truyện này. Hãy là người đầu tiên bình luận!
@@ -223,6 +237,78 @@
             </div>
             <div class="modal-footer border-secondary justify-content-center">
                 <button type="button" class="btn btn-waka-primary px-4" data-bs-dismiss="modal" id="successModalCloseBtn">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sửa bình luận -->
+<div class="modal fade" id="editCommentModal" tabindex="-1" aria-labelledby="editCommentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="editCommentModalLabel"><i class="bi bi-pencil-square text-warning me-2"></i> Chỉnh sửa bình luận</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCommentForm">
+                    <input type="hidden" id="editCommentId">
+                    <div class="mb-3">
+                        <label for="editCommentContent" class="form-label text-secondary small fw-bold">NỘI DUNG</label>
+                        <textarea class="form-control bg-black text-light border-secondary" id="editCommentContent" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary justify-content-end">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-waka-primary px-4" id="submitEditCommentBtn">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xác nhận xóa bình luận (User) -->
+<div class="modal fade" id="deleteCommentConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> Xác nhận xóa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p class="fs-5 mb-0">Bạn có chắc chắn muốn xóa bình luận này?</p>
+                <small class="text-secondary mt-2 d-block">Hành động này không thể hoàn tác.</small>
+                <input type="hidden" id="deleteUserCommentId">
+            </div>
+            <div class="modal-footer border-secondary justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger px-4" id="confirmUserDeleteCommentBtn">Xóa bình luận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Quản trị xóa bình luận -->
+<div class="modal fade" id="adminDeleteCommentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="bi bi-shield-x text-danger me-2"></i> Xóa bình luận (Quản trị)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3 text-warning"><i class="bi bi-info-circle me-1"></i> Bình luận sẽ bị xóa vĩnh viễn và gửi thông báo đến người dùng.</p>
+                <form id="adminDeleteCommentForm">
+                    <input type="hidden" id="adminDeleteCommentId">
+                    <div class="mb-3">
+                        <label for="adminDeleteReason" class="form-label text-secondary small fw-bold">LÝ DO XÓA <span class="text-danger">*</span></label>
+                        <textarea class="form-control bg-black text-light border-secondary" id="adminDeleteReason" rows="3" required placeholder="Nhập lý do xóa bình luận để thông báo cho người dùng..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary justify-content-end">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger px-4" id="confirmAdminDeleteCommentBtn">Xóa và Gửi thông báo</button>
             </div>
         </div>
     </div>

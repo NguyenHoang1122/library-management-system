@@ -101,12 +101,6 @@ public class BorrowServiceImpl implements BorrowService {
         user.setBalance(user.getBalance() - totalAmount);
         userRepository.save(user);
 
-        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
-        notificationService.sendNotification(user, "Thanh toán đơn mượn", 
-            String.format("Đã thanh toán %s đ cho đơn mượn truyện. Số dư cũ: %s đ. Số dư hiện tại: %s đ.", 
-                nf.format(totalAmount), nf.format(oldBalance), nf.format(user.getBalance())), 
-            "/borrow/history");
-
         // Tạo yêu cầu mượn
         BorrowRequest borrowRequest = new BorrowRequest();
         borrowRequest.setUser(user);
@@ -120,11 +114,37 @@ public class BorrowServiceImpl implements BorrowService {
         borrowRequest.setTotalDeposit(totalDeposit);
         borrowRequest = borrowRequestRepository.save(borrowRequest);
 
+        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        notificationService.sendNotification(user, "Thanh toán đơn mượn", 
+            String.format("Đã thanh toán %s đ cho đơn mượn truyện (Mã đơn: #%d). Số dư cũ: %s đ. Số dư hiện tại: %s đ.", 
+                nf.format(totalAmount), borrowRequest.getId(), nf.format(oldBalance), nf.format(user.getBalance())), 
+            "/borrow/history");
+
+        // Cộng tiền vào ví ADMIN
+        List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
+        if (!admins.isEmpty()) {
+            User admin = admins.get(0);
+            double adminOldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
+            admin.setBalance(adminOldBalance + totalAmount);
+            userRepository.save(admin);
+            
+            notificationService.sendNotification(admin, "Nhận tiền thanh toán đơn mượn", 
+                String.format("Nhận %s đ từ đơn mượn trực tuyến (Mã đơn: #%d) của độc giả %s. Cọc: %s đ, Phí ship: %s đ. Số dư hiện tại: %s đ.", 
+                    nf.format(totalAmount), borrowRequest.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
+                    nf.format(totalDeposit), nf.format(shippingFee), nf.format(admin.getBalance())), 
+                null);
+        }
+
         // Chuyển items từ cart sang request
         for (CartItem cartItem : cart.getItems()) {
             Book book = cartItem.getBook();
-            book.setQuantity(book.getQuantity() - cartItem.getQuantity()); // Trừ số lượng ảo trước
+            int oldQuantity = book.getQuantity() != null ? book.getQuantity() : 0;
+            book.setQuantity(oldQuantity - cartItem.getQuantity()); // Trừ số lượng ảo trước
             bookRepository.save(book);
+
+            if (oldQuantity >= 20 && book.getQuantity() < 20) {
+                notificationService.notifyLowStock(book);
+            }
 
             BorrowRequestItem borrowRequestItem = new BorrowRequestItem();
             borrowRequestItem.setBorrowRequest(borrowRequest);
@@ -154,8 +174,13 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         // TRỪ SỐ LƯỢNG NGAY KHI TẠO YÊU CẦU ĐỂ TRÁNH TRANH CHẤP
-        book.setQuantity(book.getQuantity() - 1);
+        int oldQuantity = book.getQuantity() != null ? book.getQuantity() : 0;
+        book.setQuantity(oldQuantity - 1);
         bookRepository.save(book);
+
+        if (oldQuantity >= 20 && book.getQuantity() < 20) {
+            notificationService.notifyLowStock(book);
+        }
 
         // Tạo yêu cầu mượn
         BorrowRequest borrowRequest = new BorrowRequest();
@@ -227,10 +252,26 @@ public class BorrowServiceImpl implements BorrowService {
         if (totalRefund > 0) {
             user.setBalance(oldBalance + totalRefund);
             userRepository.save(user);
+
+            // TRỪ TIỀN KHỎI VÍ ADMIN VÌ HỦY ĐƠN
+            List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
+            if (!admins.isEmpty()) {
+                User admin = admins.get(0);
+                double adminOldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
+                admin.setBalance(adminOldBalance - totalRefund);
+                userRepository.save(admin);
+                
+                java.text.NumberFormat nfAdmin = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+                notificationService.sendNotification(admin, "Trừ tiền hủy đơn mượn", 
+                    String.format("Trừ %s đ do đơn mượn (Mã đơn: #%d) của độc giả %s bị hủy. Số dư hiện tại: %s đ.", 
+                        nfAdmin.format(totalRefund), borrowRequest.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
+                        nfAdmin.format(admin.getBalance())), 
+                    null);
+            }
         }
 
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
-        String notifContent = String.format("Đơn mượn truyện (Mã: %d) của bạn đã được hủy thành công. \n" +
+        String notifContent = String.format("Đơn mượn truyện (Mã đơn: #%d) của bạn đã được hủy thành công. \n" +
                 "- Số tiền được hoàn lại: %s đ\n" +
                 "- Số dư ví cũ: %s đ\n" +
                 "- Số dư ví mới: %s đ\n",
@@ -380,8 +421,13 @@ public class BorrowServiceImpl implements BorrowService {
             if (qty <= 0) continue;
 
             Book book = bookRepository.findById(bookId).get();
-            book.setQuantity(book.getQuantity() - qty);
+            int oldQuantity = book.getQuantity() != null ? book.getQuantity() : 0;
+            book.setQuantity(oldQuantity - qty);
             bookRepository.save(book);
+
+            if (oldQuantity >= 20 && book.getQuantity() < 20) {
+                notificationService.notifyLowStock(book);
+            }
 
             BorrowRequestItem reqItem = new BorrowRequestItem();
             reqItem.setBorrowRequest(request);
@@ -432,18 +478,33 @@ public class BorrowServiceImpl implements BorrowService {
 
         // 5. Gửi thông báo
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
-        String notifContent = String.format("Thủ thư đã tạo đơn mượn trực tiếp %d cuốn truyện. \n" +
+        String notifContent = String.format("Thủ thư đã tạo đơn mượn trực tiếp (Mã đơn: #%d) với %d cuốn truyện. \n" +
                 "- Tổng cọc: %s đ\n" +
                 "- Tổng phí thuê: %s đ\n" +
                 "- Tổng tiền bị trừ: %s đ\n" +
                 "- Số dư cũ: %s đ\n" +
                 "- Số dư mới: %s đ\n" +
                 "Bạn cần trả truyện trước ngày %s.",
-                totalBooks, nf.format(totalDeposit), nf.format(totalBorrowFee), nf.format(totalAmount), 
+                transaction.getId(), totalBooks, nf.format(totalDeposit), nf.format(totalBorrowFee), nf.format(totalAmount), 
                 nf.format(currentBalance), nf.format(user.getBalance()), 
                 transaction.getDueDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
         notificationService.sendNotification(user, "Tạo đơn mượn trực tiếp", notifContent, "/borrow/history");
+
+        // Cộng tiền vào ví ADMIN
+        List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
+        if (!admins.isEmpty()) {
+            User admin = admins.get(0);
+            double adminOldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
+            admin.setBalance(adminOldBalance + totalAmount);
+            userRepository.save(admin);
+            
+            notificationService.sendNotification(admin, "Nhận tiền thanh toán đơn mượn trực tiếp", 
+                String.format("Nhận %s đ từ đơn mượn trực tiếp (Mã đơn: #%d) của độc giả %s. Cọc: %s đ, Phí thuê: %s đ. Số dư hiện tại: %s đ.", 
+                    nf.format(totalAmount), transaction.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
+                    nf.format(totalDeposit), nf.format(totalBorrowFee), nf.format(admin.getBalance())), 
+                null);
+        }
     }
 
     // Từ chối yêu cầu mượn sách: cập nhật trạng thái yêu cầu sang REJECTED, đính kèm lý do từ chối, trả lại số lượng sách vào kho và gửi thông báo từ chối cho người dùng
@@ -476,11 +537,27 @@ public class BorrowServiceImpl implements BorrowService {
         if (totalRefund > 0) {
             user.setBalance(oldBalance + totalRefund);
             userRepository.save(user);
+
+            // TRỪ TIỀN KHỎI VÍ ADMIN VÌ TỪ CHỐI ĐƠN
+            List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
+            if (!admins.isEmpty()) {
+                User admin = admins.get(0);
+                double adminOldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
+                admin.setBalance(adminOldBalance - totalRefund);
+                userRepository.save(admin);
+                
+                java.text.NumberFormat nfAdmin = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+                notificationService.sendNotification(admin, "Trừ tiền từ chối đơn mượn", 
+                    String.format("Trừ %s đ do đơn mượn (Mã đơn: #%d) của độc giả %s bị từ chối. Số dư hiện tại: %s đ.", 
+                        nfAdmin.format(totalRefund), borrowRequest.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
+                        nfAdmin.format(admin.getBalance())), 
+                    null);
+            }
         }
 
         // Thông báo
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
-        String notifContent = String.format("Đơn mượn truyện (Mã: %d) của bạn đã bị từ chối.\n" +
+        String notifContent = String.format("Đơn mượn truyện (Mã đơn: #%d) của bạn đã bị từ chối.\n" +
                 "- Lý do: %s\n" +
                 "- Số tiền được hoàn lại: %s đ\n" +
                 "- Số dư ví cũ: %s đ\n" +
@@ -711,22 +788,35 @@ public class BorrowServiceImpl implements BorrowService {
         user.setBalance(oldBalance + refundAmount);
         userRepository.save(user);
 
-        // Cộng tiền sinh lời (phí thuê + phí trễ hạn) vào ví Admin
-        double profit = totalBorrowFee + lateFine;
-        if (profit > 0) {
+        // Trừ tiền hoàn trả từ ví Admin
+        if (refundAmount > 0) {
             List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
             if (!admins.isEmpty()) {
                 User admin = admins.get(0);
                 double adminBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
-                admin.setBalance(adminBalance + profit);
+                admin.setBalance(adminBalance - refundAmount);
                 userRepository.save(admin);
                 
                 NumberFormat nfAdmin = NumberFormat.getInstance(new Locale("vi", "VN"));
-                String adminNotifContent = String.format("Nhận tiền sinh lời từ đơn hoàn trả truyện của user %s. " +
-                    "Phí thuê: %s đ, Phạt: %s đ. Tổng cộng: %s đ. Số dư mới: %s đ.",
+                String adminNotifContent = String.format("Hoàn trả %s đ tiền cọc cho độc giả %s (Giao dịch: #%d). " +
+                    "Cọc trả: %s đ, Trừ phí thuê: %s đ, Phạt: %s đ, Phí ship: %s đ. Số dư mới: %s đ.",
+                    nfAdmin.format(refundAmount),
                     user.getFullName() != null ? user.getFullName() : user.getUserName(),
-                    nfAdmin.format(totalBorrowFee), nfAdmin.format(lateFine), nfAdmin.format(profit), nfAdmin.format(admin.getBalance()));
-                notificationService.sendNotification(admin, "Cộng tiền hoàn thành đơn", adminNotifContent, null);
+                    transaction.getId(),
+                    nfAdmin.format(originalDeposit), nfAdmin.format(totalBorrowFee), nfAdmin.format(lateFine), nfAdmin.format(shippingDeduction), nfAdmin.format(admin.getBalance()));
+                notificationService.sendNotification(admin, "Trừ ví hoàn tiền trả truyện", adminNotifContent, null);
+            }
+        } else if (refundAmount == 0 && (totalBorrowFee > 0 || lateFine > 0)) {
+            // Không hoàn tiền, nhưng gửi thông báo là thu trọn cọc
+            List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
+            if (!admins.isEmpty()) {
+                User admin = admins.get(0);
+                NumberFormat nfAdmin = NumberFormat.getInstance(new Locale("vi", "VN"));
+                String adminNotifContent = String.format("Đơn trả truyện (Giao dịch: #%d) của %s không phát sinh hoàn tiền (Giữ trọn cọc %s đ do Phí thuê: %s đ, Phạt: %s đ). Số dư hiện tại: %s đ.",
+                    transaction.getId(),
+                    user.getFullName() != null ? user.getFullName() : user.getUserName(),
+                    nfAdmin.format(originalDeposit), nfAdmin.format(totalBorrowFee), nfAdmin.format(lateFine), nfAdmin.format(admin.getBalance()));
+                notificationService.sendNotification(admin, "Hoàn tất đơn trả truyện", adminNotifContent, null);
             }
         }
 

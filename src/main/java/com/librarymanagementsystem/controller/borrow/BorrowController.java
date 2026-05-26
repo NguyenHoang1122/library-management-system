@@ -151,7 +151,7 @@ public class BorrowController {
                 } else {
                     return matchBookId || matchKeyword;
                 }
-            }).collect(java.util.stream.Collectors.toList());
+            }).collect(Collectors.toList());
         }
         
         if (statusFilter != null && !statusFilter.trim().isEmpty()) {
@@ -291,7 +291,7 @@ public class BorrowController {
         }
         model.addAttribute("returnedQuantities", returnedQuantities);
         model.addAttribute("unreturnedQuantities", unreturnedQuantities);
-        
+
         model.addAttribute("request", request);
         model.addAttribute("returnRequest", returnRequest);
         model.addAttribute("transaction", transaction);

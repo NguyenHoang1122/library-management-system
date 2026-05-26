@@ -3,6 +3,7 @@ package com.librarymanagementsystem.service.user;
 
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.model.user.dto.UserDTO;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,11 +24,11 @@ public interface UserService {
 
     List<User> getAllActiveUsers();
 
-    org.springframework.data.domain.Page<User> getActiveUsers(String query, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<User> getActiveUsers(String query, Pageable pageable);
 
     List<User> getAllDeletedUsers();
 
-    org.springframework.data.domain.Page<User> getDeletedUsers(String query, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<User> getDeletedUsers(String query, Pageable pageable);
 
     // Xóa mềm
     void softDeleteUser(Long userId);

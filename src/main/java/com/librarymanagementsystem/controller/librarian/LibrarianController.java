@@ -5,6 +5,7 @@ import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
 import com.librarymanagementsystem.model.borrow.ReturnRequest;
 import com.librarymanagementsystem.model.user.User;
+import com.librarymanagementsystem.repository.book.BookRepository;
 import com.librarymanagementsystem.service.borrow.BorrowService;
 import com.librarymanagementsystem.service.user.UserService;
 import org.springframework.data.domain.Page;
@@ -33,7 +34,7 @@ public class LibrarianController {
 
     private final BorrowService borrowService;
     private final UserService userService;
-    private final com.librarymanagementsystem.repository.book.BookRepository bookRepository;
+    private final BookRepository bookRepository;
 
     //danh sách các yêu cầu mượn truyện đang chờ duyệt
     @GetMapping("/borrows")

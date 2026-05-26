@@ -348,143 +348,151 @@ document.querySelectorAll('.btn-hide-comment').forEach(btn => {
     });
 });
 
-// Delete comment
-document.querySelectorAll('.btn-delete-comment').forEach(btn => {
+// Edit comment by User using Bootstrap Modal
+document.querySelectorAll('.edit-comment-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const commentId = this.getAttribute('data-id');
-        Swal.fire({
-            title: 'Xóa vĩnh viễn?',
-            text: 'Bạn có chắc muốn xóa vĩnh viễn bình luận này không? Thao tác không thể hoàn tác.',
-            icon: 'error',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Đồng ý xóa',
-            cancelButtonText: 'Hủy bỏ',
-            background: '#181818',
-            color: '#e0e0e0',
-            customClass: {
-                popup: 'border border-danger border-opacity-25 rounded-3'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-
-                fetch(`/books/comments/${commentId}/delete`, {
-                    method: 'POST',
-                    headers: {
-                        [csrfHeader]: csrfToken
-                    }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message, background: '#181818', color: '#e0e0e0' });
-                    }
-                });
-            }
-        });
+        const contentElem = document.getElementById('comment-content-' + commentId);
+        const oldContent = contentElem ? contentElem.innerText : '';
+        
+        document.getElementById('editCommentId').value = commentId;
+        document.getElementById('editCommentContent').value = oldContent;
+        
+        const editModal = new bootstrap.Modal(document.getElementById('editCommentModal'));
+        editModal.show();
     });
 });
 
-// Edit comment by User
-document.querySelectorAll('.btn-edit-comment-user').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const commentId = this.getAttribute('data-id');
-        const oldContent = this.getAttribute('data-content');
+document.getElementById('submitEditCommentBtn')?.addEventListener('click', function() {
+    const commentId = document.getElementById('editCommentId').value;
+    const newContent = document.getElementById('editCommentContent').value;
+    
+    if (!newContent || newContent.trim() === '') {
+        alert('Nội dung bình luận không được để trống!');
+        return;
+    }
 
-        Swal.fire({
-            title: 'Chỉnh sửa bình luận',
-            input: 'textarea',
-            inputValue: oldContent,
-            inputPlaceholder: 'Nhập nội dung mới...',
-            showCancelButton: true,
-            confirmButtonColor: '#0dcaf0',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Lưu thay đổi',
-            cancelButtonText: 'Hủy bỏ',
-            background: '#181818',
-            color: '#e0e0e0',
-            customClass: {
-                popup: 'border border-info border-opacity-25 rounded-3',
-                input: 'bg-dark text-light border-secondary'
-            },
-            inputValidator: (value) => {
-                if (!value || value.trim() === '') {
-                    return 'Nội dung bình luận không được để trống!';
-                }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const newContent = result.value;
-                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-                const formData = new URLSearchParams();
-                formData.append('content', newContent);
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+    const formData = new URLSearchParams();
+    formData.append('content', newContent);
 
-                fetch(`/books/comments/${commentId}/edit`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: formData.toString()
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        showSuccessModal(data.message);
-                    } else {
-                        Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message, background: '#181818', color: '#e0e0e0' });
-                    }
-                });
-            }
-        });
+    this.disabled = true;
+    this.innerText = 'Đang lưu...';
+
+    fetch(`/books/comments/${commentId}/edit`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            [csrfHeader]: csrfToken
+        },
+        body: formData.toString()
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const editModalEl = document.getElementById('editCommentModal');
+            const editModal = bootstrap.Modal.getInstance(editModalEl);
+            editModal.hide();
+            showSuccessModal(data.message);
+        } else {
+            alert("Lỗi: " + data.message);
+            this.disabled = false;
+            this.innerText = 'Lưu thay đổi';
+        }
     });
 });
 
-// Delete comment by User
-document.querySelectorAll('.btn-delete-comment-user').forEach(btn => {
+// Delete comment by User using Bootstrap Modal
+document.querySelectorAll('.user-delete-comment-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const commentId = this.getAttribute('data-id');
-        Swal.fire({
-            title: 'Xóa bình luận?',
-            text: 'Bạn có chắc muốn xóa bình luận này không?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Đồng ý xóa',
-            cancelButtonText: 'Hủy bỏ',
-            background: '#181818',
-            color: '#e0e0e0',
-            customClass: {
-                popup: 'border border-danger border-opacity-25 rounded-3'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        document.getElementById('deleteUserCommentId').value = commentId;
+        
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteCommentConfirmModal'));
+        deleteModal.show();
+    });
+});
 
-                fetch(`/books/comments/${commentId}/user-delete`, {
-                    method: 'POST',
-                    headers: {
-                        [csrfHeader]: csrfToken
-                    }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        showSuccessModal(data.message);
-                    } else {
-                        Swal.fire({ icon: 'error', title: 'Lỗi', text: data.message, background: '#181818', color: '#e0e0e0' });
-                    }
-                });
-            }
-        });
+document.getElementById('confirmUserDeleteCommentBtn')?.addEventListener('click', function() {
+    const commentId = document.getElementById('deleteUserCommentId').value;
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+    this.disabled = true;
+    this.innerText = 'Đang xóa...';
+
+    fetch(`/books/comments/${commentId}/user-delete`, {
+        method: 'POST',
+        headers: {
+            [csrfHeader]: csrfToken
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const deleteModalEl = document.getElementById('deleteCommentConfirmModal');
+            const deleteModal = bootstrap.Modal.getInstance(deleteModalEl);
+            deleteModal.hide();
+            showSuccessModal(data.message);
+        } else {
+            alert("Lỗi: " + data.message);
+            this.disabled = false;
+            this.innerText = 'Xóa bình luận';
+        }
+    });
+});
+
+// Admin Delete Comment using Bootstrap Modal
+document.querySelectorAll('.admin-delete-comment-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const commentId = this.getAttribute('data-id');
+        document.getElementById('adminDeleteCommentId').value = commentId;
+        document.getElementById('adminDeleteReason').value = '';
+        
+        const adminDeleteModal = new bootstrap.Modal(document.getElementById('adminDeleteCommentModal'));
+        adminDeleteModal.show();
+    });
+});
+
+document.getElementById('confirmAdminDeleteCommentBtn')?.addEventListener('click', function() {
+    const commentId = document.getElementById('adminDeleteCommentId').value;
+    const reason = document.getElementById('adminDeleteReason').value;
+    
+    if (!reason || reason.trim() === '') {
+        alert('Vui lòng nhập lý do xóa!');
+        return;
+    }
+
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+    
+    const formData = new URLSearchParams();
+    formData.append('reason', reason);
+
+    this.disabled = true;
+    this.innerText = 'Đang xóa...';
+
+    fetch(`/books/comments/${commentId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            [csrfHeader]: csrfToken
+        },
+        body: formData.toString()
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const adminModalEl = document.getElementById('adminDeleteCommentModal');
+            const adminModal = bootstrap.Modal.getInstance(adminModalEl);
+            adminModal.hide();
+            showSuccessModal(data.message);
+        } else {
+            alert("Lỗi: " + data.message);
+            this.disabled = false;
+            this.innerText = 'Xóa và Gửi thông báo';
+        }
     });
 });
 

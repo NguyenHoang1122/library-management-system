@@ -3,6 +3,7 @@ package com.librarymanagementsystem.service.book;
 import com.librarymanagementsystem.model.book.BookReview;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface BookReviewService {
@@ -24,5 +25,5 @@ public interface BookReviewService {
     Long countReviewsForBook(Long bookId);
 
     // Thống kê sao
-    java.util.Map<Integer, Long> getRatingSummary(Long bookId);
+    Map<Integer, Long> getRatingSummary(Long bookId);
 }

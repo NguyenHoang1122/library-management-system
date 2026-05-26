@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface BorrowService {
@@ -54,7 +55,7 @@ public interface BorrowService {
     long calculateLateFine(Long transactionId);
 
     // Thủ thư tạo đơn mượn trực tiếp tại quầy
-    void createDirectBorrow(Long librarianId, Long userId, java.util.List<Long> bookIds, java.util.List<Integer> quantities);
+    void createDirectBorrow(Long librarianId, Long userId, List<Long> bookIds, List<Integer> quantities);
 
     // Danh sách đang mượn
     Page<BorrowHistoryDTO> getActiveBorrows(Long userId, Pageable pageable);
@@ -73,18 +74,18 @@ public interface BorrowService {
     // Danh sách truyện chờ duyệt
     List<BorrowRequest> getAllPendingRequests();
 
-    org.springframework.data.domain.Page<BorrowRequest> getPendingRequests(String query, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<BorrowRequest> getPendingRequests(String query, Pageable pageable);
 
-    org.springframework.data.domain.Page<BorrowRequest> getApprovedRequests(String query, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<BorrowRequest> getApprovedRequests(String query, Pageable pageable);
 
     // Danh sách truyện đang mượn
     List<BorrowTransaction> getAllActiveBorrows();
 
-    org.springframework.data.domain.Page<Object[]> getActiveBorrowers(String query, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<Object[]> getActiveBorrowers(String query, Pageable pageable);
 
     // User tạo yêu cầu trả sách trực tuyến
     void createReturnRequest(Long userId, Long transactionId, LocalDateTime returnDateTime, String note);
-    void createPartialReturnRequest(Long userId, Long requestId, java.util.Map<Long, Integer> returnItems, String returnMethod, String returnAddress);
+    void createPartialReturnRequest(Long userId, Long requestId, Map<Long, Integer> returnItems, String returnMethod, String returnAddress);
     void extendBorrowRequest(Long userId, Long requestId);
     ReturnRequest getReturnRequestForBorrowRequest(Long requestId);
     List<ReturnRequest> getAllReturnRequestsForBorrowRequest(Long requestId);
@@ -93,7 +94,7 @@ public interface BorrowService {
     // Danh sách yêu cầu trả chờ duyệt
     List<ReturnRequest> getAllPendingReturnRequests();
 
-    org.springframework.data.domain.Page<ReturnRequest> getPendingReturnRequests(String query, org.springframework.data.domain.Pageable pageable);
+    Page<ReturnRequest> getPendingReturnRequests(String query, Pageable pageable);
 
     // Thủ thư duyệt yêu cầu trả sách (Shipper bắt đầu đi lấy)
     void approveReturnRequest(Long requestId, Long librarianId);
