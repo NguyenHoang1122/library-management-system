@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Chi tiết giao dịch mượn</title>
@@ -133,12 +133,16 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <input type="hidden" th:id="'unreturned-' + ${group.get('book').id}" th:value="${#strings.listJoin(group.get('unreturnedIds'), ',')}">
-                                        <img th:if="${group.get('book').image != null}" th:src="${group.get('book').image}" class="rounded me-3 shadow-sm" style="width: 45px; height: 65px; object-fit: cover;"/>
-                                        <div th:unless="${group.get('book').image != null}" class="bg-secondary bg-opacity-25 rounded me-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 45px; height: 65px;">
-                                            <i class="bi bi-book text-muted"></i>
-                                        </div>
+                                        <a th:href="@{/books/{id}(id=${group.get('book').id})}">
+                                            <img th:if="${group.get('book').image != null}" th:src="${group.get('book').image}" class="rounded me-3 shadow-sm" style="width: 45px; height: 65px; object-fit: cover;"/>
+                                            <div th:unless="${group.get('book').image != null}" class="bg-secondary bg-opacity-25 rounded me-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 45px; height: 65px;">
+                                                <i class="bi bi-book text-muted"></i>
+                                            </div>
+                                        </a>
                                         <div class="flex-grow-1">
-                                            <div class="fw-bold" th:text="${group.get('book').title}"></div>
+                                            <a th:href="@{/books/{id}(id=${group.get('book').id})}" class="text-decoration-none text-light">
+                                                <div class="fw-bold" th:text="${group.get('book').title}"></div>
+                                            </a>
                                             <div class="mt-1">
                                                 <span class="badge bg-secondary me-1" th:text="'Tổng: ' + ${group.get('totalCount')}"></span>
                                                 <span class="badge bg-success me-1" th:if="${group.get('returnedCount') > 0}" th:text="'Đã trả: ' + ${group.get('returnedCount')}"></span>

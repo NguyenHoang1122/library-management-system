@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Chi Tiết Đơn Mượn | Truyện 360</title>
@@ -37,9 +37,13 @@
                                         <tr th:each="item : ${request.borrowRequestItems}">
                                             <td class="ps-4 py-3 border-secondary">
                                                 <div class="d-flex align-items-center">
-                                                    <img th:src="${item.book.image}" alt="Cover" class="rounded me-3 shadow-sm book-cover-img">
+                                                    <a th:href="@{/books/{id}(id=${item.book.id})}">
+                                                        <img th:src="${item.book.image}" alt="Cover" class="rounded me-3 shadow-sm book-cover-img">
+                                                    </a>
                                                     <div>
-                                                        <h6 class="mb-1 fw-bold text-light" th:text="${item.book.title}">Tên truyện</h6>
+                                                        <a th:href="@{/books/{id}(id=${item.book.id})}" class="text-decoration-none text-light">
+                                                            <h6 class="mb-1 fw-bold" th:text="${item.book.title}">Tên truyện</h6>
+                                                        </a>
                                                         <span class="badge bg-secondary" th:text="${item.book.author != null ? item.book.author.name : 'Đang cập nhật'}">Tác giả</span>
                                                     </div>
                                                 </div>
@@ -227,9 +231,13 @@
                                 <tr th:each="item, stat : ${request.borrowRequestItems}">
                                     <td class="py-3 border-secondary">
                                         <div class="d-flex align-items-center">
-                                            <img th:src="${item.book.image}" alt="Cover" class="rounded me-3 shadow-sm book-cover-img">
+                                            <a th:href="@{/books/{id}(id=${item.book.id})}">
+                                                <img th:src="${item.book.image}" alt="Cover" class="rounded me-3 shadow-sm book-cover-img">
+                                            </a>
                                             <div>
-                                                <h6 class="mb-0 fw-bold text-light" th:text="${item.book.title}">Tên truyện</h6>
+                                                <a th:href="@{/books/{id}(id=${item.book.id})}" class="text-decoration-none text-light">
+                                                    <h6 class="mb-0 fw-bold" th:text="${item.book.title}">Tên truyện</h6>
+                                                </a>
                                             </div>
                                         </div>
                                     </td>
