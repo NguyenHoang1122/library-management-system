@@ -9,7 +9,6 @@ import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.service.book.BookService;
 import com.librarymanagementsystem.service.borrow.BorrowService;
 import com.librarymanagementsystem.service.user.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -249,7 +248,7 @@ public class BorrowController {
                                       RedirectAttributes redirectAttributes) {
         try {
             borrowService.cancelBorrowRequest(requestId);
-            redirectAttributes.addFlashAttribute("message", "Đã hủy đơn mượn sách thành công. Tiền đã được hoàn lại vào ví của bạn.");
+            redirectAttributes.addFlashAttribute("message", "Đã hủy đơn mượn sách thành công. Tiền đang được hoàn trả lại tài khoản ngân hàng của bạn.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -326,7 +325,6 @@ public class BorrowController {
     @PostMapping("/return/cancel/{returnRequestId}")
     public String cancelReturnRequest(@PathVariable Long returnRequestId,
                                       Authentication authentication,
-                                      HttpServletRequest httpRequest,
                                       RedirectAttributes redirectAttributes) {
         try {
             User user = userService.findByUserName(authentication.getName())
@@ -338,7 +336,6 @@ public class BorrowController {
             redirectAttributes.addFlashAttribute("error", "Hủy yêu cầu thất bại: " + e.getMessage());
         }
         
-        String referer = httpRequest.getHeader("Referer");
-        return "redirect:" + (referer != null ? referer : "/borrow");
+        return "redirect:/borrow";
     }
 }

@@ -7,6 +7,7 @@ import com.librarymanagementsystem.model.borrow.*;
 import com.librarymanagementsystem.model.borrow.dto.BorrowHistoryDTO;
 import com.librarymanagementsystem.model.borrow.dto.CombinedHistoryDTO;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import com.librarymanagementsystem.model.borrow.status.RequestStatus;
 import com.librarymanagementsystem.model.borrow.status.TransactionStatus;
@@ -29,7 +30,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -56,7 +59,6 @@ public class BorrowServiceImpl implements BorrowService {
 
     private final Integer DEFAULT_BORROW_DAYS = 7;
     private final long DAILY_FINE = 7000; //phạt trả muộn
-    private final double BORROW_FEE = 30000.0; //phí thuê truyện cho 7 ngày
 
     // Yêu cầu mượn sách từ giỏ hàng (Checkout)
     @Override
@@ -74,7 +76,7 @@ public class BorrowServiceImpl implements BorrowService {
         sortedCartItems.sort(Comparator.comparing(item -> item.getBook().getId()));
 
         // Tính tổng tiền cọc và acquire DB lock cho các sách trong giỏ
-        double totalDeposit = 0.0;
+        BigDecimal totalDeposit = BigDecimal.ZERO;
         for (CartItem item : sortedCartItems) {
             Book lockedBook = bookRepository.findByIdWithLock(item.getBook().getId())
                     .orElseThrow(() -> new RuntimeException("Truyện không tồn tại"));
@@ -84,22 +86,22 @@ public class BorrowServiceImpl implements BorrowService {
             }
             item.setBook(lockedBook); // Cập nhật lại book trong item để dùng book đã lock ở bước sau
 
-            Double dp = lockedBook.getDepositPrice() != null ? lockedBook.getDepositPrice() : 0.0;
-            totalDeposit += dp * item.getQuantity();
+            BigDecimal dp = lockedBook.getDepositPrice() != null ? lockedBook.getDepositPrice() : BigDecimal.ZERO;
+            totalDeposit = totalDeposit.add(dp.multiply(BigDecimal.valueOf(item.getQuantity())));
         }
 
         // Tính phí ship
         double distance = 0.0;
-        double shippingFee = 0.0;
+        BigDecimal shippingFee = BigDecimal.ZERO;
         if (deliveryMethod == DeliveryMethod.SHIPPING) {
             int totalQuantity = cart.getItems().stream()
                     .mapToInt(item -> item.getQuantity() != null ? item.getQuantity() : 0)
                     .sum();
             distance = shippingService.calculateDistance(shippingAddress);
-            shippingFee = shippingService.calculateShippingFee(distance, totalQuantity);
+            shippingFee = BigDecimal.valueOf(shippingService.calculateShippingFee(distance, totalQuantity));
         }
 
-        double totalAmount = totalDeposit + shippingFee;
+        BigDecimal totalAmount = totalDeposit.add(shippingFee);
         // Loại bỏ thanh toán qua ví cá nhân, người dùng đã thanh toán VNPAY trực tiếp
 
         // Tạo yêu cầu mượn
@@ -115,7 +117,7 @@ public class BorrowServiceImpl implements BorrowService {
         borrowRequest.setTotalDeposit(totalDeposit);
         borrowRequest = borrowRequestRepository.save(borrowRequest);
 
-        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
         notificationService.sendNotification(user, "Thanh toán đơn mượn", 
             String.format("Đã nhận thanh toán %s đ bằng VNPAY cho đơn mượn truyện (Mã đơn: #%d).", 
                 nf.format(totalAmount), borrowRequest.getId()), 
@@ -248,22 +250,18 @@ public class BorrowServiceImpl implements BorrowService {
             bookRepository.save(book);
         }
 
-        // HOÀN LẠI TIỀN (CỌC + SHIP) CHO USER
+        // TRỪ TIỀN KHỎI VÍ ADMIN VÌ HỦY ĐƠN (Thống kê chi phí hoàn tiền của thư viện)
         User user = borrowRequest.getUser();
-        double totalRefund = (borrowRequest.getTotalDeposit() != null ? borrowRequest.getTotalDeposit() : 0) +
-                             (borrowRequest.getShippingFee() != null ? borrowRequest.getShippingFee() : 0);
-        double oldBalance = user.getBalance() != null ? user.getBalance() : 0.0;
-        if (totalRefund > 0) {
-            user.setBalance(oldBalance + totalRefund);
-            userRepository.save(user);
-
-            // TRỪ TIỀN KHỎI VÍ ADMIN VÌ HỦY ĐƠN
-            adminWalletService.logTransaction(-totalRefund, "REFUND_EXPENSE", String.format("Hoàn tiền đơn mượn bị hủy #%d", borrowRequest.getId()), borrowRequest.getId());
+        BigDecimal totalRefund = (borrowRequest.getTotalDeposit() != null ? borrowRequest.getTotalDeposit() : BigDecimal.ZERO)
+                             .add(borrowRequest.getShippingFee() != null ? borrowRequest.getShippingFee() : BigDecimal.ZERO);
+        
+        if (totalRefund.compareTo(BigDecimal.ZERO) > 0) {
+            adminWalletService.logTransaction(totalRefund.negate(), "REFUND_EXPENSE", String.format("Hoàn tiền đơn mượn bị hủy #%d", borrowRequest.getId()), borrowRequest.getId());
 
             List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
             if (!admins.isEmpty()) {
                 User admin = admins.get(0);
-                java.text.NumberFormat nfAdmin = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+                NumberFormat nfAdmin = NumberFormat.getInstance(new Locale("vi", "VN"));
                 notificationService.sendNotification(admin, "Trừ tiền hủy đơn mượn", 
                     String.format("Trừ %s đ do đơn mượn (Mã đơn: #%d) của độc giả %s bị hủy. Số dư hiện tại: %s đ.", 
                         nfAdmin.format(totalRefund), borrowRequest.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
@@ -272,14 +270,11 @@ public class BorrowServiceImpl implements BorrowService {
             }
         }
 
-        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
-        String notifContent = String.format("Đơn mượn truyện (Mã đơn: #%d) của bạn đã được hủy thành công. \n" +
-                "- Số tiền được hoàn lại: %s đ\n" +
-                "- Số dư ví cũ: %s đ\n" +
-                "- Số dư ví mới: %s đ\n",
-                borrowRequest.getId(), nf.format(totalRefund), nf.format(oldBalance), nf.format(user.getBalance()));
+        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
+        String notifContent = String.format("Đơn mượn truyện (Mã đơn: #%d) của bạn đã được hủy thành công. Số tiền %s đ (Cọc + Ship) đã được làm thủ tục hoàn trả lại vào tài khoản ngân hàng của bạn.",
+                borrowRequest.getId(), nf.format(totalRefund));
         
-        notificationService.sendNotification(user, "Hoàn tiền hủy đơn mượn", notifContent, "/borrow/history");
+        notificationService.sendNotification(user, "Hủy đơn mượn thành công", notifContent, "/borrow/history");
     }
 
     // Phê duyệt yêu cầu mượn truyện (Chuyển sang trạng thái đang giao)
@@ -360,7 +355,7 @@ public class BorrowServiceImpl implements BorrowService {
     }
 
     @Override
-    public void createDirectBorrow(Long librarianId, Long userId, java.util.List<Long> bookIds, java.util.List<Integer> quantities) {
+    public void createDirectBorrow(Long librarianId, Long userId, List<Long> bookIds, List<Integer> quantities) {
         User librarian = userRepository.findById(librarianId).orElseThrow(() -> new RuntimeException("Thủ thư không tồn tại"));
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Độc giả không tồn tại"));
 
@@ -368,8 +363,8 @@ public class BorrowServiceImpl implements BorrowService {
             throw new RuntimeException("Danh sách sách không hợp lệ");
         }
 
-        double totalDeposit = 0;
-        double totalBorrowFee = 0;
+        BigDecimal totalDeposit = BigDecimal.ZERO;
+        BigDecimal totalBorrowFee = BigDecimal.ZERO;
         int totalBooks = 0;
 
         for (int i = 0; i < bookIds.size(); i++) {
@@ -383,9 +378,9 @@ public class BorrowServiceImpl implements BorrowService {
                 throw new RuntimeException("Sách '" + book.getTitle() + "' không đủ số lượng (còn " + book.getQuantity() + ")");
             }
             
-            double deposit = book.getDepositPrice() != null ? book.getDepositPrice() : 0.0;
-            totalDeposit += deposit * qty;
-            totalBorrowFee += deposit * 0.1 * qty;
+            BigDecimal deposit = book.getDepositPrice() != null ? book.getDepositPrice() : BigDecimal.ZERO;
+            totalDeposit = totalDeposit.add(deposit.multiply(BigDecimal.valueOf(qty)));
+            totalBorrowFee = totalBorrowFee.add(deposit.multiply(BigDecimal.valueOf(0.1)).multiply(BigDecimal.valueOf(qty)));
             totalBooks += qty;
         }
 
@@ -393,7 +388,7 @@ public class BorrowServiceImpl implements BorrowService {
             throw new RuntimeException("Chưa chọn sách nào để mượn");
         }
 
-        double totalAmount = totalDeposit + totalBorrowFee;
+        BigDecimal totalAmount = totalDeposit.add(totalBorrowFee);
         // Loại bỏ kiểm tra số dư ví và trừ ví người dùng cho mượn trực tiếp tại quầy
 
         // 1. Tạo BorrowRequest
@@ -405,7 +400,7 @@ public class BorrowServiceImpl implements BorrowService {
         request.setShippingAddress(null);
         request.setNote("Đơn mượn trực tiếp tại quầy");
         request.setTotalDeposit(totalDeposit);
-        request.setShippingFee(0.0);
+        request.setShippingFee(BigDecimal.ZERO);
         request = borrowRequestRepository.save(request);
 
         // 2. Tạo BorrowRequestItem và cập nhật tồn kho Book
@@ -471,14 +466,14 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         // 5. Gửi thông báo
-        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
         String notifContent = String.format("Thủ thư đã tạo đơn mượn trực tiếp (Mã đơn: #%d) với %d cuốn truyện. \n" +
                 "- Tổng cọc: %s đ\n" +
                 "- Tổng phí thuê: %s đ\n" +
                 "- Tổng tiền thanh toán: %s đ\n" +
                 "Bạn cần trả truyện trước ngày %s.",
                 transaction.getId(), totalBooks, nf.format(totalDeposit), nf.format(totalBorrowFee), nf.format(totalAmount), 
-                transaction.getDueDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+                transaction.getDueDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
         notificationService.sendNotification(user, "Tạo đơn mượn trực tiếp", notifContent, "/borrow/history");
 
@@ -518,22 +513,19 @@ public class BorrowServiceImpl implements BorrowService {
             bookRepository.save(book);
         }
 
-        // HOÀN LẠI TIỀN (CỌC + SHIP) CHO USER KHI BỊ TỪ CHỐI
+        // TRỪ TIỀN KHỎI VÍ ADMIN VÌ TỪ CHỐI ĐƠN (thống kê hoàn tiền của thư viện)
         User user = borrowRequest.getUser();
-        double totalRefund = (borrowRequest.getTotalDeposit() != null ? borrowRequest.getTotalDeposit() : 0) +
-                             (borrowRequest.getShippingFee() != null ? borrowRequest.getShippingFee() : 0);
-        double oldBalance = user.getBalance() != null ? user.getBalance() : 0.0;
-        if (totalRefund > 0) {
-            user.setBalance(oldBalance + totalRefund);
-            userRepository.save(user);
-
+        BigDecimal totalRefund = (borrowRequest.getTotalDeposit() != null ? borrowRequest.getTotalDeposit() : BigDecimal.ZERO)
+                             .add(borrowRequest.getShippingFee() != null ? borrowRequest.getShippingFee() : BigDecimal.ZERO);
+        
+        if (totalRefund.compareTo(BigDecimal.ZERO) > 0) {
             // TRỪ TIỀN KHỎI VÍ ADMIN VÌ TỪ CHỐI ĐƠN
-            adminWalletService.logTransaction(-totalRefund, "REFUND_EXPENSE", String.format("Hoàn tiền đơn mượn bị từ chối #%d", borrowRequest.getId()), borrowRequest.getId());
+            adminWalletService.logTransaction(totalRefund.negate(), "REFUND_EXPENSE", String.format("Hoàn tiền đơn mượn bị từ chối #%d", borrowRequest.getId()), borrowRequest.getId());
 
             List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
             if (!admins.isEmpty()) {
                 User admin = admins.get(0);
-                java.text.NumberFormat nfAdmin = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+                NumberFormat nfAdmin = NumberFormat.getInstance(new Locale("vi", "VN"));
                 notificationService.sendNotification(admin, "Trừ tiền từ chối đơn mượn", 
                     String.format("Trừ %s đ do đơn mượn (Mã đơn: #%d) của độc giả %s bị từ chối. Số dư hiện tại: %s đ.", 
                         nfAdmin.format(totalRefund), borrowRequest.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
@@ -543,17 +535,15 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         // Thông báo
-        java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
         String notifContent = String.format("Đơn mượn truyện (Mã đơn: #%d) của bạn đã bị từ chối.\n" +
                 "- Lý do: %s\n" +
-                "- Số tiền được hoàn lại: %s đ\n" +
-                "- Số dư ví cũ: %s đ\n" +
-                "- Số dư ví mới: %s đ\n",
+                "- Số tiền %s đ (Cọc + Ship) đã được làm thủ tục hoàn trả lại vào tài khoản ngân hàng của bạn.",
                 borrowRequest.getId(),
                 (reason != null && !reason.trim().isEmpty() ? reason : "Không có lý do"),
-                nf.format(totalRefund), nf.format(oldBalance), nf.format(user.getBalance()));
+                nf.format(totalRefund));
         
-        notificationService.sendNotification(user, "Hoàn tiền từ chối đơn mượn", notifContent, "/borrow/history");
+        notificationService.sendNotification(user, "Đơn mượn bị từ chối", notifContent, "/borrow/history");
     }
 
     // Lấy toàn bộ lịch sử giao dịch mượn truyện của một người dùng và trả về dưới dạng danh sách DTO
@@ -653,7 +643,7 @@ public class BorrowServiceImpl implements BorrowService {
                 status,
                 req.getTotalDeposit(),
                 req.getShippingFee(),
-                (req.getTotalDeposit() != null ? req.getTotalDeposit() : 0.0) + (req.getShippingFee() != null ? req.getShippingFee() : 0.0),
+                (req.getTotalDeposit() != null ? req.getTotalDeposit() : BigDecimal.ZERO).add(req.getShippingFee() != null ? req.getShippingFee() : BigDecimal.ZERO),
                 transactionId
             );
         });
@@ -695,7 +685,7 @@ public class BorrowServiceImpl implements BorrowService {
 
     // Thủ thư xác nhận người dùng trả sách trực tiếp: Cập nhật ngày trả, đổi trạng thái sang RETURNED, hoàn trả lại số lượng sách vào kho lưu trữ và gửi thông báo trả thành công
     @Override
-    public void returnBorrowItems(Long transactionId, Long librarianId, List<Long> itemIds, Double returnShippingFee) {
+    public void returnBorrowItems(Long transactionId, Long librarianId, List<Long> itemIds, BigDecimal returnShippingFee) {
         BorrowTransaction transaction = borrowTransactionRepository.findById(transactionId)
                 .orElseThrow(() -> new RuntimeException("Giao dịch mượn không tồn tại"));
         User librarian = null;
@@ -761,25 +751,24 @@ public class BorrowServiceImpl implements BorrowService {
 
         // Hoàn tiền cọc sau khi trừ phí mượn và phí trễ hạn (nếu trả xong)
         User user = transaction.getUser();
-        double originalDeposit = itemsToReturn.stream()
-                .mapToDouble(item -> item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : 0.0)
-                .sum();
+        BigDecimal originalDeposit = itemsToReturn.stream()
+                .map(item -> item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
                 
-        double totalBorrowFee = itemsToReturn.stream()
-                .mapToDouble(item -> (item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : 0.0) * 0.1)
-                .sum();
+        BigDecimal totalBorrowFee = itemsToReturn.stream()
+                .map(item -> {
+                    BigDecimal depositPrice = item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : BigDecimal.ZERO;
+                    return depositPrice.multiply(BigDecimal.valueOf(0.1));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        double shippingDeduction = returnShippingFee != null ? returnShippingFee : 0.0;
-        double refundAmount = originalDeposit - totalBorrowFee - lateFine - shippingDeduction;
-        if (refundAmount < 0) refundAmount = 0.0; // Không hoàn âm
-        
-        double oldBalance = user.getBalance() != null ? user.getBalance() : 0.0;
-        user.setBalance(oldBalance + refundAmount);
-        userRepository.save(user);
+        BigDecimal shippingDeduction = returnShippingFee != null ? returnShippingFee : BigDecimal.ZERO;
+        BigDecimal refundAmount = originalDeposit.subtract(totalBorrowFee).subtract(BigDecimal.valueOf(lateFine)).subtract(shippingDeduction);
+        if (refundAmount.compareTo(BigDecimal.ZERO) < 0) refundAmount = BigDecimal.ZERO; // Không hoàn âm
 
-        // Trừ tiền hoàn trả từ ví Admin
-        if (refundAmount > 0) {
-            adminWalletService.logTransaction(-refundAmount, "REFUND_EXPENSE", String.format("Hoàn trả tiền cọc trả truyện #%d", transaction.getId()), transaction.getId());
+        // Trừ tiền hoàn trả từ ví Admin (chi hoàn tiền ngân hàng cho user)
+        if (refundAmount.compareTo(BigDecimal.ZERO) > 0) {
+            adminWalletService.logTransaction(refundAmount.negate(), "REFUND_EXPENSE", String.format("Hoàn trả tiền cọc trả truyện #%d", transaction.getId()), transaction.getId());
 
             List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
             if (!admins.isEmpty()) {
@@ -794,7 +783,7 @@ public class BorrowServiceImpl implements BorrowService {
                     nfAdmin.format(originalDeposit), nfAdmin.format(totalBorrowFee), nfAdmin.format(lateFine), nfAdmin.format(shippingDeduction), nfAdmin.format(admin.getBalance()));
                 notificationService.sendNotification(admin, "Trừ ví hoàn tiền trả truyện", adminNotifContent, null);
             }
-        } else if (refundAmount == 0 && (totalBorrowFee > 0 || lateFine > 0)) {
+        } else if (refundAmount.compareTo(BigDecimal.ZERO) == 0 && (totalBorrowFee.compareTo(BigDecimal.ZERO) > 0 || lateFine > 0)) {
             // Không hoàn tiền, nhưng gửi thông báo là thu trọn cọc
             List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
             if (!admins.isEmpty()) {
@@ -809,10 +798,10 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
-        String notifContent = String.format("Đã xử lý trả %d cuốn. Cọc: %s đ, Phí thuê: %s đ, Phạt: %s đ, Ship trả: %s đ. Thực lãnh: %s đ. Số dư cũ: %s đ, Số dư mới: %s đ.",
-            itemsToReturn.size(), nf.format(originalDeposit), nf.format(totalBorrowFee), nf.format(lateFine), nf.format(shippingDeduction), nf.format(refundAmount), nf.format(oldBalance), nf.format(user.getBalance()));
+        String notifContent = String.format("Đã xử lý trả %d cuốn. Cọc: %s đ, Phí thuê: %s đ, Phạt: %s đ, Ship trả: %s đ. Số tiền thực nhận %s đ đã được chuyển hoàn trả lại tài khoản ngân hàng của bạn.",
+            itemsToReturn.size(), nf.format(originalDeposit), nf.format(totalBorrowFee), nf.format(lateFine), nf.format(shippingDeduction), nf.format(refundAmount));
             
-        notificationService.sendNotification(user, "Xử lý trả truyện và hoàn tiền", notifContent, "/borrow/history");
+        notificationService.sendNotification(user, "Xử lý trả truyện thành công", notifContent, "/borrow/history");
 
         if (allReturned) {
             // Thông báo
@@ -904,16 +893,15 @@ public class BorrowServiceImpl implements BorrowService {
         
         User user = transaction.getUser();
         List<BorrowItem> items = borrowItemRepository.findByTransaction(transaction);
-        double extensionFee = items.stream()
-                .mapToDouble(item -> (item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : 0.0) * 0.1)
-                .sum();
+        BigDecimal extensionFee = items.stream()
+                .map(item -> {
+                    BigDecimal depositPrice = item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : BigDecimal.ZERO;
+                    return depositPrice.multiply(BigDecimal.valueOf(0.1));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        if (user.getBalance() == null || user.getBalance() < extensionFee) {
-            throw new RuntimeException("Số dư không đủ để gia hạn (Cần " + extensionFee + " đ). Vui lòng nạp thêm tiền.");
-        }
-        
-        user.setBalance(user.getBalance() - extensionFee);
-        userRepository.save(user);
+        // Ghi nhận doanh thu gia hạn vào ví Admin
+        adminWalletService.logTransaction(extensionFee, "BORROW_INCOME", String.format("Nhận thanh toán gia hạn mượn sách #%d", transaction.getId()), transaction.getId());
         
         transaction.setDueDate(transaction.getDueDate().plusDays(DEFAULT_BORROW_DAYS));
         borrowTransactionRepository.save(transaction);
@@ -924,8 +912,7 @@ public class BorrowServiceImpl implements BorrowService {
                 "Gia hạn mượn sách",
                 "Bạn đã gia hạn mượn sách thành công. Thời gian mượn được cộng thêm 7 ngày.\n" +
                 "- Hạn trả mới: " + transaction.getDueDate().toLocalDate() + "\n" +
-                "- Phí gia hạn: " + nf.format(extensionFee) + " đ\n" +
-                "- Số dư ví mới: " + nf.format(user.getBalance()) + " đ",
+                "- Phí gia hạn: " + nf.format(extensionFee) + " đ đã được thanh toán trực tiếp.",
                 "/borrow/history"
         );
     }
@@ -1042,9 +1029,9 @@ public class BorrowServiceImpl implements BorrowService {
         
         if ("SHIPPING".equals(returnMethod)) {
             request.setShippingAddress(returnAddress);
-            request.setShippingFee(25000.0); // Giả lập phí ship 25k
+            request.setShippingFee(BigDecimal.valueOf(25000)); // Giả lập phí ship 25k
         } else {
-            request.setShippingFee(0.0);
+            request.setShippingFee(BigDecimal.ZERO);
         }
 
         List<ReturnRequestItem> returnRequestItems = new java.util.ArrayList<>();
@@ -1244,7 +1231,7 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     public org.springframework.data.domain.Page<CombinedHistoryDTO> getCombinedBorrowHistory(Long userId, String keyword, Long bookId, String statusFilter, String sortOption, Pageable pageable) {
         // Fetch all history first (since it is a combined list of request + transaction mapped in memory)
-        List<CombinedHistoryDTO> allHistory = new java.util.ArrayList<>(getCombinedBorrowHistory(userId, org.springframework.data.domain.Pageable.unpaged()).getContent());
+        List<CombinedHistoryDTO> allHistory = new ArrayList<>(getCombinedBorrowHistory(userId, Pageable.unpaged()).getContent());
         
         // Filtering
         if (bookId != null || (keyword != null && !keyword.trim().isEmpty())) {
@@ -1288,8 +1275,8 @@ public class BorrowServiceImpl implements BorrowService {
                         if(a.getReturnDate().equals("Chưa có")) return 1;
                         if(b.getReturnDate().equals("Chưa có")) return -1;
                         try {
-                            java.time.LocalDate d1 = java.time.LocalDate.parse(a.getReturnDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                            java.time.LocalDate d2 = java.time.LocalDate.parse(b.getReturnDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                            LocalDate d1 = LocalDate.parse(a.getReturnDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                            LocalDate d2 = LocalDate.parse(b.getReturnDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
                             return d2.compareTo(d1); // Nearest return date
                         } catch(Exception e) { return 0; }
                     });
@@ -1305,16 +1292,16 @@ public class BorrowServiceImpl implements BorrowService {
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageSize, totalItems);
         
-        List<CombinedHistoryDTO> paginated = new java.util.ArrayList<>();
+        List<CombinedHistoryDTO> paginated = new ArrayList<>();
         if (start < totalItems) {
             paginated = allHistory.subList(start, end);
         }
         
-        return new org.springframework.data.domain.PageImpl<>(paginated, pageable, totalItems);
+        return new PageImpl<>(paginated, pageable, totalItems);
     }
 
     @Override
-    public java.util.Map<String, Object> getBorrowRequestDetailForUser(Long requestId, Long userId) {
+    public Map<String, Object> getBorrowRequestDetailForUser(Long requestId, Long userId) {
         BorrowRequest request = getBorrowRequestDetail(requestId)
                 .orElseThrow(() -> new RuntimeException("Đơn mượn không tồn tại"));
 
@@ -1325,10 +1312,10 @@ public class BorrowServiceImpl implements BorrowService {
         ReturnRequest returnRequest = getReturnRequestForBorrowRequest(requestId);
         BorrowTransaction transaction = getTransactionForBorrowRequest(requestId);
         
-        java.util.List<java.util.Map<String, Object>> returnRequestDetails = getReturnRequestDetails(requestId);
+        List<java.util.Map<String, Object>> returnRequestDetails = getReturnRequestDetails(requestId);
         
-        java.util.Map<Long, Integer> returnedQuantities = new java.util.HashMap<>();
-        java.util.Map<Long, Integer> unreturnedQuantities = new java.util.HashMap<>();
+        Map<Long, Integer> returnedQuantities = new HashMap<>();
+        Map<Long, Integer> unreturnedQuantities = new HashMap<>();
         if (transaction != null) {
             for (BorrowItem bi : transaction.getItems()) {
                 Long bookId = bi.getBookCopy().getBook().getId();
@@ -1340,7 +1327,7 @@ public class BorrowServiceImpl implements BorrowService {
             }
         }
         
-        java.util.Map<String, Object> modelData = new java.util.HashMap<>();
+        Map<String, Object> modelData = new HashMap<>();
         modelData.put("request", request);
         modelData.put("returnRequest", returnRequest);
         modelData.put("transaction", transaction);
@@ -1349,64 +1336,67 @@ public class BorrowServiceImpl implements BorrowService {
         modelData.put("unreturnedQuantities", unreturnedQuantities);
         
         if (returnRequest != null && !returnRequestDetails.isEmpty()) {
-            java.util.Map<String, Object> latestDetail = returnRequestDetails.get(returnRequestDetails.size() - 1);
+            Map<String, Object> latestDetail = returnRequestDetails.get(returnRequestDetails.size() - 1);
             modelData.put("returnOriginalDeposit", latestDetail.get("originalDeposit"));
             modelData.put("returnBorrowFee", latestDetail.get("borrowFee"));
             modelData.put("returnLateFine", latestDetail.get("lateFine"));
             modelData.put("returnRefundAmount", latestDetail.get("refundAmount"));
         } else {
-            modelData.put("returnOriginalDeposit", 0.0);
-            modelData.put("returnBorrowFee", 0.0);
-            modelData.put("returnLateFine", 0L);
-            modelData.put("returnRefundAmount", 0.0);
+            modelData.put("returnOriginalDeposit", BigDecimal.ZERO);
+            modelData.put("returnBorrowFee", BigDecimal.ZERO);
+            modelData.put("returnLateFine", BigDecimal.ZERO);
+            modelData.put("returnRefundAmount", BigDecimal.ZERO);
         }
         
         return modelData;
     }
 
     @Override
-    public java.util.List<java.util.Map<String, Object>> getReturnRequestDetails(Long requestId) {
+    public List<Map<String, Object>> getReturnRequestDetails(Long requestId) {
         BorrowRequest request = getBorrowRequestDetail(requestId)
                 .orElseThrow(() -> new RuntimeException("Đơn mượn không tồn tại"));
         BorrowTransaction transaction = getTransactionForBorrowRequest(requestId);
         
         List<ReturnRequest> allReturnRequests = getAllReturnRequestsForBorrowRequest(requestId);
-        java.util.List<java.util.Map<String, Object>> returnRequestDetails = new java.util.ArrayList<>();
+        List<java.util.Map<String, Object>> returnRequestDetails = new ArrayList<>();
         
         if (allReturnRequests != null && !allReturnRequests.isEmpty() && transaction != null) {
-            double currentTotalDeposit = request.getTotalDeposit() != null ? request.getTotalDeposit() : 0.0;
+            BigDecimal currentTotalDeposit = request.getTotalDeposit() != null ? request.getTotalDeposit() : BigDecimal.ZERO;
             for (int i = 0; i < allReturnRequests.size(); i++) {
                 ReturnRequest rr = allReturnRequests.get(allReturnRequests.size() - 1 - i);
-                double originalDeposit = 0.0;
+                BigDecimal originalDeposit = BigDecimal.ZERO;
                 int returnQuantity = 0;
                 if (rr.getReturnItems() != null) {
                     for (ReturnRequestItem item : rr.getReturnItems()) {
                         if (item.getBook() != null && item.getBook().getDepositPrice() != null) {
-                            originalDeposit += item.getBook().getDepositPrice() * item.getQuantity();
+                            BigDecimal dp = item.getBook().getDepositPrice();
+                            originalDeposit = originalDeposit.add(dp.multiply(BigDecimal.valueOf(item.getQuantity())));
                         }
                         returnQuantity += item.getQuantity();
                     }
                 }
                 
-                double totalBorrowFee = 0.0;
+                BigDecimal totalBorrowFee = BigDecimal.ZERO;
                 if (rr.getReturnItems() != null) {
                     for (ReturnRequestItem item : rr.getReturnItems()) {
                         if (item.getBook() != null && item.getBook().getDepositPrice() != null) {
-                            totalBorrowFee += item.getBook().getDepositPrice() * 0.1 * item.getQuantity();
+                            BigDecimal dp = item.getBook().getDepositPrice();
+                            BigDecimal fee = dp.multiply(BigDecimal.valueOf(0.1)).multiply(BigDecimal.valueOf(item.getQuantity()));
+                            totalBorrowFee = totalBorrowFee.add(fee);
                         }
                     }
                 }
-                long lateFine = 0;
+                BigDecimal lateFine = BigDecimal.ZERO;
                 if (rr.getRequestStatus() != RequestStatus.COMPLETED) {
-                    lateFine = calculateLateFine(transaction.getId());
+                    lateFine = BigDecimal.valueOf(calculateLateFine(transaction.getId()));
                 }
                 
-                double returnShippingFee = rr.getShippingFee() != null ? rr.getShippingFee() : 0.0;
-                double refundAmount = originalDeposit - totalBorrowFee - lateFine - returnShippingFee;
-                if (refundAmount < 0) refundAmount = 0.0;
+                BigDecimal returnShippingFee = rr.getShippingFee() != null ? rr.getShippingFee() : BigDecimal.ZERO;
+                BigDecimal refundAmount = originalDeposit.subtract(totalBorrowFee).subtract(lateFine).subtract(returnShippingFee);
+                if (refundAmount.compareTo(BigDecimal.ZERO) < 0) refundAmount = BigDecimal.ZERO;
                 
-                double remainingDeposit = currentTotalDeposit - originalDeposit;
-                if (remainingDeposit < 0) remainingDeposit = 0.0;
+                BigDecimal remainingDeposit = currentTotalDeposit.subtract(originalDeposit);
+                if (remainingDeposit.compareTo(BigDecimal.ZERO) < 0) remainingDeposit = BigDecimal.ZERO;
                 currentTotalDeposit = remainingDeposit;
                 
                 java.util.Map<String, Object> detail = new java.util.HashMap<>();
@@ -1427,58 +1417,58 @@ public class BorrowServiceImpl implements BorrowService {
     }
 
     @Override
-    public java.util.List<java.util.Map<String, Object>> getActiveBooksGrouped(Long userId) {
+    public List<java.util.Map<String, Object>> getActiveBooksGrouped(Long userId) {
         List<BorrowTransaction> activeTxs = getActiveTransactionsPaged(userId, Pageable.unpaged()).getContent();
-        java.util.Map<Long, java.util.Map<String, Object>> groupedBooks = new java.util.HashMap<>();
+        Map<Long, java.util.Map<String, Object>> groupedBooks = new HashMap<>();
         for (BorrowTransaction tx : activeTxs) {
             for (BorrowItem item : tx.getItems()) {
                 if (item.getReturnDate() == null) {
                     Long bookId = item.getBookCopy().getBook().getId();
                     if (!groupedBooks.containsKey(bookId)) {
-                        java.util.Map<String, Object> group = new java.util.HashMap<>();
+                       Map<String, Object> group = new HashMap<>();
                         group.put("book", item.getBookCopy().getBook());
                         group.put("quantity", 0);
                         groupedBooks.put(bookId, group);
                     }
-                    java.util.Map<String, Object> group = groupedBooks.get(bookId);
+                    Map<String, Object> group = groupedBooks.get(bookId);
                     group.put("quantity", (int)group.get("quantity") + 1);
                 }
             }
         }
-        return new java.util.ArrayList<>(groupedBooks.values());
+        return new ArrayList<>(groupedBooks.values());
     }
 
     @Override
-    public java.util.List<java.util.Map<String, Object>> getGroupedItemsForTransaction(Long transactionId) {
+    public List<java.util.Map<String, Object>> getGroupedItemsForTransaction(Long transactionId) {
         BorrowTransaction transaction = getBorrowTransactionDetail(transactionId)
                 .orElseThrow(() -> new RuntimeException("Giao dịch mượn không tồn tại"));
                 
-        java.util.Map<Long, java.util.Map<String, Object>> grouped = new java.util.HashMap<>();
+        Map<Long, java.util.Map<String, Object>> grouped = new HashMap<>();
         for (BorrowItem item : transaction.getItems()) {
             Long bookId = item.getBookCopy().getBook().getId();
             if (!grouped.containsKey(bookId)) {
-                java.util.Map<String, Object> groupInfo = new java.util.HashMap<>();
+               Map<String, Object> groupInfo = new HashMap<>();
                 groupInfo.put("book", item.getBookCopy().getBook());
                 groupInfo.put("totalCount", 0);
                 groupInfo.put("returnedCount", 0);
-                groupInfo.put("unreturnedIds", new java.util.ArrayList<Long>());
+                groupInfo.put("unreturnedIds", new ArrayList<Long>());
                 grouped.put(bookId, groupInfo);
             }
-            java.util.Map<String, Object> groupInfo = grouped.get(bookId);
+            Map<String, Object> groupInfo = grouped.get(bookId);
             groupInfo.put("totalCount", (int) groupInfo.get("totalCount") + 1);
             if (item.getReturnDate() != null) {
                 groupInfo.put("returnedCount", (int) groupInfo.get("returnedCount") + 1);
             } else {
-                ((java.util.List<Long>) groupInfo.get("unreturnedIds")).add(item.getId());
+                ((List<Long>) groupInfo.get("unreturnedIds")).add(item.getId());
             }
         }
-        return new java.util.ArrayList<>(grouped.values());
+        return new ArrayList<>(grouped.values());
     }
 
     @Override
-    public java.util.List<Long> getPendingBookIdsByUser(Long userId) {
-        java.util.List<Long> pendingBookIds = new java.util.ArrayList<>();
-        java.util.List<BorrowRequest> userRequests = getUserBorrowRequests(userId);
+    public List<Long> getPendingBookIdsByUser(Long userId) {
+        List<Long> pendingBookIds = new ArrayList<>();
+        List<BorrowRequest> userRequests = getUserBorrowRequests(userId);
         if (userRequests != null) {
             for (BorrowRequest req : userRequests) {
                 if (req.getRequestStatus() == RequestStatus.PENDING) {

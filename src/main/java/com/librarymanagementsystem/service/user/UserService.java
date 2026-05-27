@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
+import java.math.BigDecimal;
+
 public interface UserService {
 
     User register(UserDTO userDTO);
@@ -45,7 +47,7 @@ public interface UserService {
     // Tự động xóa vĩnh viễn các user
     void permanentlyDeleteOldUsers();
     //nap tiền
-    Double deposit(Long userId, Double amount);
+    BigDecimal deposit(Long userId, BigDecimal amount);
     //rut tiền
-    Double withdraw(Long userId, Double amount);
+    BigDecimal withdraw(Long userId, BigDecimal amount);
 }

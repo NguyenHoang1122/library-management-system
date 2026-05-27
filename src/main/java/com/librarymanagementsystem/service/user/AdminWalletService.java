@@ -4,6 +4,7 @@ import com.librarymanagementsystem.model.user.AdminWalletTransaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 public interface AdminWalletService {
@@ -12,12 +13,12 @@ public interface AdminWalletService {
      * Ghi nhận một giao dịch tài chính cho ví ảo Admin.
      * Đồng thời tự động cập nhật số dư tài khoản của Admin trong Cơ sở dữ liệu.
      */
-    AdminWalletTransaction logTransaction(Double amount, String type, String description, Long referenceId);
+    AdminWalletTransaction logTransaction(BigDecimal amount, String type, String description, Long referenceId);
 
     /**
      * Lấy số dư hiện tại của Ví ảo Admin.
      */
-    Double getAdminBalance();
+    BigDecimal getAdminBalance();
 
     /**
      * Lấy lịch sử danh sách giao dịch ví ảo có phân trang.

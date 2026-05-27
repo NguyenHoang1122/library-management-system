@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -24,8 +25,8 @@ public class AdminWalletServiceImpl implements AdminWalletService {
     private final AdminWalletTransactionRepository transactionRepository;
 
     @Override
-    public synchronized AdminWalletTransaction logTransaction(Double amount, String type, String description, Long referenceId) {
-        if (amount == null || amount == 0.0) {
+    public synchronized AdminWalletTransaction logTransaction(BigDecimal amount, String type, String description, Long referenceId) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) == 0) {
             return null;
         }
 
@@ -35,8 +36,8 @@ public class AdminWalletServiceImpl implements AdminWalletService {
         }
         User admin = admins.get(0);
 
-        double oldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
-        double newBalance = oldBalance + amount;
+        BigDecimal oldBalance = admin.getBalance() != null ? admin.getBalance() : BigDecimal.ZERO;
+        BigDecimal newBalance = oldBalance.add(amount);
         admin.setBalance(newBalance);
         userRepository.save(admin);
 
@@ -53,13 +54,13 @@ public class AdminWalletServiceImpl implements AdminWalletService {
     }
 
     @Override
-    public Double getAdminBalance() {
+    public BigDecimal getAdminBalance() {
         List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
         if (admins.isEmpty()) {
-            return 0.0;
+            return BigDecimal.ZERO;
         }
         User admin = admins.get(0);
-        return admin.getBalance() != null ? admin.getBalance() : 0.0;
+        return admin.getBalance() != null ? admin.getBalance() : BigDecimal.ZERO;
     }
 
     @Override
@@ -69,13 +70,13 @@ public class AdminWalletServiceImpl implements AdminWalletService {
 
     @Override
     public Map<String, Object> getMonthlyFinanceSummary(int month, int year) {
-        Double revenue = transactionRepository.sumTotalRevenueByMonth(month, year);
-        Double expense = transactionRepository.sumTotalExpenseByMonth(month, year);
+        BigDecimal revenue = transactionRepository.sumTotalRevenueByMonth(month, year);
+        BigDecimal expense = transactionRepository.sumTotalExpenseByMonth(month, year);
 
-        if (revenue == null) revenue = 0.0;
-        if (expense == null) expense = 0.0;
+        if (revenue == null) revenue = BigDecimal.ZERO;
+        if (expense == null) expense = BigDecimal.ZERO;
 
-        Double netIncome = revenue - expense;
+        BigDecimal netIncome = revenue.subtract(expense);
 
         Map<String, Object> summary = new HashMap<>();
         summary.put("revenue", revenue);

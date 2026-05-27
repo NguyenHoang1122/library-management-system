@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
@@ -122,19 +123,22 @@ public class CartServiceImpl implements CartService {
                 .mapToInt(item -> item.getQuantity() != null ? item.getQuantity() : 0)
                 .sum();
         
-        double totalDeposit = cart.getItems().stream()
-                .mapToDouble(item -> (item.getBook().getDepositPrice() != null ? item.getBook().getDepositPrice() : 0.0) * item.getQuantity())
-                .sum();
+        BigDecimal totalDeposit = cart.getItems().stream()
+                .map(item -> {
+                    BigDecimal depositPrice = item.getBook().getDepositPrice() != null ? item.getBook().getDepositPrice() : BigDecimal.ZERO;
+                    return depositPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        double shippingFee = 0.0;
+        BigDecimal shippingFee = BigDecimal.ZERO;
         if (user.getAddress() != null && !user.getAddress().isEmpty()) {
              double distance = shippingService.calculateDistance(user.getAddress());
              if (distance >= 0) {
-                 shippingFee = shippingService.calculateShippingFee(distance, totalQuantity);
+                 shippingFee = BigDecimal.valueOf(shippingService.calculateShippingFee(distance, totalQuantity));
              }
         }
         
-        double totalAmount = totalDeposit + shippingFee;
+        BigDecimal totalAmount = totalDeposit.add(shippingFee);
         
         java.util.Map<String, Object> summary = new java.util.HashMap<>();
         summary.put("cart", cart);

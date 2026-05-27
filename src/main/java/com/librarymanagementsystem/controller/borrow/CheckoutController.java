@@ -20,6 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.util.Map;
 
@@ -128,16 +129,16 @@ public class CheckoutController {
 
             // 2. Tính toán tổng số tiền cần thanh toán
             Map<String, Object> summary = cartService.getCartSummary(currentUser.getId());
-            double totalDeposit = (Double) summary.get("totalDeposit");
-            double shippingFee = 0.0;
+            BigDecimal totalDeposit = (BigDecimal) summary.get("totalDeposit");
+            BigDecimal shippingFee = BigDecimal.ZERO;
             if (method == DeliveryMethod.SHIPPING) {
                 int totalQuantity = cart.getItems().stream()
                         .mapToInt(item -> item.getQuantity() != null ? item.getQuantity() : 0)
                         .sum();
                 double distance = shippingService.calculateDistance(shippingAddress);
-                shippingFee = shippingService.calculateShippingFee(distance, totalQuantity);
+                shippingFee = BigDecimal.valueOf(shippingService.calculateShippingFee(distance, totalQuantity));
             }
-            double totalAmount = totalDeposit + shippingFee;
+            BigDecimal totalAmount = totalDeposit.add(shippingFee);
 
             // 3. Lưu thông tin đơn mượn tạm thời vào Session để dùng lại sau khi VNPAY callback thành công
             session.setAttribute("checkout_deliveryMethod", deliveryMethod);
@@ -148,7 +149,7 @@ public class CheckoutController {
             // 4. Tạo URL thanh toán VNPAY
             String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
             String orderInfo = "Thanh toan don muon sach " + currentUser.getId();
-            String paymentUrl = vnPayService.createOrder((int) totalAmount, orderInfo, baseUrl, "/checkout/vnpay-return");
+            String paymentUrl = vnPayService.createOrder(totalAmount.intValue(), orderInfo, baseUrl, "/checkout/vnpay-return");
 
             return "redirect:" + paymentUrl;
         } catch (Exception e) {

@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -85,17 +86,18 @@ public class BookServiceImpl implements BookService {
             }
             
             // Deduct admin money and save history
-            double totalPrice = savedBook.getQuantity() * (savedBook.getImportPrice() != null ? savedBook.getImportPrice() : 0.0);
+            BigDecimal importPrice = savedBook.getImportPrice() != null ? savedBook.getImportPrice() : BigDecimal.ZERO;
+            BigDecimal totalPrice = importPrice.multiply(BigDecimal.valueOf(savedBook.getQuantity()));
             deductAdminWallet(totalPrice, savedBook.getTitle(), savedBook.getQuantity());
-            saveImportHistory(savedBook, savedBook.getQuantity(), savedBook.getImportPrice(), totalPrice);
+            saveImportHistory(savedBook, savedBook.getQuantity(), importPrice, totalPrice);
         }
         
         return savedBook;
     }
 
-    private void deductAdminWallet(double amount, String bookTitle, int quantity) {
-        if (amount <= 0) return;
-        adminWalletService.logTransaction(-amount, "IMPORT", String.format("Chi phí nhập %d cuốn truyện '%s'", quantity, bookTitle), null);
+    private void deductAdminWallet(BigDecimal amount, String bookTitle, int quantity) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) return;
+        adminWalletService.logTransaction(amount.negate(), "IMPORT", String.format("Chi phí nhập %d cuốn truyện '%s'", quantity, bookTitle), null);
 
         List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
         if (!admins.isEmpty()) {
@@ -106,7 +108,7 @@ public class BookServiceImpl implements BookService {
         }
     }
 
-    private void saveImportHistory(Book book, int quantity, Double importPrice, double totalPrice) {
+    private void saveImportHistory(Book book, int quantity, BigDecimal importPrice, BigDecimal totalPrice) {
         BookImportHistory history = new BookImportHistory();
         history.setBook(book);
         history.setImportQuantity(quantity);
@@ -147,8 +149,8 @@ public class BookServiceImpl implements BookService {
             }
             
             // Deduct admin money and save history for added books
-            double importPrice = bookDTO.getImportPrice() != null ? bookDTO.getImportPrice() : 0.0;
-            double totalPrice = diff * importPrice;
+            BigDecimal importPrice = bookDTO.getImportPrice() != null ? bookDTO.getImportPrice() : BigDecimal.ZERO;
+            BigDecimal totalPrice = importPrice.multiply(BigDecimal.valueOf(diff));
             deductAdminWallet(totalPrice, book.getTitle(), diff);
             saveImportHistory(book, diff, importPrice, totalPrice);
         } else if (newQuantity < currentQuantity) {
@@ -242,8 +244,8 @@ public class BookServiceImpl implements BookService {
         bookRepository.save(book);
 
         // Deduct admin money and save history
-        double importPrice = book.getImportPrice() != null ? book.getImportPrice() : 0.0;
-        double totalPrice = addedQuantity * importPrice;
+        BigDecimal importPrice = book.getImportPrice() != null ? book.getImportPrice() : BigDecimal.ZERO;
+        BigDecimal totalPrice = importPrice.multiply(BigDecimal.valueOf(addedQuantity));
         deductAdminWallet(totalPrice, book.getTitle(), addedQuantity);
         saveImportHistory(book, addedQuantity, importPrice, totalPrice);
     }

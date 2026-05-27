@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -16,10 +17,10 @@ public interface AdminWalletTransactionRepository extends JpaRepository<AdminWal
     Page<AdminWalletTransaction> findAllByOrderByTransactionDateDesc(Pageable pageable);
 
     @Query("SELECT SUM(t.amount) FROM AdminWalletTransaction t WHERE t.amount > 0 AND MONTH(t.transactionDate) = :month AND YEAR(t.transactionDate) = :year")
-    Double sumTotalRevenueByMonth(@Param("month") int month, @Param("year") int year);
+    BigDecimal sumTotalRevenueByMonth(@Param("month") int month, @Param("year") int year);
 
     @Query("SELECT SUM(ABS(t.amount)) FROM AdminWalletTransaction t WHERE t.amount < 0 AND MONTH(t.transactionDate) = :month AND YEAR(t.transactionDate) = :year")
-    Double sumTotalExpenseByMonth(@Param("month") int month, @Param("year") int year);
+    BigDecimal sumTotalExpenseByMonth(@Param("month") int month, @Param("year") int year);
 
     @Query(value = "SELECT DATE_FORMAT(transaction_date, '%Y-%m') as date, " +
             "SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as revenue, " +

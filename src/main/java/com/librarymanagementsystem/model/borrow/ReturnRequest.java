@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.librarymanagementsystem.model.borrow.status.DeliveryMethod;
+import java.math.BigDecimal;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+
 @Entity
 @Data
 @Table(name = "return_requests")
@@ -47,8 +51,10 @@ public class ReturnRequest {
     @Column(name = "return_method")
     private DeliveryMethod returnMethod;
 
-    @Column(name = "shipping_fee")
-    private Double shippingFee = 0.0;
+    @Column(name = "shipping_fee", precision = 15, scale = 2)
+    @Max(value = 10000000, message = "Phí ship không được vượt quá 10 triệu VNĐ")
+    @Min(value = 0, message = "Phí ship không được nhỏ hơn 0")
+    private BigDecimal shippingFee = BigDecimal.ZERO;
 
     @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;

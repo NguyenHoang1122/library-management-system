@@ -15,6 +15,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import java.math.BigDecimal;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+
 @Entity
 @Table(name = "books")
 @Getter
@@ -49,11 +53,15 @@ public class Book {
     @Column(nullable = false)
     private Integer quantity = 0;
 
-    @Column(name = "import_price")
-    private Double importPrice = 0.0;
+    @Column(name = "import_price", precision = 15, scale = 2)
+    @Max(value = 100000000, message = "Giá nhập không được vượt quá 100 triệu VNĐ")
+    @Min(value = 0, message = "Giá nhập không được là số âm")
+    private BigDecimal importPrice = BigDecimal.ZERO;
 
-    @Column(name = "deposit_price")
-    private Double depositPrice = 0.0;
+    @Column(name = "deposit_price", precision = 15, scale = 2)
+    @Max(value = 100000000, message = "Giá cọc không được vượt quá 100 triệu VNĐ")
+    @Min(value = 0, message = "Giá cọc không được là số âm")
+    private BigDecimal depositPrice = BigDecimal.ZERO;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "book_categories",

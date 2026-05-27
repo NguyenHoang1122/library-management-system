@@ -74,19 +74,6 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-md-6" style="display: none !important;">
-                                    <div class="info-label">Số dư ví (VNĐ)</div>
-                                    <div class="info-value text-success fw-bold d-flex align-items-center">
-                                        <span th:if="${user.balance != null}" th:text="|${#numbers.formatDecimal(user.balance, 0, 'COMMA', 0, 'POINT')} đ|">0 đ</span>
-                                        <span th:unless="${user.balance != null}">0 đ</span>
-                                        <button type="button" class="btn btn-sm btn-outline-success ms-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#depositModal">
-                                            <i class="bi bi-wallet2 me-1"></i> Nạp tiền
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-warning ms-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#withdrawModal">
-                                            <i class="bi bi-cash-coin me-1"></i> Rút tiền
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
 
                             <div class="row mt-3">
@@ -245,59 +232,6 @@
     </div>
 </div>
 
-<!-- Modal Nạp tiền -->
-<div class="modal fade" id="depositModal" tabindex="-1" aria-labelledby="depositModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
-            <div class="modal-header bg-success text-white" style="border-radius: 16px 16px 0 0;">
-                <h5 class="modal-title fw-bold" id="depositModalLabel"><i class="bi bi-wallet2 me-2"></i>Nạp tiền vào ví</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="depositForm">
-                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                    <div class="mb-3">
-                        <label for="amount" class="form-label fw-bold text-secondary">Số tiền cần nạp (VNĐ)</label>
-                        <input type="number" class="form-control form-control-lg" id="amount" name="amount" min="10000" step="10000" required placeholder="Ví dụ: 100000">
-                        <small class="text-muted mt-2 d-block">Mệnh giá nạp tối thiểu là 10.000 đ</small>
-                    </div>
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold" id="btnSubmitDeposit">
-                            <i class="bi bi-cash me-2"></i> Xác nhận nạp
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Rút tiền -->
-<div class="modal fade" id="withdrawModal" tabindex="-1" aria-labelledby="withdrawModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
-            <div class="modal-header bg-warning text-dark" style="border-radius: 16px 16px 0 0;">
-                <h5 class="modal-title fw-bold" id="withdrawModalLabel"><i class="bi bi-cash-coin me-2"></i>Rút tiền từ ví</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="withdrawForm">
-                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                    <div class="mb-3">
-                        <label for="withdrawAmount" class="form-label fw-bold text-secondary">Số tiền cần rút (VNĐ)</label>
-                        <input type="number" class="form-control form-control-lg" id="withdrawAmount" name="amount" min="10000" step="10000" required placeholder="Ví dụ: 100000">
-                        <small class="text-muted mt-2 d-block">Mệnh giá rút tối thiểu là 10.000 đ</small>
-                    </div>
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-warning btn-lg rounded-pill fw-bold text-dark" id="btnSubmitWithdraw">
-                            <i class="bi bi-cash-stack me-2"></i> Xác nhận rút
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Modal Thao Tác Ví Ảo Hệ Thống (Dành Cho Admin) -->
 <div sec:authorize="hasRole('ADMIN')" class="modal fade" id="adminWalletModal" tabindex="-1" aria-labelledby="adminWalletModalLabel" aria-hidden="true">

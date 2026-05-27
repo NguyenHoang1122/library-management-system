@@ -8,14 +8,14 @@ import com.librarymanagementsystem.service.borrow.BorrowService;
 import com.librarymanagementsystem.repository.book.BookRepository;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
 import com.librarymanagementsystem.model.book.Book;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class DashboardServiceImpl implements DashboardService {
@@ -41,11 +41,11 @@ public class DashboardServiceImpl implements DashboardService {
         
         long totalUsers = userRepository.countTotalUsers();
         
-        java.time.LocalDate now = java.time.LocalDate.now();
+        LocalDate now = LocalDate.now();
         Map<String, Object> financeSummary = adminWalletService.getMonthlyFinanceSummary(now.getMonthValue(), now.getYear());
         
-        Double totalRevenue = (Double) financeSummary.get("revenue");
-        Double actualRevenue = (Double) financeSummary.get("netIncome");
+        BigDecimal totalRevenue = (BigDecimal) financeSummary.get("revenue");
+        BigDecimal actualRevenue = (BigDecimal) financeSummary.get("netIncome");
 
         stats.put("totalUsers", totalUsers);
         stats.put("totalRevenue", totalRevenue);
@@ -107,9 +107,9 @@ public class DashboardServiceImpl implements DashboardService {
         Map<String, Object> data = new HashMap<>();
 
         // 1. Số liệu chỉ số vận hành thời gian thực (Operational KPIs)
-        long pendingBorrows = borrowService.getPendingRequests(null, org.springframework.data.domain.Pageable.unpaged()).getTotalElements();
-        long pendingReturns = borrowService.getPendingReturnRequests(null, org.springframework.data.domain.Pageable.unpaged()).getTotalElements();
-        long activeDeliveries = borrowService.getApprovedRequests(null, org.springframework.data.domain.Pageable.unpaged()).getTotalElements();
+        long pendingBorrows = borrowService.getPendingRequests(null, Pageable.unpaged()).getTotalElements();
+        long pendingReturns = borrowService.getPendingReturnRequests(null, Pageable.unpaged()).getTotalElements();
+        long activeDeliveries = borrowService.getApprovedRequests(null, Pageable.unpaged()).getTotalElements();
         
         List<BorrowTransaction> activeBorrows = borrowService.getAllActiveBorrows();
         long overdueCount = activeBorrows.stream()
@@ -138,7 +138,7 @@ public class DashboardServiceImpl implements DashboardService {
         Map<Book, Long> bookBorrowCounts = activeBorrows.stream()
                 .flatMap(tx -> tx.getItems().stream())
                 .map(item -> item.getBookCopy() != null ? item.getBookCopy().getBook() : null)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(b -> b, Collectors.counting()));
 
         List<Map.Entry<Book, Long>> topBorrowed = bookBorrowCounts.entrySet().stream()

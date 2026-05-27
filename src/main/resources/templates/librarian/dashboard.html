@@ -113,7 +113,7 @@
                         <h5 class="fw-bold mb-3 text-glow-waka"><i class="bi bi-award me-2"></i>Bảng Vàng Xu Hướng Đọc (Top 5 Truyện Mượn Nhiều)</h5>
                         
                         <div class="table-responsive">
-                            <table class="table table-borderless text-light align-middle mb-0">
+                            <table class="table table-waka table-borderless align-middle mb-0">
                                 <thead>
                                     <tr class="border-bottom border-secondary border-opacity-25 text-secondary small">
                                         <th scope="col" style="width: 10%;">Hạng</th>
@@ -132,7 +132,7 @@
                                                 <img th:src="${entry.key.image ?: '/images/default-book.png'}" alt="Book" style="width: 40px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #333;" />
                                                 <div>
                                                     <h6 class="mb-0 fw-bold text-white text-truncate" style="max-width: 250px;" th:text="${entry.key.title}">Tên bộ truyện</h6>
-                                                    <small class="text-secondary" th:text="${entry.key.author != null ? entry.key.author.authorName : 'Khuyết danh'}">Tác giả</small>
+                                                    <small class="text-secondary" th:text="${entry.key.author != null ? entry.key.author.name : 'Khuyết danh'}">Tác giả</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -164,7 +164,7 @@
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table waka-table mb-0 align-middle">
+                            <table class="table table-waka mb-0 align-middle">
                                 <thead>
                                     <tr>
                                         <th scope="col" class="ps-4" style="width: 10%;">Mã Sách</th>
@@ -182,7 +182,7 @@
                                                 <img th:src="${book.image ?: '/images/default-book.png'}" alt="Book cover" style="width: 40px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #333;" />
                                                 <div>
                                                     <h6 class="mb-0 fw-bold text-light" th:text="${book.title}">Tên bộ truyện</h6>
-                                                    <small class="text-secondary" th:text="${book.author != null ? book.author.authorName : 'Không rõ tác giả'}">Tác giả</small>
+                                                    <small class="text-secondary" th:text="${book.author != null ? book.author.name : 'Không rõ tác giả'}">Tác giả</small>
                                                 </div>
                                             </div>
                                         </td>

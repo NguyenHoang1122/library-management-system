@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.math.BigDecimal;
+
 public interface BorrowService {
     
     BorrowRequest checkout(Long userId, DeliveryMethod deliveryMethod, String shippingAddress, String note);
@@ -51,7 +53,7 @@ public interface BorrowService {
     Optional<BorrowTransaction> getBorrowTransactionDetail(Long transactionId);
 
     // Thủ thư xác nhận người dùng trả sách trực tiếp tại quầy
-    void returnBorrowItems(Long transactionId, Long librarianId, List<Long> itemIds, Double returnShippingFee);
+    void returnBorrowItems(Long transactionId, Long librarianId, List<Long> itemIds, BigDecimal returnShippingFee);
 
     // Tính tiền phạt
     long calculateLateFine(Long transactionId);

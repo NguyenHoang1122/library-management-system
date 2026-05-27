@@ -28,6 +28,8 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -258,22 +260,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Double deposit(Long userId, Double amount) {
+    public BigDecimal deposit(Long userId, BigDecimal amount) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-        double newBalance = (user.getBalance() != null ? user.getBalance() : 0.0) + amount;
+        BigDecimal oldBalance = user.getBalance() != null ? user.getBalance() : BigDecimal.ZERO;
+        BigDecimal newBalance = oldBalance.add(amount);
         user.setBalance(newBalance);
         userRepository.save(user);
         return newBalance;
     }
 
     @Override
-    public Double withdraw(Long userId, Double amount) {
+    public BigDecimal withdraw(Long userId, BigDecimal amount) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-        double currentBalance = user.getBalance() != null ? user.getBalance() : 0.0;
-        if (currentBalance < amount) {
+        BigDecimal currentBalance = user.getBalance() != null ? user.getBalance() : BigDecimal.ZERO;
+        if (currentBalance.compareTo(amount) < 0) {
             throw new RuntimeException("Số dư không đủ để rút");
         }
-        double newBalance = currentBalance - amount;
+        BigDecimal newBalance = currentBalance.subtract(amount);
         user.setBalance(newBalance);
         userRepository.save(user);
         return newBalance;

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Tạo đơn mượn trực tiếp | Truyện 360</title>
@@ -38,7 +38,7 @@
                             <div class="card-body">
                                 <select class="form-select select2-user" name="userId" id="userId" required>
                                     <option value="" disabled selected>-- Tìm kiếm độc giả (Email, SĐT, Tên) --</option>
-                                    <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName + ' - ' + u.email + ' - Ví: ' + #numbers.formatDecimal(u.balance != null ? u.balance : 0, 0, 'COMMA', 0, 'POINT') + 'đ'}"></option>
+                                    <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName + ' - ' + u.email}"></option>
                                 </select>
                             </div>
                         </div>
@@ -91,7 +91,7 @@
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <td colspan="4" class="text-end fw-bold">Tổng Thanh Toán (Sẽ trừ vào ví):</td>
+                                                <td colspan="4" class="text-end fw-bold">Tổng Thanh Toán (Thanh toán trực tiếp):</td>
                                                 <td colspan="2" class="text-warning fw-bold fs-5" id="totalAmount">0 đ</td>
                                             </tr>
                                         </tfoot>
