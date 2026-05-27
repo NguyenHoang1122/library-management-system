@@ -29,6 +29,7 @@
 
             <!-- Search Area -->
             <form th:action="@{/user/search}" method="get" class="mb-4">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <div class="search-box-waka">
                     <i class="bi bi-search text-secondary me-2"></i>
                     <input type="text" name="query" class="form-control" placeholder="Tìm kiếm theo họ tên, email hoặc tên đăng nhập..." th:value="${searchQuery}">
@@ -38,6 +39,7 @@
 
             <!-- Content Area -->
             <form id="roleChangeForm" method="post">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <div class="table-responsive">
                     <table class="table table-waka">
                         <thead>
@@ -69,6 +71,7 @@
                                 <td class="text-end">
                                     <div th:if="${user.role.roleName.name() != 'ROLE_ADMIN'}" class="btn-group">
                                         <form th:action="@{/user/{id}/soft-delete(id=${user.id})}" method="post" class="d-inline delete-user-form">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                             <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 btn-delete-user">Xóa</button>
                                         </form>
                                     </div>

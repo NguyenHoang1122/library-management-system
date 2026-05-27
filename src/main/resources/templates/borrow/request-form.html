@@ -26,6 +26,7 @@
 
                 <div class="card-body p-4">
                     <form th:action="@{/borrow/request/{bookId}(bookId=${bookId})}" method="post">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                         <div class="mb-4">
                             <label class="form-label fw-bold">
                                 <i class="bi bi-book"></i> Truyện

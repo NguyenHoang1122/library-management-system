@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Tạo đơn mượn trực tiếp | Truyện 360</title>
@@ -28,6 +28,7 @@
             <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
 
             <form id="directBorrowForm" th:action="@{/librarian/direct-borrow}" method="post">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <div class="row">
                     <div class="col-md-12 mb-4">
                         <div class="card bg-dark-card rounded-3 shadow-sm">
@@ -124,3 +125,4 @@
 <script th:src="@{/js/direct-borrow.js}"></script>
 </body>
 </html>
+

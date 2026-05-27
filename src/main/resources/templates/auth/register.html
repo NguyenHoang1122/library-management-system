@@ -13,6 +13,7 @@
     <div class="register-container">
         <h2>Đăng ký tài khoản</h2>
         <form id="registerForm" th:action="@{/users/register}" method="post" th:object="${userDTO}">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <div class="form-group">
                 <input th:field="*{fullName}" placeholder="Họ tên" >
                 <div th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}" class="error-message"></div>

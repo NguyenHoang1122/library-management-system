@@ -29,6 +29,7 @@
 
             <!-- Search Area -->
             <form th:action="@{/user/trash/search}" method="get" class="mb-4">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <div class="search-box-waka">
                     <i class="bi bi-search text-secondary me-2"></i>
                     <input type="text" name="query" class="form-control" placeholder="Tìm kiếm tài khoản bị xóa..." th:value="${searchQuery}">
@@ -65,6 +66,7 @@
                                 <div class="btn-group gap-2 justify-content-end" role="group">
                                     <!-- Nút Khôi phục -->
                                     <form th:action="@{/user/{id}/restore(id=${user.id})}" method="post" class="d-inline">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                         <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" title="Khôi phục">
                                             <i class="bi bi-arrow-counterclockwise me-1"></i> KHÔI PHỤC
                                         </button>
@@ -72,6 +74,7 @@
 
                                     <!-- Nút Xóa vĩnh viễn -->
                                     <form th:action="@{/user/{id}/permanently-delete(id=${user.id})}" method="post" class="d-inline permanently-delete-form">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                         <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold btn-delete-permanent"
                                                 title="Xóa vĩnh viễn">
                                             <i class="bi bi-trash-fill me-1"></i> XÓA VĨNH VIỄN

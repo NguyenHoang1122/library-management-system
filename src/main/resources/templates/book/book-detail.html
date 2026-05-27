@@ -66,8 +66,8 @@
                     <div class="value text-warning fw-bold" th:text="${#numbers.formatDecimal(book.depositPrice != null ? book.depositPrice : 0, 0, 'COMMA', 0, 'POINT')} + ' đ'"></div>
                 </div>
                 <div class="info-item">
-                    <div class="label">Giá thuê</div>
-                    <div class="value text-success fw-bold">30,000 đ/7 ngày</div>
+                    <div class="label">Giá thuê (7 ngày)</div>
+                    <div class="value text-success fw-bold" th:text="${#numbers.formatDecimal((book.depositPrice != null ? book.depositPrice : 0) * 0.1, 0, 'COMMA', 0, 'POINT')} + ' đ'">10% giá cọc</div>
                 </div>
             </div>
 
@@ -89,7 +89,10 @@
             <!-- Cảnh báo thuê truyện -->
             <div class="mt-4 p-3 rounded bg-warning bg-opacity-10 border border-warning border-opacity-50" style="max-width: 600px;">
                 <i class="bi bi-exclamation-triangle-fill me-2 text-warning fs-5"></i>
-                <span class="text-warning fw-medium" style="line-height: 1.5;">Lưu ý: Thời gian mượn mặc định là 7 ngày. Phí thuê là 30,000 đ/truyện. Nếu quá hạn, bạn sẽ bị phạt 7,000 đ cho mỗi ngày trễ. Tiền cọc sẽ hoàn lại sau khi trừ phí thuê và phí phạt (nếu có).</span>
+                <span class="text-warning fw-medium" style="line-height: 1.5;" 
+                      th:text="'Lưu ý: Thời gian mượn mặc định là 7 ngày. Phí thuê là ' + ${#numbers.formatDecimal((book.depositPrice != null ? book.depositPrice : 0) * 0.1, 0, 'COMMA', 0, 'POINT')} + ' đ/truyện (10% giá trị cọc). Nếu quá hạn, bạn sẽ bị phạt 7,000 đ cho mỗi ngày trễ. Tiền cọc sẽ hoàn lại sau khi trừ phí thuê và phí phạt (nếu có).'">
+                    Lưu ý: Thời gian mượn mặc định là 7 ngày. Phí thuê bằng 10% giá trị truyện. Nếu quá hạn, bạn sẽ bị phạt 7,000 đ cho mỗi ngày trễ. Tiền cọc sẽ hoàn lại sau khi trừ phí thuê và phí phạt (nếu có).
+                </span>
             </div>
 
 
