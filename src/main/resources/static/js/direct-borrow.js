@@ -11,7 +11,6 @@ $(document).ready(function() {
         width: '100%'
     });
 
-    const BORROW_FEE = 30000;
     let cartItems = {};
 
     function formatCurrency(number) {
@@ -29,7 +28,8 @@ $(document).ready(function() {
 
         for (let bookId in cartItems) {
             let item = cartItems[bookId];
-            let itemTotal = (item.deposit + BORROW_FEE) * item.qty;
+            let itemBorrowFee = item.deposit * 0.1;
+            let itemTotal = (item.deposit + itemBorrowFee) * item.qty;
             totalAmount += itemTotal;
 
             let tr = $('<tr></tr>');
@@ -39,7 +39,7 @@ $(document).ready(function() {
             </td>`);
             tr.append(`<td>${item.qty}</td>`);
             tr.append(`<td>${formatCurrency(item.deposit)}</td>`);
-            tr.append(`<td>${formatCurrency(BORROW_FEE)}</td>`);
+            tr.append(`<td>${formatCurrency(itemBorrowFee)}</td>`);
             tr.append(`<td class="text-info fw-bold">${formatCurrency(itemTotal)}</td>`);
             tr.append(`<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-remove" data-id="${bookId}"><i class="bi bi-trash"></i></button></td>`);
             

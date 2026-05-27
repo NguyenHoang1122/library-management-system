@@ -66,19 +66,23 @@ document.addEventListener("DOMContentLoaded", function() {
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Thành công',
-                            html: 'Đã nạp tiền thành công!',
-                            confirmButtonColor: '#00b074',
-                            background: '#181818',
-                            color: '#e0e0e0',
-                            customClass: {
-                                popup: 'border border-success border-opacity-25 rounded-3'
-                            }
-                        }).then(() => {
-                            location.reload();
-                        });
+                        if (data.redirectUrl) {
+                            window.location.href = data.redirectUrl;
+                        } else {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công',
+                                html: 'Đã nạp tiền thành công!',
+                                confirmButtonColor: '#00b074',
+                                background: '#181818',
+                                color: '#e0e0e0',
+                                customClass: {
+                                    popup: 'border border-success border-opacity-25 rounded-3'
+                                }
+                            }).then(() => {
+                                location.reload();
+                            });
+                        }
                     } else {
                         Swal.fire({
                             icon: 'error',

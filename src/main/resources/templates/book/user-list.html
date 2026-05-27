@@ -36,6 +36,7 @@
             <!-- Search & Sort Area -->
             <div class="d-flex flex-column flex-md-row gap-3 align-items-md-center justify-content-between mb-4">
                 <form th:action="@{/books/search}" method="get" class="flex-grow-1 mb-0">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <div class="search-box-waka">
                         <i class="bi bi-search text-secondary me-2"></i>
                         <input type="text" name="query" class="form-control" placeholder="Tìm kiếm truyện hoặc tác giả mà bạn muốn mượn..." th:value="${searchQuery ?: param.query}">
@@ -106,3 +107,4 @@
 <div th:replace="~{layout :: footer}"></div>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 
 <head>
@@ -51,6 +51,7 @@
                 
                 <!-- Search Input -->
                 <form th:action="@{/borrow/history}" method="get" class="flex-grow-1 mb-0">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <input type="hidden" name="statusFilter" th:value="${statusFilter}" />
                     <div class="search-box-waka">
                         <i class="bi bi-search text-secondary me-2"></i>

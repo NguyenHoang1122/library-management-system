@@ -62,16 +62,20 @@ function handleWalletTransaction(actionStr, url) {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    updateHeaderBalance(data.newBalance);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Thành công',
-                        text: `Đã ${actionStr.toLowerCase()} ${new Intl.NumberFormat('vi-VN').format(amount)}đ thành công!`,
-                        background: '#181818',
-                        color: '#e0e0e0',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
+                    if (data.redirectUrl) {
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        updateHeaderBalance(data.newBalance);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành công',
+                            text: `Đã ${actionStr.toLowerCase()} ${new Intl.NumberFormat('vi-VN').format(amount)}đ thành công!`,
+                            background: '#181818',
+                            color: '#e0e0e0',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
                 } else {
                     Swal.fire('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
                 }

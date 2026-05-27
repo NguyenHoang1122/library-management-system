@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Thông Tin Cá Nhân | Truyện 360</title>
@@ -62,7 +62,7 @@
                                     <div class="info-label">Tên đăng nhập</div>
                                     <div class="info-value" th:text="${user.userName}">username</div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6" style="display: none !important;">
                                     <div class="info-label">Số dư ví (VNĐ)</div>
                                     <div class="info-value text-success fw-bold d-flex align-items-center">
                                         <span th:if="${user.balance != null}" th:text="|${#numbers.formatDecimal(user.balance, 0, 'COMMA', 0, 'POINT')} đ|">0 đ</span>
@@ -85,7 +85,7 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-6" style="display: none !important;">
                                     <div class="info-label">Số điện thoại</div>
                                     <div class="info-value" th:text="${user.phoneNumber ?: 'Chưa cập nhật'}">090xxxxxxx</div>
                                 </div>
@@ -98,7 +98,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="info-label">Ngày tham gia</div>
-                                    <div class="info-value" th:text="${#temporals.format(user.createDate, 'dd/MM/yyyy')}">01/01/2023</div>
+                                    <div class="info-value" th:text="${user.createDate != null ? #temporals.format(user.createDate, 'dd/MM/yyyy') : 'Chưa có thông tin'}">01/01/2023</div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="info-label">Cập nhật lần cuối</div>
@@ -134,6 +134,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form th:action="@{/user/profile/update}" method="post" enctype="multipart/form-data">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <input type="hidden" name="userName" th:value="${user.userName}"/>
 
                 <div class="modal-body p-4 p-md-5">
@@ -242,6 +243,7 @@
             </div>
             <div class="modal-body p-4">
                 <form id="depositForm">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <div class="mb-3">
                         <label for="amount" class="form-label fw-bold text-secondary">Số tiền cần nạp (VNĐ)</label>
                         <input type="number" class="form-control form-control-lg" id="amount" name="amount" min="10000" step="10000" required placeholder="Ví dụ: 100000">
@@ -268,6 +270,7 @@
             </div>
             <div class="modal-body p-4">
                 <form id="withdrawForm">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                     <div class="mb-3">
                         <label for="withdrawAmount" class="form-label fw-bold text-secondary">Số tiền cần rút (VNĐ)</label>
                         <input type="number" class="form-control form-control-lg" id="withdrawAmount" name="amount" min="10000" step="10000" required placeholder="Ví dụ: 100000">

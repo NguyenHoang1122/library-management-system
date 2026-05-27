@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Chi tiết giao dịch mượn</title>
@@ -208,6 +208,7 @@
                     </div>
 
                     <form id="userActionForm" method="post" style="display: none;">
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                         <input type="hidden" name="returnDateTime" id="actionDateTime">
                         <input type="hidden" name="note" id="actionNote">
                     </form>

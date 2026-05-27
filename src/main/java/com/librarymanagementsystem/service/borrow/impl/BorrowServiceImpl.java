@@ -32,9 +32,7 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -69,14 +67,22 @@ public class BorrowServiceImpl implements BorrowService {
             throw new RuntimeException("Giỏ hàng đang trống");
         }
 
-        // Tính tổng tiền cọc
+        // Sắp xếp cart items theo bookId để tránh deadlock khi lock nhiều record
+       List<CartItem> sortedCartItems = new ArrayList<>(cart.getItems());
+        sortedCartItems.sort(Comparator.comparing(item -> item.getBook().getId()));
+
+        // Tính tổng tiền cọc và acquire DB lock cho các sách trong giỏ
         double totalDeposit = 0.0;
-        for (CartItem item : cart.getItems()) {
-            Book book = item.getBook();
-            if (book.getQuantity() < item.getQuantity()) {
-                throw new RuntimeException("Sách " + book.getTitle() + " không đủ số lượng trong kho");
+        for (CartItem item : sortedCartItems) {
+            Book lockedBook = bookRepository.findByIdWithLock(item.getBook().getId())
+                    .orElseThrow(() -> new RuntimeException("Truyện không tồn tại"));
+            
+            if (lockedBook.getQuantity() < item.getQuantity()) {
+                throw new RuntimeException("Sách " + lockedBook.getTitle() + " không đủ số lượng trong kho");
             }
-            Double dp = book.getDepositPrice() != null ? book.getDepositPrice() : 0.0;
+            item.setBook(lockedBook); // Cập nhật lại book trong item để dùng book đã lock ở bước sau
+
+            Double dp = lockedBook.getDepositPrice() != null ? lockedBook.getDepositPrice() : 0.0;
             totalDeposit += dp * item.getQuantity();
         }
 
@@ -92,14 +98,7 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         double totalAmount = totalDeposit + shippingFee;
-        if (user.getBalance() == null || user.getBalance() < totalAmount) {
-            throw new RuntimeException("Số dư ví không đủ để thanh toán. Vui lòng nạp thêm tiền.");
-        }
-
-        // Trừ tiền
-        double oldBalance = user.getBalance();
-        user.setBalance(user.getBalance() - totalAmount);
-        userRepository.save(user);
+        // Loại bỏ thanh toán qua ví cá nhân, người dùng đã thanh toán VNPAY trực tiếp
 
         // Tạo yêu cầu mượn
         BorrowRequest borrowRequest = new BorrowRequest();
@@ -116,11 +115,11 @@ public class BorrowServiceImpl implements BorrowService {
 
         java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
         notificationService.sendNotification(user, "Thanh toán đơn mượn", 
-            String.format("Đã thanh toán %s đ cho đơn mượn truyện (Mã đơn: #%d). Số dư cũ: %s đ. Số dư hiện tại: %s đ.", 
-                nf.format(totalAmount), borrowRequest.getId(), nf.format(oldBalance), nf.format(user.getBalance())), 
+            String.format("Đã nhận thanh toán %s đ bằng VNPAY cho đơn mượn truyện (Mã đơn: #%d).", 
+                nf.format(totalAmount), borrowRequest.getId()), 
             "/borrow/history");
 
-        // Cộng tiền vào ví ADMIN
+        // Ghi nhận doanh thu cho hệ thống (ví Admin)
         List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
         if (!admins.isEmpty()) {
             User admin = admins.get(0);
@@ -380,7 +379,7 @@ public class BorrowServiceImpl implements BorrowService {
             int qty = quantities.get(i);
             if (qty <= 0) continue;
 
-            Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("Truyện không tồn tại"));
+            Book book = bookRepository.findByIdWithLock(bookId).orElseThrow(() -> new RuntimeException("Truyện không tồn tại"));
             
             if (book.getQuantity() < qty) {
                 throw new RuntimeException("Sách '" + book.getTitle() + "' không đủ số lượng (còn " + book.getQuantity() + ")");
@@ -388,7 +387,7 @@ public class BorrowServiceImpl implements BorrowService {
             
             double deposit = book.getDepositPrice() != null ? book.getDepositPrice() : 0.0;
             totalDeposit += deposit * qty;
-            totalBorrowFee += BORROW_FEE * qty;
+            totalBorrowFee += deposit * 0.1 * qty;
             totalBooks += qty;
         }
 
@@ -397,15 +396,7 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         double totalAmount = totalDeposit + totalBorrowFee;
-        double currentBalance = user.getBalance() != null ? user.getBalance() : 0.0;
-
-        if (currentBalance < totalAmount) {
-            throw new RuntimeException("Số dư ví không đủ. Cần " + totalAmount + "đ nhưng ví chỉ có " + currentBalance + "đ.");
-        }
-
-        // Trừ tiền
-        user.setBalance(currentBalance - totalAmount);
-        userRepository.save(user);
+        // Loại bỏ kiểm tra số dư ví và trừ ví người dùng cho mượn trực tiếp tại quầy
 
         // 1. Tạo BorrowRequest
         BorrowRequest request = new BorrowRequest();
@@ -486,12 +477,9 @@ public class BorrowServiceImpl implements BorrowService {
         String notifContent = String.format("Thủ thư đã tạo đơn mượn trực tiếp (Mã đơn: #%d) với %d cuốn truyện. \n" +
                 "- Tổng cọc: %s đ\n" +
                 "- Tổng phí thuê: %s đ\n" +
-                "- Tổng tiền bị trừ: %s đ\n" +
-                "- Số dư cũ: %s đ\n" +
-                "- Số dư mới: %s đ\n" +
+                "- Tổng tiền thanh toán: %s đ\n" +
                 "Bạn cần trả truyện trước ngày %s.",
                 transaction.getId(), totalBooks, nf.format(totalDeposit), nf.format(totalBorrowFee), nf.format(totalAmount), 
-                nf.format(currentBalance), nf.format(user.getBalance()), 
                 transaction.getDueDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
         notificationService.sendNotification(user, "Tạo đơn mượn trực tiếp", notifContent, "/borrow/history");
@@ -505,7 +493,7 @@ public class BorrowServiceImpl implements BorrowService {
             userRepository.save(admin);
             
             notificationService.sendNotification(admin, "Nhận tiền thanh toán đơn mượn trực tiếp", 
-                String.format("Nhận %s đ từ đơn mượn trực tiếp (Mã đơn: #%d) của độc giả %s. Cọc: %s đ, Phí thuê: %s đ. Số dư hiện tại: %s đ.", 
+                String.format("Nhận %s đ từ đơn mượn trực tiếp (Mã đơn: #%d) của độc giả %s. Cọc: %s đ, Phí thuê: %s đ. Số dư ví Admin hiện tại: %s đ.", 
                     nf.format(totalAmount), transaction.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
                     nf.format(totalDeposit), nf.format(totalBorrowFee), nf.format(admin.getBalance())), 
                 null);
@@ -783,7 +771,9 @@ public class BorrowServiceImpl implements BorrowService {
                 .mapToDouble(item -> item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : 0.0)
                 .sum();
                 
-        double totalBorrowFee = itemsToReturn.size() * BORROW_FEE;
+        double totalBorrowFee = itemsToReturn.stream()
+                .mapToDouble(item -> (item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : 0.0) * 0.1)
+                .sum();
         
         double shippingDeduction = returnShippingFee != null ? returnShippingFee : 0.0;
         double refundAmount = originalDeposit - totalBorrowFee - lateFine - shippingDeduction;
@@ -921,7 +911,9 @@ public class BorrowServiceImpl implements BorrowService {
         
         User user = transaction.getUser();
         List<BorrowItem> items = borrowItemRepository.findByTransaction(transaction);
-        double extensionFee = items.size() * BORROW_FEE;
+        double extensionFee = items.stream()
+                .mapToDouble(item -> (item.getBookCopy().getBook().getDepositPrice() != null ? item.getBookCopy().getBook().getDepositPrice() : 0.0) * 0.1)
+                .sum();
         
         if (user.getBalance() == null || user.getBalance() < extensionFee) {
             throw new RuntimeException("Số dư không đủ để gia hạn (Cần " + extensionFee + " đ). Vui lòng nạp thêm tiền.");
@@ -1403,7 +1395,14 @@ public class BorrowServiceImpl implements BorrowService {
                     }
                 }
                 
-                double totalBorrowFee = returnQuantity * 30000.0;
+                double totalBorrowFee = 0.0;
+                if (rr.getReturnItems() != null) {
+                    for (ReturnRequestItem item : rr.getReturnItems()) {
+                        if (item.getBook() != null && item.getBook().getDepositPrice() != null) {
+                            totalBorrowFee += item.getBook().getDepositPrice() * 0.1 * item.getQuantity();
+                        }
+                    }
+                }
                 long lateFine = 0;
                 if (rr.getRequestStatus() != RequestStatus.COMPLETED) {
                     lateFine = calculateLateFine(transaction.getId());

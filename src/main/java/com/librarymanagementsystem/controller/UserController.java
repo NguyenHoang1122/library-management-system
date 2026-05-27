@@ -15,6 +15,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import com.librarymanagementsystem.service.payment.VNPayService;
+import jakarta.servlet.http.HttpServletRequest;
 
 
 import java.util.Map;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final VNPayService vnPayService;
 
     // Hiển thị thông tin hồ sơ chi tiết (Profile) của người dùng đang đăng nhập hiện tại
     @GetMapping("/profile")
@@ -166,21 +169,51 @@ public class UserController {
         return "redirect:/user/trash";
     }
 
-    // Nạp tiền
     @PostMapping("/deposit")
     @ResponseBody
-    public ResponseEntity<?> deposit(@RequestParam Double amount, Authentication authentication) {
+    public ResponseEntity<?> deposit(@RequestParam Double amount, HttpServletRequest request, Authentication authentication) {
         if (authentication == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
-        if (amount == null || amount <= 0) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ"));
+        if (amount == null || amount <= 10000) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ (phải > 10.000)"));
         
         try {
             String userName = authentication.getName();
             User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-            Double newBalance = userService.deposit(user.getId(), amount);
-            return ResponseEntity.ok(Map.of("success", true, "newBalance", newBalance));
+            
+            String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+            String orderInfo = "Nap tien vao tai khoan " + user.getId();
+            String paymentUrl = vnPayService.createOrder(amount.intValue(), orderInfo, baseUrl);
+            
+            return ResponseEntity.ok(Map.of("success", true, "redirectUrl", paymentUrl));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
+    }
+
+    @GetMapping("/vnpay-return")
+    public String vnpayReturn(HttpServletRequest request, Model model) {
+        boolean isValidSignature = vnPayService.verifySignature(request);
+        String vnp_ResponseCode = request.getParameter("vnp_ResponseCode");
+        String vnp_OrderInfo = request.getParameter("vnp_OrderInfo");
+        String vnp_Amount = request.getParameter("vnp_Amount"); // Amount is multiplied by 100 in VNPAY
+        
+        model.addAttribute("isSuccess", false);
+        model.addAttribute("message", "Giao dịch không thành công hoặc bị hủy.");
+        
+        if (isValidSignature && "00".equals(vnp_ResponseCode)) {
+            try {
+                // Parse userId từ OrderInfo (VD: "Nap tien vao tai khoan 1")
+                String[] parts = vnp_OrderInfo.split(" ");
+                Long userId = Long.parseLong(parts[parts.length - 1]);
+                Double amount = Double.parseDouble(vnp_Amount) / 100.0;
+                
+                userService.deposit(userId, amount);
+                model.addAttribute("isSuccess", true);
+                model.addAttribute("message", "Nạp tiền thành công! Đã cộng " + String.format("%,.0f", amount) + "đ vào tài khoản.");
+            } catch (Exception e) {
+                model.addAttribute("message", "Có lỗi xảy ra khi cộng tiền: " + e.getMessage());
+            }
+        }
+        return "user/vnpay-result";
     }
 
     // Rút tiền
