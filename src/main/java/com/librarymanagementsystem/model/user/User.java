@@ -17,6 +17,10 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import java.math.BigDecimal;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -39,8 +43,10 @@ public class User {
     @Column(length = 500)
     private String image;
 
-    @Column(name = "balance", nullable = false)
-    private Double balance = 0.0;
+    @Column(name = "balance", nullable = false, precision = 15, scale = 2)
+    @Max(value = 1000000000, message = "Số dư quỹ không được vượt quá 1 tỷ VNĐ")
+    @Min(value = 0, message = "Số dư quỹ không được nhỏ hơn 0")
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     private UserStatus userStatus;

@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import java.math.BigDecimal;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+
 @Entity
 @Data
 @Table(name = "borrow_requests")
@@ -38,11 +42,15 @@ public class BorrowRequest {
     @Enumerated(EnumType.STRING)
     private DeliveryMethod deliveryMethod;
 
-    @Column(name = "shipping_fee")
-    private Double shippingFee = 0.0;
+    @Column(name = "shipping_fee", precision = 15, scale = 2)
+    @Max(value = 10000000, message = "Phí ship không được vượt quá 10 triệu VNĐ")
+    @Min(value = 0, message = "Phí ship không được nhỏ hơn 0")
+    private BigDecimal shippingFee = BigDecimal.ZERO;
 
-    @Column(name = "total_deposit")
-    private Double totalDeposit = 0.0;
+    @Column(name = "total_deposit", precision = 15, scale = 2)
+    @Max(value = 1000000000, message = "Tổng tiền cọc không được vượt quá 1 tỷ VNĐ")
+    @Min(value = 0, message = "Tổng tiền cọc không được nhỏ hơn 0")
+    private BigDecimal totalDeposit = BigDecimal.ZERO;
 
     @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;

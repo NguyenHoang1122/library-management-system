@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -44,10 +45,10 @@ public interface BorrowRequestRepository extends JpaRepository<BorrowRequest, Lo
     Page<BorrowRequest> findApprovedRequestsWithSearch(@Param("query") String query, Pageable pageable);
 
     @Query("SELECT SUM(br.totalDeposit + br.shippingFee) FROM BorrowRequest br WHERE br.requestStatus IN (com.librarymanagementsystem.model.borrow.status.RequestStatus.APPROVED, com.librarymanagementsystem.model.borrow.status.RequestStatus.COMPLETED, com.librarymanagementsystem.model.borrow.status.RequestStatus.RETURNING) AND MONTH(br.requestDate) = MONTH(CURRENT_DATE) AND YEAR(br.requestDate) = YEAR(CURRENT_DATE)")
-    Double sumTotalRevenueCurrentMonth();
+    BigDecimal sumTotalRevenueCurrentMonth();
 
     @Query("SELECT SUM(bri.quantity * b.importPrice) FROM BorrowRequestItem bri JOIN bri.borrowRequest br JOIN bri.book b WHERE br.requestStatus IN (com.librarymanagementsystem.model.borrow.status.RequestStatus.APPROVED, com.librarymanagementsystem.model.borrow.status.RequestStatus.COMPLETED, com.librarymanagementsystem.model.borrow.status.RequestStatus.RETURNING) AND MONTH(br.requestDate) = MONTH(CURRENT_DATE) AND YEAR(br.requestDate) = YEAR(CURRENT_DATE)")
-    Double sumTotalCostCurrentMonth();
+    BigDecimal sumTotalCostCurrentMonth();
 
     @Query(value = "SELECT DATE(request_date) as date, SUM(total_deposit + shipping_fee) as revenue FROM borrow_requests WHERE request_status IN ('APPROVED', 'COMPLETED', 'RETURNING') GROUP BY DATE(request_date) ORDER BY date DESC LIMIT 30", nativeQuery = true)
     List<Object[]> getDailyRevenue();

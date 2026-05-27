@@ -19,6 +19,7 @@ import com.librarymanagementsystem.service.payment.VNPayService;
 import jakarta.servlet.http.HttpServletRequest;
 
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import java.util.List;
@@ -37,11 +38,11 @@ public class UserController {
     // Xử lý nạp/rút tiền ví ảo hệ thống dành cho Admin
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/profile/adjust-wallet")
-    public String adjustAdminWallet(@RequestParam Double amount,
+    public String adjustAdminWallet(@RequestParam BigDecimal amount,
                                     @RequestParam String action,
                                     @RequestParam String reason,
                                     RedirectAttributes redirectAttributes) {
-        if (amount == null || amount <= 0) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             redirectAttributes.addFlashAttribute("error", "Số tiền không hợp lệ");
             return "redirect:/user/profile";
         }
@@ -50,12 +51,13 @@ public class UserController {
                 (action.equals("deposit") ? "Nạp bổ sung quỹ hệ thống" : "Rút quỹ chi tiêu hệ thống");
 
         try {
-            double finalAmount = action.equals("deposit") ? amount : -amount;
+            BigDecimal finalAmount = action.equals("deposit") ? amount : amount.negate();
             adminWalletService.logTransaction(finalAmount, "MANUAL_ADJUST", cleanReason, null);
             
+            java.text.NumberFormat nf = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
             String msg = action.equals("deposit") ? 
-                    "Đã nạp quỹ hệ thống thành công " + String.format("%,.0f", amount) + " đ." :
-                    "Đã rút quỹ hệ thống thành công " + String.format("%,.0f", amount) + " đ.";
+                    "Đã nạp quỹ hệ thống thành công " + nf.format(amount) + " đ." :
+                    "Đã rút quỹ hệ thống thành công " + nf.format(amount) + " đ.";
             redirectAttributes.addFlashAttribute("message", msg);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
@@ -203,9 +205,9 @@ public class UserController {
 
     @PostMapping("/deposit")
     @ResponseBody
-    public ResponseEntity<?> deposit(@RequestParam Double amount, HttpServletRequest request, Authentication authentication) {
+    public ResponseEntity<?> deposit(@RequestParam BigDecimal amount, HttpServletRequest request, Authentication authentication) {
         if (authentication == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
-        if (amount == null || amount <= 10000) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ (phải > 10.000)"));
+        if (amount == null || amount.compareTo(BigDecimal.valueOf(10000)) <= 0) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ (phải > 10.000)"));
         
         try {
             String userName = authentication.getName();
@@ -236,11 +238,12 @@ public class UserController {
                 // Parse userId từ OrderInfo (VD: "Nap tien vao tai khoan 1")
                 String[] parts = vnp_OrderInfo.split(" ");
                 Long userId = Long.parseLong(parts[parts.length - 1]);
-                Double amount = Double.parseDouble(vnp_Amount) / 100.0;
+                Double amountDouble = Double.parseDouble(vnp_Amount) / 100.0;
+                BigDecimal amount = BigDecimal.valueOf(amountDouble);
                 
                 userService.deposit(userId, amount);
                 model.addAttribute("isSuccess", true);
-                model.addAttribute("message", "Nạp tiền thành công! Đã cộng " + String.format("%,.0f", amount) + "đ vào tài khoản.");
+                model.addAttribute("message", "Nạp tiền thành công! Đã cộng " + String.format("%,.0f", amountDouble) + "đ vào tài khoản.");
             } catch (Exception e) {
                 model.addAttribute("message", "Có lỗi xảy ra khi cộng tiền: " + e.getMessage());
             }
@@ -251,14 +254,14 @@ public class UserController {
     // Rút tiền
     @PostMapping("/withdraw")
     @ResponseBody
-    public ResponseEntity<?> withdraw(@RequestParam Double amount, Authentication authentication) {
+    public ResponseEntity<?> withdraw(@RequestParam BigDecimal amount, Authentication authentication) {
         if (authentication == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
-        if (amount == null || amount <= 0) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ"));
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) return ResponseEntity.badRequest().body(Map.of("message", "Số tiền không hợp lệ"));
         
         try {
             String userName = authentication.getName();
             User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-            Double newBalance = userService.withdraw(user.getId(), amount);
+            BigDecimal newBalance = userService.withdraw(user.getId(), amount);
             return ResponseEntity.ok(Map.of("success", true, "newBalance", newBalance));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

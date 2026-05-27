@@ -13,6 +13,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import java.math.BigDecimal;
+import jakarta.validation.constraints.Max;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -47,9 +50,11 @@ public class BookDTO {
 
     @NotNull(message = "Giá nhập không được để trống")
     @Positive(message = "Giá nhập phải lớn hơn 0")
-    private Double importPrice;
+    @Max(value = 100000000, message = "Giá nhập không được vượt quá 100,000,000 đ")
+    private BigDecimal importPrice;
 
     @NotNull(message = "Giá cọc không được để trống")
     @Positive(message = "Giá cọc phải lớn hơn 0")
-    private Double depositPrice;
+    @Max(value = 100000000, message = "Giá cọc không được vượt quá 100,000,000 đ")
+    private BigDecimal depositPrice;
 }

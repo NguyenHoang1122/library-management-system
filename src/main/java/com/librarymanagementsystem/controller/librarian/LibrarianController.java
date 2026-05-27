@@ -21,6 +21,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -384,7 +385,7 @@ public class LibrarianController {
             boolean isOverdue = borrowService.isOverdue(transactionId);
             long fine = borrowService.calculateLateFine(transactionId);
 
-            borrowService.returnBorrowItems(transactionId, librarian.getId(), itemIds, 0.0);
+            borrowService.returnBorrowItems(transactionId, librarian.getId(), itemIds, BigDecimal.ZERO);
 
             String message = "Đã xử lý trả truyện thành công";
             if (isOverdue) {
@@ -420,7 +421,7 @@ public class LibrarianController {
                     .orElseThrow(() -> new RuntimeException("Librarian not found"));
             
             borrowService.createDirectBorrow(librarian.getId(), userId, bookIds, quantities);
-            redirectAttributes.addFlashAttribute("message", "Tạo đơn mượn trực tiếp thành công. Tiền đã được trừ từ ví độc giả.");
+            redirectAttributes.addFlashAttribute("message", "Tạo đơn mượn trực tiếp thành công. Thu phí và cọc trực tiếp từ độc giả.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/librarian/direct-borrow";

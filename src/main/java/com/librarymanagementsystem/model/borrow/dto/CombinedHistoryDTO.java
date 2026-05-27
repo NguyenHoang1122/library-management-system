@@ -2,6 +2,8 @@ package com.librarymanagementsystem.model.borrow.dto;
 
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -12,8 +14,8 @@ public class CombinedHistoryDTO {
     private String requestDate;
     private String returnDate;
     private String status;
-    private Double totalDeposit;
-    private Double shippingFee;
-    private Double totalAmount;
+    private BigDecimal totalDeposit;
+    private BigDecimal shippingFee;
+    private BigDecimal totalAmount;
     private Long transactionId;
 }
