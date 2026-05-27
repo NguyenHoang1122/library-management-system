@@ -22,16 +22,6 @@
                 <h3 class="mb-0"><i class="bi bi-shield-exclamation me-2 text-warning"></i> Quản lý Từ Nhạy Cảm</h3>
                 <span class="badge bg-opacity-10 text-info bg-info border border-info border-opacity-25 px-3 py-2 rounded-pill"><i class="bi bi-robot me-1"></i> Trí tuệ Nhân tạo AI</span>
             </div>
-            
-            <!-- Message/Error Alert Banners -->
-            <div th:if="${message}" class="alert alert-success alert-dismissible fade show border-success border-opacity-25 bg-success bg-opacity-10 text-success rounded-3 mt-4" role="alert">
-                <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${message}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show border-danger border-opacity-25 bg-danger bg-opacity-10 text-danger rounded-3 mt-4" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${error}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
 
             <!-- AI Moderation Section -->
             <div class="row mb-5 mt-4 g-4">

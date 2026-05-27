@@ -11,9 +11,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:///" + uploadDir.replace("\\", "/"));
-    }
+    // Gỡ bỏ cấu hình addResourceHandlers phục vụ tĩnh trực tiếp để ép buộc đi qua FileController bảo mật
 }

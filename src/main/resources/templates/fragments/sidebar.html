@@ -14,7 +14,7 @@
             <th:block sec:authorize="hasRole('ADMIN')">
                 <li class="nav-item">
                     <a th:href="@{/admin/dashboard}" class="nav-link-waka" th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
-                        <i class="bi bi-speedometer2 me-3"></i> Dashboard
+                        <i class="bi bi-speedometer2 me-3"></i> Thống kê báo cáo
                     </a>
                 </li>
                 <li class="nav-item">
@@ -42,6 +42,7 @@
                         <i class="bi bi-clock-history me-3"></i> Lịch sử nhập truyện
                     </a>
                 </li>
+
                 <li class="nav-item">
                     <a th:href="@{/admin/sensitive-words}" class="nav-link-waka" th:classappend="${activePage == 'sensitivewords' ? 'active' : ''}">
                         <i class="bi bi-shield-exclamation me-3"></i> Quản lý từ nhạy cảm
@@ -56,6 +57,11 @@
 
             <!-- ========== MENU CHO LIBRARIAN ========== -->
             <th:block sec:authorize="hasRole('LIBRARIAN')">
+                <li class="nav-item">
+                    <a th:href="@{/librarian/dashboard}" class="nav-link-waka" th:classappend="${activePage == 'librariandashboard' ? 'active' : ''}">
+                        <i class="bi bi-speedometer2 me-3"></i> Thống kê nghiệp vụ
+                    </a>
+                </li>
                 <li class="nav-item">
                     <a th:href="@{/user/profile}" class="nav-link-waka" th:classappend="${activePage == 'profile' ? 'active' : ''}">
                         <i class="far fa-user me-3"></i> Thông tin người dùng

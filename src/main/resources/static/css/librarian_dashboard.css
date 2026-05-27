@@ -1,0 +1,120 @@
+/* Style dành riêng cho Thống kê Nghiệp vụ của Thủ thư (Librarian Dashboard) */
+
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+.librarian-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.card-dark {
+    background: #1a1a1a !important;
+    border: 1px solid #333 !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease;
+}
+
+.card-dark:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Biểu đồ Doughnut */
+.chart-card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+/* Bảng cảnh báo và danh sách */
+.waka-table-container {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.waka-table th {
+    background: #252525 !important;
+    color: #14b4a0 !important;
+    font-weight: 600;
+    border-bottom: 2px solid #333 !important;
+}
+
+.waka-table td {
+    color: #ccc;
+    border-bottom: 1px solid #262626 !important;
+    vertical-align: middle;
+}
+
+.waka-table tr:hover {
+    background-color: #222 !important;
+}
+
+/* Huy hiệu xếp hạng Top truyện */
+.rank-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.rank-1 {
+    background-color: #ffd700;
+    color: #000;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+.rank-2 {
+    background-color: #c0c0c0;
+    color: #000;
+}
+
+.rank-3 {
+    background-color: #cd7f32;
+    color: #000;
+}
+
+.rank-other {
+    background-color: #333;
+    color: #ccc;
+}
+
+/* Tiêu đề phát sáng */
+.text-glow-waka {
+    color: #14b4a0;
+    text-shadow: 0 0 10px rgba(20, 180, 160, 0.2);
+}
+
+/* Trạng thái custom */
+.badge-warning-custom {
+    background-color: rgba(230, 126, 34, 0.15);
+    color: #e67e22;
+    border: 1px solid rgba(230, 126, 34, 0.3);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.badge-danger-custom {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
