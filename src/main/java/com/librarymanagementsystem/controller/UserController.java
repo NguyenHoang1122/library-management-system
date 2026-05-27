@@ -15,7 +15,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
-import com.librarymanagementsystem.repository.user.UserRepository;
+
 
 import java.util.Map;
 
@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-    private final UserRepository userRepository;
 
     // Hiển thị thông tin hồ sơ chi tiết (Profile) của người dùng đang đăng nhập hiện tại
     @GetMapping("/profile")
@@ -49,19 +48,6 @@ public class UserController {
                                 RedirectAttributes redirectAttributes, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("error", "Dữ liệu không hợp lệ");
-            return "redirect:/user/profile";
-        }
-        
-        if (userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().trim().isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Số điện thoại không được để trống");
-            return "redirect:/user/profile";
-        }
-        if (!userDTO.getPhoneNumber().matches("^[0-9]{10,11}$")) {
-            redirectAttributes.addFlashAttribute("error", "Số điện thoại phải là 10-11 chữ số");
-            return "redirect:/user/profile";
-        }
-        if (userDTO.getAddress() == null || userDTO.getAddress().trim().isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Địa chỉ không được để trống");
             return "redirect:/user/profile";
         }
 
@@ -190,9 +176,8 @@ public class UserController {
         try {
             String userName = authentication.getName();
             User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-            user.setBalance((user.getBalance() != null ? user.getBalance() : 0.0) + amount);
-            userRepository.save(user);
-            return ResponseEntity.ok(Map.of("success", true, "newBalance", user.getBalance()));
+            Double newBalance = userService.deposit(user.getId(), amount);
+            return ResponseEntity.ok(Map.of("success", true, "newBalance", newBalance));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
@@ -208,13 +193,8 @@ public class UserController {
         try {
             String userName = authentication.getName();
             User user = userService.findByUserName(userName).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-            double currentBalance = user.getBalance() != null ? user.getBalance() : 0.0;
-            if (currentBalance < amount) {
-                return ResponseEntity.badRequest().body(Map.of("message", "Số dư không đủ để rút"));
-            }
-            user.setBalance(currentBalance - amount);
-            userRepository.save(user);
-            return ResponseEntity.ok(Map.of("success", true, "newBalance", user.getBalance()));
+            Double newBalance = userService.withdraw(user.getId(), amount);
+            return ResponseEntity.ok(Map.of("success", true, "newBalance", newBalance));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

@@ -30,6 +30,9 @@ public class CartServiceImpl implements CartService {
     @Autowired
     private BookRepository bookRepository;
 
+    @Autowired
+    private com.librarymanagementsystem.service.shipping.ShippingService shippingService;
+
     @Override
     @Transactional
     public Cart getCartByUserId(Long userId) {
@@ -107,5 +110,38 @@ public class CartServiceImpl implements CartService {
     public Integer getCartItemCount(Long userId) {
         Cart cart = getCartByUserId(userId);
         return cart.getItems().stream().mapToInt(CartItem::getQuantity).sum();
+    }
+
+    @Override
+    @Transactional
+    public java.util.Map<String, Object> getCartSummary(Long userId) {
+        Cart cart = getCartByUserId(userId);
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        
+        int totalQuantity = cart.getItems().stream()
+                .mapToInt(item -> item.getQuantity() != null ? item.getQuantity() : 0)
+                .sum();
+        
+        double totalDeposit = cart.getItems().stream()
+                .mapToDouble(item -> (item.getBook().getDepositPrice() != null ? item.getBook().getDepositPrice() : 0.0) * item.getQuantity())
+                .sum();
+        
+        double shippingFee = 0.0;
+        if (user.getAddress() != null && !user.getAddress().isEmpty()) {
+             double distance = shippingService.calculateDistance(user.getAddress());
+             if (distance >= 0) {
+                 shippingFee = shippingService.calculateShippingFee(distance, totalQuantity);
+             }
+        }
+        
+        double totalAmount = totalDeposit + shippingFee;
+        
+        java.util.Map<String, Object> summary = new java.util.HashMap<>();
+        summary.put("cart", cart);
+        summary.put("totalQuantity", totalQuantity);
+        summary.put("totalDeposit", totalDeposit);
+        summary.put("shippingFee", shippingFee);
+        summary.put("totalAmount", totalAmount);
+        return summary;
     }
 }

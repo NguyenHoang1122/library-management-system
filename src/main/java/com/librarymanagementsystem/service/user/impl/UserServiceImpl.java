@@ -91,6 +91,16 @@ public class UserServiceImpl implements UserService {
     public User updateProfile(Long userId, UserDTO userDTO) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
+        if (userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().trim().isEmpty()) {
+            throw new RuntimeException("Số điện thoại không được để trống");
+        }
+        if (!userDTO.getPhoneNumber().matches("^[0-9]{10,11}$")) {
+            throw new RuntimeException("Số điện thoại phải là 10-11 chữ số");
+        }
+        if (userDTO.getAddress() == null || userDTO.getAddress().trim().isEmpty()) {
+            throw new RuntimeException("Địa chỉ không được để trống");
+        }
+
         // Cập nhật thông tin
         user.setFullName(userDTO.getFullName());
         user.setUserName(userDTO.getUserName());
@@ -242,5 +252,27 @@ public class UserServiceImpl implements UserService {
         }
 
         userRepository.permanentlyDeleteOldUsers(cutoffDate);
+    }
+
+    @Override
+    public Double deposit(Long userId, Double amount) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+        double newBalance = (user.getBalance() != null ? user.getBalance() : 0.0) + amount;
+        user.setBalance(newBalance);
+        userRepository.save(user);
+        return newBalance;
+    }
+
+    @Override
+    public Double withdraw(Long userId, Double amount) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+        double currentBalance = user.getBalance() != null ? user.getBalance() : 0.0;
+        if (currentBalance < amount) {
+            throw new RuntimeException("Số dư không đủ để rút");
+        }
+        double newBalance = currentBalance - amount;
+        user.setBalance(newBalance);
+        userRepository.save(user);
+        return newBalance;
     }
 }

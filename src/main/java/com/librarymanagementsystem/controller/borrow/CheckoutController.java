@@ -54,34 +54,16 @@ public class CheckoutController {
             return "redirect:/cart?error=address_required";
         }
 
-        Cart cart = cartService.getCartByUserId(currentUser.getId());
+        Map<String, Object> summary = cartService.getCartSummary(currentUser.getId());
+        Cart cart = (Cart) summary.get("cart");
         if (cart.getItems().isEmpty()) {
             return "redirect:/cart";
         }
 
-        model.addAttribute("cart", cart);
+        model.addAllAttributes(summary);
         model.addAttribute("user", currentUser);
-        
-        int totalQuantity = cart.getItems().stream()
-                .mapToInt(item -> item.getQuantity() != null ? item.getQuantity() : 0)
-                .sum();
-        
-        double totalDeposit = cart.getItems().stream()
-                .mapToDouble(item -> (item.getBook().getDepositPrice() != null ? item.getBook().getDepositPrice() : 0.0) * item.getQuantity())
-                .sum();
-        model.addAttribute("totalDeposit", totalDeposit);
 
-        double defaultShippingFee = 0.0;
-        if (currentUser.getAddress() != null && !currentUser.getAddress().isEmpty()) {
-            double distance = shippingService.calculateDistance(currentUser.getAddress());
-            if (distance >= 0) {
-                defaultShippingFee = shippingService.calculateShippingFee(distance, totalQuantity);
-            }
-        }
-        model.addAttribute("shippingFee", defaultShippingFee);
-        model.addAttribute("totalAmount", totalDeposit + defaultShippingFee);
-
-        return "user/checkout";
+        return "cart/checkout";
     }
 
     @PostMapping("/calculate-fee")

@@ -124,81 +124,16 @@ public class BorrowController {
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
         if (page < 1) page = 1;
+        Pageable pageable = PageRequest.of(page - 1, 10);
         
-        List<CombinedHistoryDTO> allHistory = new ArrayList<>(borrowService.getCombinedBorrowHistory(user.getId(), Pageable.unpaged()).getContent());
+        Page<CombinedHistoryDTO> historyPage = borrowService.getCombinedBorrowHistory(user.getId(), keyword, bookId, statusFilter, sortOption, pageable);
         
-        // Filtering
-        if (bookId != null || (keyword != null && !keyword.trim().isEmpty())) {
-            String lowerKw = keyword != null ? keyword.toLowerCase() : "";
-            allHistory = allHistory.stream().filter(dto -> {
-                boolean matchBookId = false;
-                if (bookId != null && dto.getBooksSummary() != null) {
-                    try {
-                        String bookTitle = bookService.getBookById(bookId).get().getTitle();
-                        matchBookId = dto.getBooksSummary().contains(bookTitle);
-                    } catch (Exception e) {}
-                }
-                
-                boolean matchKeyword = false;
-                if (keyword != null && !keyword.trim().isEmpty() && dto.getBooksSummary() != null) {
-                    matchKeyword = dto.getBooksSummary().toLowerCase().contains(lowerKw);
-                }
-                
-                if (bookId != null && (keyword == null || keyword.trim().isEmpty())) {
-                    return matchBookId;
-                } else if (bookId == null && keyword != null && !keyword.trim().isEmpty()) {
-                    return matchKeyword;
-                } else {
-                    return matchBookId || matchKeyword;
-                }
-            }).collect(Collectors.toList());
-        }
-        
-        if (statusFilter != null && !statusFilter.trim().isEmpty()) {
-            allHistory = allHistory.stream().filter(dto -> dto.getStatus().equals(statusFilter)).collect(Collectors.toList());
-        }
-        
-        // Sorting
-        if (sortOption != null) {
-            switch(sortOption) {
-                case "newest":
-                    allHistory.sort((a,b) -> b.getRequestId().compareTo(a.getRequestId()));
-                    break;
-                case "return_date":
-                    allHistory.sort((a,b) -> {
-                        if(a.getReturnDate().equals("Chưa có")) return 1;
-                        if(b.getReturnDate().equals("Chưa có")) return -1;
-                        try {
-                            LocalDate d1 = LocalDate.parse(a.getReturnDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                            LocalDate d2 = LocalDate.parse(b.getReturnDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                            return d2.compareTo(d1); // Nearest return date
-                        } catch(Exception e) { return 0; }
-                    });
-                    break;
-            }
-        } else {
-            // Default sort by request date
-            allHistory.sort((a,b) -> b.getRequestId().compareTo(a.getRequestId()));
-        }
-
-        int pageSize = 10;
-        int totalItems = allHistory.size();
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-        if (totalPages == 0) totalPages = 1;
-        
-        int start = (page - 1) * pageSize;
-        int end = Math.min(start + pageSize, totalItems);
-        List<CombinedHistoryDTO> paginated = new ArrayList<>();
-        if (start < totalItems) {
-            paginated = allHistory.subList(start, end);
-        }
-
         long totalActive = borrowService.getActiveBorrows(user.getId(), PageRequest.of(0, 1)).getTotalElements();
 
-        model.addAttribute("borrowHistory", paginated);
+        model.addAttribute("borrowHistory", historyPage.getContent());
         model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("totalBorrows", totalItems);
+        model.addAttribute("totalPages", historyPage.getTotalPages() > 0 ? historyPage.getTotalPages() : 1);
+        model.addAttribute("totalBorrows", historyPage.getTotalElements());
         model.addAttribute("totalActive", totalActive);
         
         model.addAttribute("keyword", keyword);
@@ -213,88 +148,9 @@ public class BorrowController {
         User currentUser = userService.findByUserName(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
-        BorrowRequest request = borrowService.getBorrowRequestDetail(requestId)
-                .orElseThrow(() -> new RuntimeException("Đơn mượn không tồn tại"));
+        Map<String, Object> detailData = borrowService.getBorrowRequestDetailForUser(requestId, currentUser.getId());
+        model.addAllAttributes(detailData);
 
-        if (!request.getUser().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("Bạn không có quyền xem thông tin này");
-        }
-
-        ReturnRequest returnRequest = borrowService.getReturnRequestForBorrowRequest(requestId);
-        BorrowTransaction transaction = borrowService.getTransactionForBorrowRequest(requestId);
-        
-        List<ReturnRequest> allReturnRequests = borrowService.getAllReturnRequestsForBorrowRequest(requestId);
-        List<Map<String, Object>> returnRequestDetails = new ArrayList<>();
-        
-        if (allReturnRequests != null && !allReturnRequests.isEmpty() && transaction != null) {
-            // allReturnRequests is descending (newest first). Let's process them in reverse so index 1 is oldest.
-            double currentTotalDeposit = request.getTotalDeposit() != null ? request.getTotalDeposit() : 0.0;
-            for (int i = 0; i < allReturnRequests.size(); i++) {
-                ReturnRequest rr = allReturnRequests.get(allReturnRequests.size() - 1 - i);
-                double originalDeposit = 0.0;
-                int returnQuantity = 0;
-                if (rr.getReturnItems() != null) {
-                    for (ReturnRequestItem item : rr.getReturnItems()) {
-                        if (item.getBook() != null && item.getBook().getDepositPrice() != null) {
-                            originalDeposit += item.getBook().getDepositPrice() * item.getQuantity();
-                        }
-                        returnQuantity += item.getQuantity();
-                    }
-                }
-                
-                double totalBorrowFee = returnQuantity * 30000.0;
-                // Late fine could be calculated, but it's hard to know historical late fines. Let's just use 0 for simplicity or what was there.
-                // We'll just show 0 or the current late fine for the latest pending one.
-                long lateFine = 0;
-                if (rr.getRequestStatus() != RequestStatus.COMPLETED) {
-                    lateFine = borrowService.calculateLateFine(transaction.getId());
-                }
-                
-                double returnShippingFee = rr.getShippingFee() != null ? rr.getShippingFee() : 0.0;
-                double refundAmount = originalDeposit - totalBorrowFee - lateFine - returnShippingFee;
-                if (refundAmount < 0) refundAmount = 0.0;
-                
-                double remainingDeposit = currentTotalDeposit - originalDeposit;
-                if (remainingDeposit < 0) remainingDeposit = 0.0;
-                currentTotalDeposit = remainingDeposit;
-                
-                Map<String, Object> detail = new HashMap<>();
-                detail.put("returnRequest", rr);
-                detail.put("originalDeposit", originalDeposit);
-                detail.put("borrowFee", totalBorrowFee);
-                detail.put("lateFine", lateFine);
-                detail.put("shippingFee", returnShippingFee);
-                detail.put("refundAmount", refundAmount);
-                detail.put("returnQuantity", returnQuantity);
-                detail.put("remainingDeposit", remainingDeposit);
-                detail.put("index", i + 1);
-                
-                returnRequestDetails.add(detail);
-            }
-        }
-        
-        // Reverse so that the newest return request appears first (or last? User says "thêm trường thông tin trả lần 1")
-        // Usually Lần 1, Lần 2 from top to bottom. The list is currently ascending (oldest first). We'll keep it ascending.
-        model.addAttribute("returnRequestDetails", returnRequestDetails);
-        
-        Map<Long, Integer> returnedQuantities = new HashMap<>();
-        Map<Long, Integer> unreturnedQuantities = new HashMap<>();
-        if (transaction != null) {
-            for (BorrowItem bi : transaction.getItems()) {
-                Long bookId = bi.getBookCopy().getBook().getId();
-                if (bi.getReturnDate() != null) {
-                    returnedQuantities.put(bookId, returnedQuantities.getOrDefault(bookId, 0) + 1);
-                } else {
-                    unreturnedQuantities.put(bookId, unreturnedQuantities.getOrDefault(bookId, 0) + 1);
-                }
-            }
-        }
-        model.addAttribute("returnedQuantities", returnedQuantities);
-        model.addAttribute("unreturnedQuantities", unreturnedQuantities);
-
-        model.addAttribute("request", request);
-        model.addAttribute("returnRequest", returnRequest);
-        model.addAttribute("transaction", transaction);
         return "borrow/request-detail";
     }
 
@@ -308,26 +164,7 @@ public class BorrowController {
 
         if (page < 1) page = 1;
         
-        List<BorrowTransaction> activeTxs = borrowService.getActiveTransactionsPaged(user.getId(), Pageable.unpaged()).getContent();
-        
-        Map<Long, Map<String, Object>> groupedBooks = new HashMap<>();
-        for (BorrowTransaction tx : activeTxs) {
-            for (BorrowItem item : tx.getItems()) {
-                if (item.getReturnDate() == null) {
-                    Long bookId = item.getBookCopy().getBook().getId();
-                    if (!groupedBooks.containsKey(bookId)) {
-                        Map<String, Object> group = new HashMap<>();
-                        group.put("book", item.getBookCopy().getBook());
-                        group.put("quantity", 0);
-                        groupedBooks.put(bookId, group);
-                    }
-                    Map<String, Object> group = groupedBooks.get(bookId);
-                    group.put("quantity", (int)group.get("quantity") + 1);
-                }
-            }
-        }
-
-        List<Map<String, Object>> activeBooks = new ArrayList<>(groupedBooks.values());
+        List<Map<String, Object>> activeBooks = borrowService.getActiveBooksGrouped(user.getId());
 
         int pageSize = 10;
         int totalItems = activeBooks.size();
@@ -369,26 +206,8 @@ public class BorrowController {
         long lateFine = borrowService.calculateLateFine(transactionId);
         boolean isOverdue = borrowService.isOverdue(transactionId);
 
-        Map<Long, Map<String, Object>> grouped = new HashMap<>();
-        for (BorrowItem item : transaction.getItems()) {
-            Long bookId = item.getBookCopy().getBook().getId();
-            if (!grouped.containsKey(bookId)) {
-                Map<String, Object> groupInfo = new HashMap<>();
-                groupInfo.put("book", item.getBookCopy().getBook());
-                groupInfo.put("totalCount", 0);
-                groupInfo.put("returnedCount", 0);
-                groupInfo.put("unreturnedIds", new ArrayList<Long>());
-                grouped.put(bookId, groupInfo);
-            }
-            Map<String, Object> groupInfo = grouped.get(bookId);
-            groupInfo.put("totalCount", (int) groupInfo.get("totalCount") + 1);
-            if (item.getReturnDate() != null) {
-                groupInfo.put("returnedCount", (int) groupInfo.get("returnedCount") + 1);
-            } else {
-                ((List<Long>) groupInfo.get("unreturnedIds")).add(item.getId());
-            }
-        }
-        model.addAttribute("groupedItems", new ArrayList<>(grouped.values()));
+        List<Map<String, Object>> groupedItems = borrowService.getGroupedItemsForTransaction(transactionId);
+        model.addAttribute("groupedItems", groupedItems);
 
         model.addAttribute("transaction", transaction);
         model.addAttribute("lateFine", lateFine);

@@ -17,7 +17,7 @@
             <img th:src="@{/image/empty-cart.png}" alt="Giỏ hàng trống" onerror="this.src='https://cdn-icons-png.flaticon.com/512/11329/11329060.png'" class="mb-3 empty-cart-img">
             <h4 class="text-secondary">Giỏ hàng của bạn đang trống</h4>
             <p class="text-secondary">Hãy tìm vài cuốn truyện thú vị để đọc nhé!</p>
-            <a th:href="@{/}" class="btn btn-outline-success mt-2 rounded-pill px-4"><i class="bi bi-book me-2"></i>Xem truyện ngay</a>
+            <a th:href="@{/static}" class="btn btn-outline-success mt-2 rounded-pill px-4"><i class="bi bi-book me-2"></i>Xem truyện ngay</a>
         </div>
 
         <div th:if="${cart != null and !cart.items.isEmpty()}" class="row">
@@ -112,7 +112,7 @@
                         <a th:href="@{/checkout}" class="btn btn-success w-100 py-2 fw-bold text-uppercase rounded-pill shadow-sm">
                             Tiến hành thanh toán <i class="bi bi-arrow-right ms-2"></i>
                         </a>
-                        <a th:href="@{/}" class="btn btn-outline-info w-100 mt-3 rounded-pill fw-medium">Tiếp tục chọn sách <i class="bi bi-search ms-1"></i></a>
+                        <a th:href="@{/static}" class="btn btn-outline-info w-100 mt-3 rounded-pill fw-medium">Tiếp tục chọn sách <i class="bi bi-search ms-1"></i></a>
                     </div>
                 </div>
             </div>

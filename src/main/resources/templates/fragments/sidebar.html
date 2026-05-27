@@ -43,6 +43,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a th:href="@{/admin/sensitive-words}" class="nav-link-waka" th:classappend="${activePage == 'sensitivewords' ? 'active' : ''}">
+                        <i class="bi bi-shield-exclamation me-3"></i> Quản lý từ nhạy cảm
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a th:href="@{/user/trash}" class="nav-link-waka" th:classappend="${activePage == 'trash' ? 'active' : ''}">
                         <i class="bi bi-trash me-3"></i> Thùng rác
                     </a>
