@@ -23,6 +23,7 @@ import com.librarymanagementsystem.model.borrow.status.DeliveryMethod;
 import com.librarymanagementsystem.model.cart.Cart;
 import com.librarymanagementsystem.model.cart.CartItem;
 import com.librarymanagementsystem.service.notification.NotificationService;
+import com.librarymanagementsystem.service.user.AdminWalletService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -51,6 +52,7 @@ public class BorrowServiceImpl implements BorrowService {
     private final ReturnRequestRepository returnRequestRepository;
     private final CartService cartService;
     private final ShippingService shippingService;
+    private final AdminWalletService adminWalletService;
 
     private final Integer DEFAULT_BORROW_DAYS = 7;
     private final long DAILY_FINE = 7000; //phạt trả muộn
@@ -120,13 +122,11 @@ public class BorrowServiceImpl implements BorrowService {
             "/borrow/history");
 
         // Ghi nhận doanh thu cho hệ thống (ví Admin)
+        adminWalletService.logTransaction(totalAmount, "BORROW_INCOME", String.format("Nhận thanh toán đơn mượn trực tuyến #%d", borrowRequest.getId()), borrowRequest.getId());
+
         List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
         if (!admins.isEmpty()) {
             User admin = admins.get(0);
-            double adminOldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
-            admin.setBalance(adminOldBalance + totalAmount);
-            userRepository.save(admin);
-            
             notificationService.sendNotification(admin, "Nhận tiền thanh toán đơn mượn", 
                 String.format("Nhận %s đ từ đơn mượn trực tuyến (Mã đơn: #%d) của độc giả %s. Cọc: %s đ, Phí ship: %s đ. Số dư hiện tại: %s đ.", 
                     nf.format(totalAmount), borrowRequest.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
@@ -258,13 +258,11 @@ public class BorrowServiceImpl implements BorrowService {
             userRepository.save(user);
 
             // TRỪ TIỀN KHỎI VÍ ADMIN VÌ HỦY ĐƠN
+            adminWalletService.logTransaction(-totalRefund, "REFUND_EXPENSE", String.format("Hoàn tiền đơn mượn bị hủy #%d", borrowRequest.getId()), borrowRequest.getId());
+
             List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
             if (!admins.isEmpty()) {
                 User admin = admins.get(0);
-                double adminOldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
-                admin.setBalance(adminOldBalance - totalRefund);
-                userRepository.save(admin);
-                
                 java.text.NumberFormat nfAdmin = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
                 notificationService.sendNotification(admin, "Trừ tiền hủy đơn mượn", 
                     String.format("Trừ %s đ do đơn mượn (Mã đơn: #%d) của độc giả %s bị hủy. Số dư hiện tại: %s đ.", 
@@ -485,13 +483,11 @@ public class BorrowServiceImpl implements BorrowService {
         notificationService.sendNotification(user, "Tạo đơn mượn trực tiếp", notifContent, "/borrow/history");
 
         // Cộng tiền vào ví ADMIN
+        adminWalletService.logTransaction(totalAmount, "BORROW_INCOME", String.format("Nhận thanh toán đơn mượn trực tiếp tại quầy #%d", transaction.getId()), transaction.getId());
+
         List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
         if (!admins.isEmpty()) {
             User admin = admins.get(0);
-            double adminOldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
-            admin.setBalance(adminOldBalance + totalAmount);
-            userRepository.save(admin);
-            
             notificationService.sendNotification(admin, "Nhận tiền thanh toán đơn mượn trực tiếp", 
                 String.format("Nhận %s đ từ đơn mượn trực tiếp (Mã đơn: #%d) của độc giả %s. Cọc: %s đ, Phí thuê: %s đ. Số dư ví Admin hiện tại: %s đ.", 
                     nf.format(totalAmount), transaction.getId(), user.getFullName() != null ? user.getFullName() : user.getUserName(), 
@@ -532,13 +528,11 @@ public class BorrowServiceImpl implements BorrowService {
             userRepository.save(user);
 
             // TRỪ TIỀN KHỎI VÍ ADMIN VÌ TỪ CHỐI ĐƠN
+            adminWalletService.logTransaction(-totalRefund, "REFUND_EXPENSE", String.format("Hoàn tiền đơn mượn bị từ chối #%d", borrowRequest.getId()), borrowRequest.getId());
+
             List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
             if (!admins.isEmpty()) {
                 User admin = admins.get(0);
-                double adminOldBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
-                admin.setBalance(adminOldBalance - totalRefund);
-                userRepository.save(admin);
-                
                 java.text.NumberFormat nfAdmin = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
                 notificationService.sendNotification(admin, "Trừ tiền từ chối đơn mượn", 
                     String.format("Trừ %s đ do đơn mượn (Mã đơn: #%d) của độc giả %s bị từ chối. Số dư hiện tại: %s đ.", 
@@ -785,12 +779,11 @@ public class BorrowServiceImpl implements BorrowService {
 
         // Trừ tiền hoàn trả từ ví Admin
         if (refundAmount > 0) {
+            adminWalletService.logTransaction(-refundAmount, "REFUND_EXPENSE", String.format("Hoàn trả tiền cọc trả truyện #%d", transaction.getId()), transaction.getId());
+
             List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
             if (!admins.isEmpty()) {
                 User admin = admins.get(0);
-                double adminBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
-                admin.setBalance(adminBalance - refundAmount);
-                userRepository.save(admin);
                 
                 NumberFormat nfAdmin = NumberFormat.getInstance(new Locale("vi", "VN"));
                 String adminNotifContent = String.format("Hoàn trả %s đ tiền cọc cho độc giả %s (Giao dịch: #%d). " +

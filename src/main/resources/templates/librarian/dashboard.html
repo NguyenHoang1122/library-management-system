@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Thống Kê Nghiệp Vụ | Truyện 360</title>
+    <!-- Nhúng Header Head chung -->
+    <div th:replace="~{layout :: header_head}"></div>
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Nhúng File CSS độc lập cho Dashboard Thủ thư -->
+    <link rel="stylesheet" th:href="@{/css/librarian_dashboard.css}">
+</head>
+<body>
+<!-- Nhúng Header chung -->
+<div th:replace="~{layout :: header}"></div>
+
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Sidebar điều hướng -->
+        <div class="col-md-3 col-lg-2">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='librariandashboard')}"></div>
+        </div>
+
+        <!-- Nội dung chính -->
+        <div class="col-md-9 col-lg-10 px-5">
+            
+            <div class="librarian-header">
+                <h3 class="mb-0 text-glow-waka"><i class="bi bi-speedometer2 me-2"></i> Thống Kê Nghiệp Vụ Thủ Thư</h3>
+                <span class="text-secondary small fw-bold"><i class="bi bi-calendar-event me-1"></i> Hôm nay: <span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">28/05/2026</span></span>
+            </div>
+
+            <!-- KPI Vận Hành thời gian thực -->
+            <div class="row mb-4 g-3">
+                <!-- Chờ duyệt -->
+                <div class="col-md-3">
+                    <div class="card card-dark border-start border-info border-4 h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between p-3">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.75rem;">Yêu Cầu Chờ Duyệt</h6>
+                                <h3 class="fw-bold mb-0 text-info" th:text="${pendingBorrows}">0</h3>
+                            </div>
+                            <i class="bi bi-hourglass-split fs-1 text-info opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Chờ trả -->
+                <div class="col-md-3">
+                    <div class="card card-dark border-start border-warning border-4 h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between p-3">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.75rem;">Đơn Trả Chờ Kiểm Kho</h6>
+                                <h3 class="fw-bold mb-0 text-warning" th:text="${pendingReturns}">0</h3>
+                            </div>
+                            <i class="bi bi-journal-arrow-down fs-1 text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Đang giao -->
+                <div class="col-md-3">
+                    <div class="card card-dark border-start border-primary border-4 h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between p-3">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.75rem;">Truyện Đang Giao Đi</h6>
+                                <h3 class="fw-bold mb-0 text-primary" th:text="${activeDeliveries}">0</h3>
+                            </div>
+                            <i class="bi bi-truck fs-1 text-primary opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Quá hạn -->
+                <div class="col-md-3">
+                    <div class="card card-dark border-start border-danger border-4 h-100">
+                        <div class="card-body d-flex align-items-center justify-content-between p-3">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.75rem;">Đơn Mượn Quá Hạn</h6>
+                                <h3 class="fw-bold mb-0 text-danger" th:text="${overdueCount}">0</h3>
+                            </div>
+                            <i class="bi bi-exclamation-triangle fs-1 text-danger opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hàng thông tin phân bổ kho & Top truyện -->
+            <div class="row mb-4">
+                <!-- Phân bổ kho sách Doughnut Chart -->
+                <div class="col-lg-5 mb-4">
+                    <div class="chart-card h-100">
+                        <h5 class="fw-bold mb-4 text-glow-waka"><i class="bi bi-pie-chart me-2"></i>Tình Trạng Sách Vật Lý</h5>
+                        <div style="height: 250px; position: relative;">
+                            <!-- Đưa các giá trị thống kê vào data-attributes để file JS ngoài có thể đọc động -->
+                            <canvas id="inventoryChart" th:data-warehouse="${booksInWarehouse}" th:data-lent="${booksLentOut}"></canvas>
+                        </div>
+                        <div class="d-flex justify-content-around mt-4">
+                            <div class="text-center">
+                                <span class="d-block small text-secondary">Trong Kho</span>
+                                <h6 class="fw-bold text-success mb-0" th:text="${booksInWarehouse} + ' cuốn'">0</h6>
+                            </div>
+                            <div class="text-center">
+                                <span class="d-block small text-secondary">Đang Cho Mượn</span>
+                                <h6 class="fw-bold text-info mb-0" th:text="${booksLentOut} + ' cuốn'">0</h6>
+                            </div>
+                            <div class="text-center">
+                                <span class="d-block small text-secondary">Tổng Sách</span>
+                                <h6 class="fw-bold text-light mb-0" th:text="${totalPhysicalBooks} + ' cuốn'">0</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top 5 truyện mượn nhiều nhất -->
+                <div class="col-lg-7 mb-4">
+                    <div class="chart-card h-100">
+                        <h5 class="fw-bold mb-3 text-glow-waka"><i class="bi bi-award me-2"></i>Bảng Vàng Xu Hướng Đọc (Top 5 Truyện Mượn Nhiều)</h5>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-borderless text-light align-middle mb-0">
+                                <thead>
+                                    <tr class="border-bottom border-secondary border-opacity-25 text-secondary small">
+                                        <th scope="col" style="width: 10%;">Hạng</th>
+                                        <th scope="col" style="width: 60%;">Tên Sách</th>
+                                        <th scope="col" style="width: 30%;" class="text-end">Lượt mượn hiện hành</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="entry, stat : ${topBorrowed}">
+                                        <td>
+                                            <span th:class="|rank-badge rank-${stat.index + 1}|" th:if="${stat.index < 3}" th:text="${stat.index + 1}">1</span>
+                                            <span th:class="|rank-badge rank-other|" th:unless="${stat.index < 3}" th:text="${stat.index + 1}">4</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img th:src="${entry.key.image ?: '/images/default-book.png'}" alt="Book" style="width: 40px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #333;" />
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold text-white text-truncate" style="max-width: 250px;" th:text="${entry.key.title}">Tên bộ truyện</h6>
+                                                    <small class="text-secondary" th:text="${entry.key.author != null ? entry.key.author.authorName : 'Khuyết danh'}">Tác giả</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end fw-bold text-info">
+                                            <span th:text="${entry.value}">0</span> lượt mượn
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(topBorrowed)}">
+                                        <td colspan="3" class="text-center py-4 text-muted small">
+                                            Chưa có dữ liệu thống kê xu hướng đọc truyện.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng cảnh báo sách sắp hết kho (Stock < 10) -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="waka-table-container shadow-sm">
+                        <div class="p-3 bg-dark border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-bold text-warning d-flex align-items-center gap-2">
+                                <i class="bi bi-exclamation-octagon-fill"></i> Cảnh Báo Tồn Kho Rất Thấp (Tồn kho &lt; 10 cuốn)
+                            </h5>
+                            <span class="badge bg-warning text-dark fw-bold" th:text="${#lists.size(lowStockBooks)} + ' sản phẩm'">0 sản phẩm</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table waka-table mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="ps-4" style="width: 10%;">Mã Sách</th>
+                                        <th scope="col" style="width: 40%;">Đầu Truyện</th>
+                                        <th scope="col" style="width: 20%;">ISBN</th>
+                                        <th scope="col" style="width: 15%;">Số Lượng Còn Lại</th>
+                                        <th scope="col" class="pe-4 text-end" style="width: 15%;">Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="book : ${lowStockBooks}">
+                                        <td class="ps-4 fw-bold" th:text="'#' + ${book.id}">#1</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img th:src="${book.image ?: '/images/default-book.png'}" alt="Book cover" style="width: 40px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #333;" />
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold text-light" th:text="${book.title}">Tên bộ truyện</h6>
+                                                    <small class="text-secondary" th:text="${book.author != null ? book.author.authorName : 'Không rõ tác giả'}">Tác giả</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="font-monospace text-secondary" th:text="${book.isbn ?: '-'}">ISBN</td>
+                                        <td>
+                                            <span class="fw-bold text-danger" th:text="${book.quantity} + ' cuốn'">0 cuốn</span>
+                                        </td>
+                                        <td class="pe-4 text-end">
+                                            <span th:if="${book.quantity > 0}" class="badge-warning-custom">Sắp hết hàng</span>
+                                            <span th:if="${book.quantity == 0}" class="badge-danger-custom">Đã cháy hàng</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(lowStockBooks)}">
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            <i class="bi bi-emoji-smile fs-2 d-block mb-2"></i>
+                                            Tất cả đầu truyện đều có lượng tồn kho phong phú và an toàn! (trên 10 cuốn)
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<!-- Nhúng Footer chung -->
+<div th:replace="~{layout :: footer}"></div>
+
+<!-- CDN Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Nhúng File JS độc lập xử lý Biểu đồ -->
+<script th:src="@{/js/librarian_dashboard.js}"></script>
+</body>
+</html>

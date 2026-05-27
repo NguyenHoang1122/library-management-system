@@ -1,105 +1,302 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <title>Thống kê thư viện | Truyện 360</title>
+    <title>Thống kê & Quản lý tài chính | Truyện 360</title>
+    <!-- Nhúng head mẫu chung -->
     <div th:replace="~{layout :: header_head}"></div>
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <!-- CSS kết hợp hợp nhất của Dashboard và Tài chính -->
+    <link rel="stylesheet" th:href="@{/css/admin_dashboard.css}">
 </head>
 <body>
+<!-- Nhúng Header mẫu chung -->
 <div th:replace="~{layout :: header}"></div>
 
 <main class="container-fluid my-5 px-0">
     <div class="row g-0">
-        <!-- Sidebar -->
+        <!-- Sidebar điều hướng bên trái -->
         <div class="col-md-3 col-lg-2">
             <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='dashboard')}"></div>
         </div>
 
-        <!-- Main Content -->
+        <!-- Nội dung chính -->
         <div class="col-md-9 col-lg-10 px-5">
-            <div class="admin-header-waka">
-                <h3 class="mb-0"><i class="bi bi-bar-chart-fill me-2 text-warning"></i> Thống Kê Thư Viện</h3>
-            </div>
             
-            <!-- KPI Cards -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card shadow-sm card-waka border-start border-primary border-4 rounded-3 h-100">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-secondary fw-bold">Tổng doanh thu dự kiến chưa trừ chi phí</h6>
-                                <h3 class="fw-bold mb-0 text-primary" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</h3>
-                            </div>
-                            <i class="bi bi-cash-stack fs-1 text-primary opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow-sm card-waka border-start border-success border-4 rounded-3 h-100">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-secondary fw-bold">Doanh thu thực tế đã trừ chi phí</h6>
-                                <h3 class="fw-bold mb-0 text-success" th:text="${#numbers.formatDecimal(actualRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</h3>
-                            </div>
-                            <i class="bi bi-wallet2 fs-1 text-success opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow-sm card-waka border-start border-warning border-4 rounded-3 h-100">
-                        <div class="card-body d-flex align-items-center justify-content-between">
-                            <div>
-                                <h6 class="text-uppercase mb-2 text-secondary fw-bold">Tổng Users Đăng ký</h6>
-                                <h3 class="fw-bold mb-0 text-warning" th:text="${totalUsers}">0</h3>
-                            </div>
-                            <i class="bi bi-people fs-1 text-warning opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Bộ chuyển đổi Tab cao cấp phong cách Minimalist -->
+            <ul class="nav nav-pills nav-fill mb-4" id="dashboardTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link rounded-4 py-3 fw-bold text-uppercase d-flex align-items-center justify-content-center gap-2" 
+                            id="stats-tab" data-bs-toggle="pill" data-bs-target="#stats-content" type="button" role="tab" aria-controls="stats-content" 
+                            th:classappend="${activeTab == 'stats' ? 'active' : ''}"
+                            th:aria-selected="${activeTab == 'stats'}">
+                        <i class="bi bi-bar-chart-fill"></i> Thống Kê Thư Viện
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link rounded-4 py-3 fw-bold text-uppercase d-flex align-items-center justify-content-center gap-2" 
+                            id="finance-tab" data-bs-toggle="pill" data-bs-target="#finance-content" type="button" role="tab" aria-controls="finance-content"
+                            th:classappend="${activeTab == 'finance' ? 'active' : ''}"
+                            th:aria-selected="${activeTab == 'finance'}">
+                        <i class="bi bi-wallet2"></i> Quản Lý Tài Chính & Ví Ảo
+                    </button>
+                </li>
+            </ul>
 
-            <!-- Charts -->
-            <div class="row">
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm card-waka rounded-3 h-100">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Biểu đồ Doanh Thu</h6>
-                            <select id="revenuePeriod" class="form-select form-select-sm w-auto">
-                                <option value="day">Theo Ngày</option>
-                                <option value="month">Theo Tháng</option>
-                                <option value="year">Theo Năm</option>
-                            </select>
+            <div class="tab-content" id="dashboardTabsContent">
+                
+                <!-- TAB 1: THỐNG KÊ TỔNG QUAN THƯ VIỆN -->
+                <div class="tab-pane fade" id="stats-content" role="tabpanel" aria-labelledby="stats-tab"
+                     th:classappend="${activeTab == 'stats' ? 'show active' : ''}">
+                    
+                    <div class="admin-header-waka mb-4">
+                        <h3 class="mb-0 text-warning"><i class="bi bi-bar-chart-fill me-2"></i> Thống Kê Thư Viện</h3>
+                    </div>
+
+                    <!-- Hàng KPI thẻ thống kê -->
+                    <div class="row mb-4 g-3">
+                        <!-- Tổng Doanh Thu Dự Kiến -->
+                        <div class="col-md-4">
+                            <div class="card shadow-sm card-waka border-start border-primary border-4 rounded-3 h-100">
+                                <div class="card-body d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem;">Tổng Doanh Thu Dự Kiến (Chưa trừ chi phí)</h6>
+                                        <h3 class="fw-bold mb-0 text-primary" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</h3>
+                                    </div>
+                                    <i class="bi bi-cash-stack fs-1 text-primary opacity-50"></i>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body rounded-bottom" style="background: #121212;">
-                            <canvas id="revenueChart" height="250"></canvas>
+                        <!-- Doanh Thu Thực Tế (Lợi Nhuận) -->
+                        <div class="col-md-4">
+                            <div class="card shadow-sm card-waka border-start border-success border-4 rounded-3 h-100">
+                                <div class="card-body d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem;">Doanh Thu Thực Tế (Đã trừ chi phí)</h6>
+                                        <h3 class="fw-bold mb-0 text-success" th:text="${#numbers.formatDecimal(actualRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</h3>
+                                    </div>
+                                    <i class="bi bi-wallet2 fs-1 text-success opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tổng Users -->
+                        <div class="col-md-4">
+                            <div class="card shadow-sm card-waka border-start border-warning border-4 rounded-3 h-100">
+                                <div class="card-body d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem;">Tổng Độc Giả Đăng Ký</h6>
+                                        <h3 class="fw-bold mb-0 text-warning" th:text="${totalUsers}">0</h3>
+                                    </div>
+                                    <i class="bi bi-people fs-1 text-warning opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cặp biểu đồ Thống kê -->
+                    <div class="row">
+                        <!-- Biểu đồ lợi nhuận thực tế (đã chỉnh thành doanh thu thực / lợi nhuận) -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow-sm card-waka rounded-3 h-100">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="fw-bold mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Biểu Đồ Lợi Nhuận Thực Tế (Doanh Thu Thực)</h6>
+                                    <select id="revenuePeriod" class="form-select form-select-sm w-auto bg-dark text-white border-secondary">
+                                        <option value="day">Theo Ngày</option>
+                                        <option value="month">Theo Tháng</option>
+                                        <option value="year">Theo Năm</option>
+                                    </select>
+                                </div>
+                                <div class="card-body rounded-bottom" style="background: #121212; height: 300px; position: relative;">
+                                    <canvas id="revenueChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Biểu đồ User đăng ký mới -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow-sm card-waka rounded-3 h-100">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="fw-bold mb-0"><i class="bi bi-person-lines-fill text-success me-2"></i>Biểu Đồ User Đăng Ký Mới</h6>
+                                    <select id="usersPeriod" class="form-select form-select-sm w-auto bg-dark text-white border-secondary">
+                                        <option value="day">Theo Ngày</option>
+                                        <option value="month">Theo Tháng</option>
+                                        <option value="year">Theo Năm</option>
+                                    </select>
+                                </div>
+                                <div class="card-body rounded-bottom" style="background: #121212; height: 300px; position: relative;">
+                                    <canvas id="usersChart"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm card-waka rounded-3 h-100">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="fw-bold mb-0"><i class="bi bi-person-lines-fill text-success me-2"></i>Biểu đồ User Đăng Ký Mới</h6>
-                            <select id="usersPeriod" class="form-select form-select-sm w-auto">
-                                <option value="day">Theo Ngày</option>
-                                <option value="month">Theo Tháng</option>
-                                <option value="year">Theo Năm</option>
-                            </select>
+
+                <!-- TAB 2: QUẢN LÝ TÀI CHÍNH & VÍ ẢO HỆ THỐNG -->
+                <div class="tab-pane fade" id="finance-content" role="tabpanel" aria-labelledby="finance-tab"
+                     th:classappend="${activeTab == 'finance' ? 'show active' : ''}">
+                    
+                    <div class="admin-header-waka mb-4">
+                        <h3 class="mb-0 text-neon-cyan"><i class="bi bi-wallet2 me-2"></i> Quản Lý Tài Chính & Ví Ảo Hệ Thống</h3>
+                    </div>
+
+                    <!-- Hàng KPI của trang ví tài chính -->
+                    <div class="row mb-4 g-4">
+                        <!-- Số dư ví ảo Admin -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card h-100 shadow-sm finance-card border-start border-info border-4">
+                                <div class="card-body d-flex align-items-center justify-content-between p-4">
+                                    <div>
+                                        <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Số Dư Ví Ảo Admin</h6>
+                                        <h3 class="fw-bold mb-0 text-info" th:text="${#numbers.formatDecimal(balance, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                                    </div>
+                                    <i class="bi bi-wallet2 fs-1 text-info opacity-50"></i>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body rounded-bottom" style="background: #121212;">
-                            <canvas id="usersChart" height="250"></canvas>
+
+                        <!-- Tổng thu tháng này -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card h-100 shadow-sm finance-card border-start border-success border-4">
+                                <div class="card-body d-flex align-items-center justify-content-between p-4">
+                                    <div>
+                                        <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Tổng Thu Tháng Này</h6>
+                                        <h3 class="fw-bold mb-0 text-success" th:text="${#numbers.formatDecimal(revenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                                    </div>
+                                    <i class="bi bi-graph-up-arrow fs-1 text-success opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tổng chi tháng này -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card h-100 shadow-sm finance-card border-start border-danger border-4">
+                                <div class="card-body d-flex align-items-center justify-content-between p-4">
+                                    <div>
+                                        <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Tổng Chi Tháng Này</h6>
+                                        <h3 class="fw-bold mb-0 text-danger" th:text="${#numbers.formatDecimal(expense, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                                    </div>
+                                    <i class="bi bi-graph-down-arrow fs-1 text-danger opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thực thu / Lợi nhuận -->
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card h-100 shadow-sm finance-card border-start border-warning border-4">
+                                <div class="card-body d-flex align-items-center justify-content-between p-4">
+                                    <div>
+                                        <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Thực Thu / Lợi Nhuận</h6>
+                                        <h3 class="fw-bold mb-0 text-warning" th:text="${(netIncome >= 0 ? '+' : '') + #numbers.formatDecimal(netIncome, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                                    </div>
+                                    <i class="bi bi-piggy-bank fs-1 text-warning opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Biểu đồ so sánh Thu Chi -->
+                    <div class="row mb-5">
+                        <div class="col-12">
+                            <div class="chart-container-dark">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h5 class="mb-0 fw-bold"><i class="bi bi-bar-chart-line text-info me-2"></i>Biểu Đồ Xu Hướng Tài Chính (Thu - Chi)</h5>
+                                    <select id="financePeriod" class="form-select form-select-sm w-auto bg-dark text-white border-secondary">
+                                        <option value="day">Theo Ngày (30 ngày qua)</option>
+                                        <option value="month">Theo Tháng (12 tháng qua)</option>
+                                    </select>
+                                </div>
+                                <div style="height: 350px; position: relative;">
+                                    <canvas id="financeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lịch sử giao dịch ví ảo Admin -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history text-success me-2"></i>Lịch Sử Biến Động Số Dư Ví Admin</h5>
+                            </div>
+
+                            <div class="table-responsive shadow-sm">
+                                <table class="table table-waka align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="ps-4">Mã GD</th>
+                                            <th scope="col">Ngày Giao Dịch</th>
+                                            <th scope="col">Loại Hoạt Động</th>
+                                            <th scope="col">Số Tiền</th>
+                                            <th scope="col">Số Dư Sau GD</th>
+                                            <th scope="col">Chi Tiết / Mô Tả</th>
+                                            <th scope="col" class="pe-4 text-end">Tham Chiếu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="tx : ${transactions}">
+                                            <td class="ps-4 fw-bold" th:text="'#' + ${tx.id}">#1</td>
+                                            <td th:text="${#temporals.format(tx.transactionDate, 'dd/MM/yyyy HH:mm:ss')}">28/05/2026 12:00:00</td>
+                                            <td>
+                                                <span th:if="${tx.type == 'IMPORT'}" class="badge bg-secondary badge-tx-type"><i class="bi bi-box-seam me-1"></i>Nhập truyện</span>
+                                                <span th:if="${tx.type == 'BORROW_INCOME'}" class="badge bg-success badge-tx-type"><i class="bi bi-journal-check me-1"></i>Thu mượn truyện</span>
+                                                <span th:if="${tx.type == 'REFUND_EXPENSE'}" class="badge bg-danger badge-tx-type"><i class="bi bi-arrow-counterclockwise me-1"></i>Hoàn cọc</span>
+                                                <span th:if="${tx.type == 'FINE_INCOME'}" class="badge bg-warning badge-tx-type"><i class="bi bi-exclamation-triangle me-1"></i>Thu tiền phạt</span>
+                                                <span th:if="${tx.type == 'MANUAL_ADJUST'}" class="badge bg-dark badge-tx-type"><i class="bi bi-sliders me-1"></i>Điều chỉnh</span>
+                                            </td>
+                                            <td>
+                                                <span th:class="${tx.amount > 0 ? 'badge-finance-inflow' : 'badge-finance-outflow'}" 
+                                                      th:text="${(tx.amount > 0 ? '+' : '') + #numbers.formatDecimal(tx.amount, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                                                    +0 đ
+                                                </span>
+                                            </td>
+                                            <td class="fw-medium text-light" th:text="${#numbers.formatDecimal(tx.balanceAfter, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                            <td class="text-wrap" style="max-width: 300px;" th:text="${tx.description}">Mô tả giao dịch</td>
+                                            <td class="pe-4 text-end">
+                                                <span th:if="${tx.referenceId != null}" class="text-secondary small fw-bold" th:text="'Mã đơn: #' + ${tx.referenceId}">#123</span>
+                                                <span th:if="${tx.referenceId == null}" class="text-muted small">-</span>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(transactions)}">
+                                            <td colspan="7" class="text-center py-5 text-muted">
+                                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                                Chưa có giao dịch tài chính nào được ghi nhận.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Phân trang duy trì trạng thái của Tab Tài chính khi bấm chuyển trang -->
+                            <div th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                                <nav aria-label="Transaction history pagination">
+                                    <ul class="pagination pagination-waka">
+                                        <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                                            <a class="page-link" th:href="@{/admin/dashboard(tab='finance', page=${currentPage - 1})}"><i class="bi bi-chevron-left"></i></a>
+                                        </li>
+                                        <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                                            th:classappend="${currentPage == i ? 'active' : ''}">
+                                            <a class="page-link" th:href="@{/admin/dashboard(tab='finance', page=${i})}" th:text="${i + 1}">1</a>
+                                        </li>
+                                        <li class="page-item" th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                                            <a class="page-link" th:href="@{/admin/dashboard(tab='finance', page=${currentPage + 1})}"><i class="bi bi-chevron-right"></i></a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 </main>
 
+<!-- Nhúng Footer mẫu chung -->
 <div th:replace="~{layout :: footer}"></div>
 
-<!-- Chart.js -->
+<!-- Thư viện vẽ biểu đồ Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script th:src="@{/js/dashboard.js}"></script>
+<!-- Tệp JS điều khiển chung vừa được tạo -->
+<script th:src="@{/js/admin_dashboard.js}"></script>
 </body>
 </html>

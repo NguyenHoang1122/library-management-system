@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Quản lý tài chính & Ví ảo | Truyện 360</title>
+    <!-- Nhúng thẻ head mẫu chung -->
+    <div th:replace="~{layout :: header_head}"></div>
+    <!-- Biểu tượng Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- CSS cho Dashboard chung -->
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+    <!-- CSS tài chính riêng vừa tách ra -->
+    <link rel="stylesheet" th:href="@{/css/finance.css}">
+</head>
+<body>
+<!-- Nhúng Header của layout chung -->
+<div th:replace="~{layout :: header}"></div>
+
+<main class="container-fluid my-5 px-0">
+    <div class="row g-0">
+        <!-- Thanh điều hướng Sidebar bên trái -->
+        <div class="col-md-3 col-lg-2">
+            <div th:replace="~{fragments/sidebar :: common_sidebar(activePage='finance')}"></div>
+        </div>
+
+        <!-- Nội dung chính -->
+        <div class="col-md-9 col-lg-10 px-5">
+            <!-- Tiêu đề trang -->
+            <div class="admin-header-waka mb-4">
+                <h3 class="mb-0"><i class="bi bi-wallet2 me-2 text-neon-cyan"></i> Quản Lý Tài Chính & Ví Ảo Hệ Thống</h3>
+            </div>
+
+            <!-- Hàng thẻ thống kê chỉ số KPI -->
+            <div class="row mb-5 g-4">
+                <!-- Thẻ: Ví ảo của Admin -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card h-100 shadow-sm finance-card border-start border-info border-4">
+                        <div class="card-body d-flex align-items-center justify-content-between p-4">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Số Dư Ví Ảo Admin</h6>
+                                <h3 class="fw-bold mb-0 text-info" th:text="${#numbers.formatDecimal(balance, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                            </div>
+                            <i class="bi bi-wallet2 fs-1 text-info opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ: Tổng thu trong tháng -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card h-100 shadow-sm finance-card border-start border-success border-4">
+                        <div class="card-body d-flex align-items-center justify-content-between p-4">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Tổng Thu Tháng Này</h6>
+                                <h3 class="fw-bold mb-0 text-success" th:text="${#numbers.formatDecimal(revenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                            </div>
+                            <i class="bi bi-graph-up-arrow fs-1 text-success opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ: Tổng chi trong tháng -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card h-100 shadow-sm finance-card border-start border-danger border-4">
+                        <div class="card-body d-flex align-items-center justify-content-between p-4">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Tổng Chi Tháng Này</h6>
+                                <h3 class="fw-bold mb-0 text-danger" th:text="${#numbers.formatDecimal(expense, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                            </div>
+                            <i class="bi bi-graph-down-arrow fs-1 text-danger opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ: Lợi nhuận thực tế -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card h-100 shadow-sm finance-card border-start border-warning border-4">
+                        <div class="card-body d-flex align-items-center justify-content-between p-4">
+                            <div>
+                                <h6 class="text-uppercase mb-2 text-secondary fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;">Thực Thu / Lợi Nhuận</h6>
+                                <h3 class="fw-bold mb-0 text-warning" th:text="${(netIncome >= 0 ? '+' : '') + #numbers.formatDecimal(netIncome, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                            </div>
+                            <i class="bi bi-piggy-bank fs-1 text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khung biểu đồ cột Thu - Chi -->
+            <div class="row mb-5">
+                <div class="col-12">
+                    <div class="chart-container-dark">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="mb-0 fw-bold"><i class="bi bi-bar-chart-line text-info me-2"></i>Biểu Đồ Xu Hướng Tài Chính (Thu - Chi)</h5>
+                            <!-- Bộ lọc thời gian -->
+                            <select id="financePeriod" class="form-select form-select-sm w-auto bg-dark text-white border-secondary">
+                                <option value="day">Theo Ngày (30 ngày qua)</option>
+                                <option value="month">Theo Tháng (12 tháng qua)</option>
+                            </select>
+                        </div>
+                        <div style="height: 350px; position: relative;">
+                            <canvas id="financeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lịch sử biến động ví chi tiết -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history text-success me-2"></i>Lịch Sử Biến Động Số Dư Ví Admin</h5>
+                    </div>
+
+                    <div class="table-responsive shadow-sm">
+                        <table class="table table-waka align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="ps-4">Mã GD</th>
+                                    <th scope="col">Ngày Giao Dịch</th>
+                                    <th scope="col">Loại Hoạt Động</th>
+                                    <th scope="col">Số Tiền</th>
+                                    <th scope="col">Số Dư Sau GD</th>
+                                    <th scope="col">Chi Tiết / Mô Tả</th>
+                                    <th scope="col" class="pe-4 text-end">Tham Chiếu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="tx : ${transactions}">
+                                    <td class="ps-4 fw-bold" th:text="'#' + ${tx.id}">#1</td>
+                                    <td th:text="${#temporals.format(tx.transactionDate, 'dd/MM/yyyy HH:mm:ss')}">28/05/2026 12:00:00</td>
+                                    <td>
+                                        <!-- Thẻ nhãn loại giao dịch bằng tiếng Việt -->
+                                        <span th:if="${tx.type == 'IMPORT'}" class="badge bg-secondary badge-tx-type"><i class="bi bi-box-seam me-1"></i>Nhập truyện</span>
+                                        <span th:if="${tx.type == 'BORROW_INCOME'}" class="badge bg-success badge-tx-type"><i class="bi bi-journal-check me-1"></i>Thu mượn truyện</span>
+                                        <span th:if="${tx.type == 'REFUND_EXPENSE'}" class="badge bg-danger badge-tx-type"><i class="bi bi-arrow-counterclockwise me-1"></i>Hoàn cọc</span>
+                                        <span th:if="${tx.type == 'FINE_INCOME'}" class="badge bg-warning badge-tx-type"><i class="bi bi-exclamation-triangle me-1"></i>Thu tiền phạt</span>
+                                        <span th:if="${tx.type == 'MANUAL_ADJUST'}" class="badge bg-dark badge-tx-type"><i class="bi bi-sliders me-1"></i>Điều chỉnh</span>
+                                    </td>
+                                    <td>
+                                        <!-- Nhãn số tiền (Xanh lá khi thu, Đỏ khi chi) -->
+                                        <span th:class="${tx.amount > 0 ? 'badge-finance-inflow' : 'badge-finance-outflow'}" 
+                                              th:text="${(tx.amount > 0 ? '+' : '') + #numbers.formatDecimal(tx.amount, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                                            +0 đ
+                                        </span>
+                                    </td>
+                                    <td class="fw-medium text-light" th:text="${#numbers.formatDecimal(tx.balanceAfter, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                    <td class="text-wrap" style="max-width: 300px;" th:text="${tx.description}">Mô tả giao dịch</td>
+                                    <td class="pe-4 text-end">
+                                        <span th:if="${tx.referenceId != null}" class="text-secondary small fw-bold" th:text="'Mã đơn: #' + ${tx.referenceId}">#123</span>
+                                        <span th:if="${tx.referenceId == null}" class="text-muted small">-</span>
+                                    </td>
+                                </tr>
+                                <!-- Trạng thái rỗng khi chưa có dữ liệu giao dịch -->
+                                <tr th:if="${#lists.isEmpty(transactions)}">
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                        Chưa có giao dịch tài chính nào được ghi nhận.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Phân trang lịch sử -->
+                    <div th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+                        <nav aria-label="Transaction history pagination">
+                            <ul class="pagination pagination-waka">
+                                <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/admin/finance(page=${currentPage - 1})}"><i class="bi bi-chevron-left"></i></a>
+                                </li>
+                                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                                    th:classappend="${currentPage == i ? 'active' : ''}">
+                                    <a class="page-link" th:href="@{/admin/finance(page=${i})}" th:text="${i + 1}">1</a>
+                                </li>
+                                <li class="page-item" th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                                    <a class="page-link" th:href="@{/admin/finance(page=${currentPage + 1})}"><i class="bi bi-chevron-right"></i></a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Nhúng Footer của layout chung -->
+<div th:replace="~{layout :: footer}"></div>
+
+<!-- Nhúng thư viện Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Nhúng Javascript xử lý vẽ biểu đồ tài chính riêng vừa tách ra -->
+<script th:src="@{/js/finance.js}"></script>
+</body>
+</html>

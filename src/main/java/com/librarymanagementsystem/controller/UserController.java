@@ -24,12 +24,44 @@ import java.util.Map;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.librarymanagementsystem.service.user.AdminWalletService;
+
 @Controller
 @RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
     private final VNPayService vnPayService;
+    private final AdminWalletService adminWalletService;
+
+    // Xử lý nạp/rút tiền ví ảo hệ thống dành cho Admin
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/profile/adjust-wallet")
+    public String adjustAdminWallet(@RequestParam Double amount,
+                                    @RequestParam String action,
+                                    @RequestParam String reason,
+                                    RedirectAttributes redirectAttributes) {
+        if (amount == null || amount <= 0) {
+            redirectAttributes.addFlashAttribute("error", "Số tiền không hợp lệ");
+            return "redirect:/user/profile";
+        }
+        
+        String cleanReason = (reason != null && !reason.trim().isEmpty()) ? reason.trim() : 
+                (action.equals("deposit") ? "Nạp bổ sung quỹ hệ thống" : "Rút quỹ chi tiêu hệ thống");
+
+        try {
+            double finalAmount = action.equals("deposit") ? amount : -amount;
+            adminWalletService.logTransaction(finalAmount, "MANUAL_ADJUST", cleanReason, null);
+            
+            String msg = action.equals("deposit") ? 
+                    "Đã nạp quỹ hệ thống thành công " + String.format("%,.0f", amount) + " đ." :
+                    "Đã rút quỹ hệ thống thành công " + String.format("%,.0f", amount) + " đ.";
+            redirectAttributes.addFlashAttribute("message", msg);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+        }
+        return "redirect:/user/profile";
+    }
 
     // Hiển thị thông tin hồ sơ chi tiết (Profile) của người dùng đang đăng nhập hiện tại
     @GetMapping("/profile")

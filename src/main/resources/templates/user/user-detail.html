@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <title>Thông Tin Cá Nhân | Truyện 360</title>
@@ -61,6 +61,18 @@
                                 <div class="col-md-6">
                                     <div class="info-label">Tên đăng nhập</div>
                                     <div class="info-value" th:text="${user.userName}">username</div>
+                                </div>
+                                <div sec:authorize="hasRole('ADMIN')" class="col-md-6">
+                                    <div class="info-label">Số dư quỹ hệ thống (Ví ảo Admin)</div>
+                                    <div class="info-value text-info fw-bold d-flex align-items-center">
+                                        <span th:text="|${#numbers.formatDecimal(user.balance != null ? user.balance : 0, 0, 'COMMA', 0, 'POINT')} đ|">0 đ</span>
+                                        <button type="button" class="btn btn-sm btn-outline-success ms-3 rounded-pill" data-bs-toggle="modal" data-bs-target="#adminWalletModal" onclick="openAdminWalletModal('deposit')">
+                                            <i class="bi bi-plus-circle me-1"></i> Nạp quỹ
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning ms-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#adminWalletModal" onclick="openAdminWalletModal('withdraw')">
+                                            <i class="bi bi-dash-circle me-1"></i> Rút quỹ
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-md-6" style="display: none !important;">
                                     <div class="info-label">Số dư ví (VNĐ)</div>
@@ -287,9 +299,73 @@
     </div>
 </div>
 
+<!-- Modal Thao Tác Ví Ảo Hệ Thống (Dành Cho Admin) -->
+<div sec:authorize="hasRole('ADMIN')" class="modal fade" id="adminWalletModal" tabindex="-1" aria-labelledby="adminWalletModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-secondary border-opacity-25 shadow-lg" style="background: #1a1a1a; border-radius: 16px; border: 1px solid #333;">
+            <div class="modal-header border-secondary border-opacity-25 py-3">
+                <h5 class="modal-title text-light fw-bold" id="adminWalletModalLabel">
+                    <i class="bi bi-wallet2 text-info me-2"></i>Thao Tác Quỹ Hệ Thống
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:action="@{/user/profile/adjust-wallet}" method="post">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input type="hidden" name="action" id="adminWalletAction" value="deposit" />
+
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="adminAmount" class="form-label small text-secondary fw-bold">SỐ TIỀN CẦN THAO TÁC (VNĐ)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-secondary" style="border-radius: 10px 0 0 10px;"><i class="bi bi-cash"></i></span>
+                            <input type="number" name="amount" id="adminAmount" class="form-control bg-dark text-white border-secondary" style="border-radius: 0 10px 10px 0;" min="1000" step="1000" required placeholder="Nhập số tiền..." />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="adminReason" class="form-label small text-secondary fw-bold">LÝ DO THỰC HIỆN GIAO DỊCH</label>
+                        <textarea name="reason" id="adminReason" class="form-control bg-dark text-white border-secondary" style="border-radius: 10px;" rows="3" required placeholder="Nhập lý do điều chỉnh ví..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-secondary border-opacity-25 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-info rounded-pill px-5 fw-bold" id="btnAdminWalletSubmit">
+                        XÁC NHẬN GIAO DỊCH
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div th:replace="~{layout :: footer}"></div>
 <script th:src="@{/js/user-detail.js}"></script>
 <script>
+    // Hàm JS ở mức toàn cục để cập nhật Modal động
+    function openAdminWalletModal(action) {
+        const actionField = document.getElementById('adminWalletAction');
+        const modalTitle = document.getElementById('adminWalletModalLabel');
+        const submitBtn = document.getElementById('btnAdminWalletSubmit');
+        const amountInput = document.getElementById('adminAmount');
+        const reasonInput = document.getElementById('adminReason');
+
+        actionField.value = action;
+        amountInput.value = '';
+        reasonInput.value = '';
+
+        if (action === 'deposit') {
+            modalTitle.innerHTML = '<i class="bi bi-plus-circle text-success me-2"></i>Nạp Thêm Quỹ Hệ Thống';
+            submitBtn.className = 'btn btn-success rounded-pill px-5 fw-bold';
+            submitBtn.innerText = 'XÁC NHẬN NẠP QUỸ';
+            reasonInput.placeholder = 'Nhập lý do nạp quỹ (ví dụ: Bổ sung ngân sách nhập truyện quý II/2026)...';
+        } else {
+            modalTitle.innerHTML = '<i class="bi bi-dash-circle text-warning me-2"></i>Rút Quỹ Hệ Thống';
+            submitBtn.className = 'btn btn-warning text-dark rounded-pill px-5 fw-bold';
+            submitBtn.innerText = 'XÁC NHẬN RÚT QUỸ';
+            reasonInput.placeholder = 'Nhập lý do rút quỹ (ví dụ: Rút tiền mặt chi phí vận chuyển, sửa chữa thư viện)...';
+        }
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
 
         // Logic Address Selects (Provinces API esgoo.net)

@@ -19,6 +19,7 @@ import com.librarymanagementsystem.repository.book.BookImportHistoryRepository;
 import com.librarymanagementsystem.repository.user.UserRepository;
 import com.librarymanagementsystem.service.book.BookService;
 import com.librarymanagementsystem.service.notification.NotificationService;
+import com.librarymanagementsystem.service.user.AdminWalletService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,6 +48,7 @@ public class BookServiceImpl implements BookService {
     private final BookImportHistoryRepository bookImportHistoryRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final AdminWalletService adminWalletService;
 
     @Value("${file.upload-dir}")
     private String upload;
@@ -93,13 +95,11 @@ public class BookServiceImpl implements BookService {
 
     private void deductAdminWallet(double amount, String bookTitle, int quantity) {
         if (amount <= 0) return;
+        adminWalletService.logTransaction(-amount, "IMPORT", String.format("Chi phí nhập %d cuốn truyện '%s'", quantity, bookTitle), null);
+
         List<User> admins = userRepository.findByRoleRoleName(RoleStatus.ROLE_ADMIN);
         if (!admins.isEmpty()) {
             User admin = admins.get(0);
-            double currentBalance = admin.getBalance() != null ? admin.getBalance() : 0.0;
-            admin.setBalance(currentBalance - amount);
-            userRepository.save(admin);
-
             java.text.NumberFormat nfAdmin = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
             String notifContent = String.format("Tài khoản của bạn đã bị trừ %s đ để thanh toán phí nhập %d cuốn truyện '%s'.", nfAdmin.format(amount), quantity, bookTitle);
             notificationService.sendNotification(admin, "Trừ tiền nhập truyện", notifContent, null);
@@ -301,6 +301,9 @@ public class BookServiceImpl implements BookService {
 
         // Upload ảnh
         if (bookDTO.getImageFile() != null && !bookDTO.getImageFile().isEmpty()) {
+            // Xác thực file ảnh (MIME type và extension) bảo mật
+            com.librarymanagementsystem.util.ImageUploadValidator.validateImage(bookDTO.getImageFile());
+
             String fileName = UUID.randomUUID().toString() + "_" + bookDTO.getImageFile().getOriginalFilename();
             Path path = Paths.get(upload + fileName);
             try {

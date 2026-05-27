@@ -1,0 +1,161 @@
+/* Tệp CSS hợp nhất cho Dashboard và Tài chính */
+
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+.admin-header-waka {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+/* Kiểu dáng các thẻ Card Waka */
+.card-waka {
+    background: #1a1a1a !important;
+    border: 1px solid #333 !important;
+    color: #e0e0e0;
+}
+.card-waka .card-header {
+    background: #252525 !important;
+    border-bottom: 1px solid #333 !important;
+}
+.card-waka .card-header h6 {
+    color: #16a085;
+}
+
+/* Kiểu dáng các thẻ Tài chính */
+.finance-card {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    background: #1a1a1a;
+    border: 1px solid #2d2d2d;
+    border-radius: 12px !important;
+    overflow: hidden;
+}
+.finance-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    border-color: #16a085;
+}
+
+/* Container chứa biểu đồ */
+.chart-container-dark {
+    background: #141414;
+    border: 1px solid #2d2d2d;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+/* Bảng lịch sử giao dịch */
+.transaction-table {
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #2d2d2d;
+}
+.transaction-table th {
+    background: #252525 !important;
+    color: #16a085 !important;
+    font-weight: 600;
+    border-bottom: 2px solid #333 !important;
+}
+.transaction-table td {
+    color: #ccc;
+    border-bottom: 1px solid #262626 !important;
+    vertical-align: middle;
+}
+.transaction-table tr:hover {
+    background-color: #222 !important;
+}
+
+/* Nhãn dòng tiền thu (màu xanh lá) */
+.badge-finance-inflow {
+    background-color: rgba(46, 204, 113, 0.15) !important;
+    color: #2ecc71 !important;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Nhãn dòng tiền chi (màu đỏ) */
+.badge-finance-outflow {
+    background-color: rgba(231, 76, 60, 0.15) !important;
+    color: #e74c3c !important;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Nhãn loại giao dịch */
+.badge-tx-type {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Phân trang kiểu Waka */
+.pagination-waka .page-link {
+    background-color: #1a1a1a;
+    border-color: #333;
+    color: #ccc;
+}
+.pagination-waka .page-link:hover {
+    background-color: #252525;
+    color: #16a085;
+    border-color: #16a085;
+}
+.pagination-waka .page-item.active .page-link {
+    background-color: #16a085;
+    border-color: #16a085;
+    color: white;
+}
+
+/* Chữ phát sáng Neon Cyan */
+.text-neon-cyan {
+    color: #00f2fe;
+    text-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+}
+
+/* Định dạng cấu trúc Tabs */
+#dashboardTabs {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #333 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+}
+
+.nav-pills .nav-link {
+    color: #888;
+    background: transparent !important;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+    border-radius: 0 !important;
+    margin-bottom: -1px; /* Đè khít lên đường kẻ viền dưới của container */
+}
+
+.nav-pills .nav-link:hover {
+    color: #16a085;
+}
+
+.nav-pills .nav-link.active {
+    background-color: transparent !important;
+    color: #16a085 !important;
+    border-bottom: 3px solid #16a085 !important;
+    box-shadow: none !important;
+}
+
+/* Gỡ bỏ hoàn toàn pseudo-element của layout.css chung trên thanh tab này */
+#dashboardTabs .nav-link.active::after {
+    display: none !important;
+    content: none !important;
+}

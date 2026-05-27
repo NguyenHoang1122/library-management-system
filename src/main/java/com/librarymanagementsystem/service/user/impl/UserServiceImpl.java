@@ -111,6 +111,9 @@ public class UserServiceImpl implements UserService {
 
         // Upload ảnh đại diện nếu có
         if (userDTO.getImageFile() != null && !userDTO.getImageFile().isEmpty()) {
+            // Xác thực file ảnh (MIME type và extension) bảo mật
+            com.librarymanagementsystem.util.ImageUploadValidator.validateImage(userDTO.getImageFile());
+
             // Xóa ảnh cũ nếu tồn tại
             if (user.getImage() != null && !user.getImage().isEmpty()) {
                 try {

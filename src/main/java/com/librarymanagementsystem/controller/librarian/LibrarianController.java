@@ -1,5 +1,6 @@
 package com.librarymanagementsystem.controller.librarian;
 
+import com.librarymanagementsystem.model.book.Book;
 import com.librarymanagementsystem.model.borrow.BorrowItem;
 import com.librarymanagementsystem.model.borrow.BorrowRequest;
 import com.librarymanagementsystem.model.borrow.BorrowTransaction;
@@ -20,11 +21,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import com.librarymanagementsystem.service.dashboard.DashboardService;
 
 @Controller
 @RequestMapping("/librarian")
@@ -35,6 +35,7 @@ public class LibrarianController {
     private final BorrowService borrowService;
     private final UserService userService;
     private final BookRepository bookRepository;
+    private final DashboardService dashboardService;
 
     //danh sách các yêu cầu mượn truyện đang chờ duyệt
     @GetMapping("/borrows")
@@ -425,5 +426,17 @@ public class LibrarianController {
             return "redirect:/librarian/direct-borrow";
         }
         return "redirect:/librarian/active-borrows/user/" + userId;
+    }
+
+    // Hiển thị Trang thống kê nghiệp vụ vận hành dành riêng cho Thủ thư (Librarian Dashboard)
+    @GetMapping("/dashboard")
+    public String viewLibrarianDashboard(Model model) {
+        // Tách biệt toàn bộ logic xử lý nghiệp vụ sang tầng Service
+        Map<String, Object> dashboardData = dashboardService.getLibrarianDashboardData();
+        
+        // Nạp tất cả dữ liệu từ Service vào Model cho Thymeleaf hiển thị
+        model.addAllAttributes(dashboardData);
+
+        return "librarian/dashboard";
     }
 }
