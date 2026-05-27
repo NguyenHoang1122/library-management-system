@@ -293,26 +293,8 @@ public class LibrarianController {
             data.put("isOverdue", borrowService.isOverdue(borrow.getId()));
             data.put("lateFine", borrowService.calculateLateFine(borrow.getId()));
             
-            Map<Long, Map<String, Object>> grouped = new HashMap<>();
-            for (BorrowItem item : borrow.getItems()) {
-                Long bookId = item.getBookCopy().getBook().getId();
-                if (!grouped.containsKey(bookId)) {
-                    Map<String, Object> groupInfo = new HashMap<>();
-                    groupInfo.put("book", item.getBookCopy().getBook());
-                    groupInfo.put("totalCount", 0);
-                    groupInfo.put("returnedCount", 0);
-                    groupInfo.put("unreturnedIds", new ArrayList<Long>());
-                    grouped.put(bookId, groupInfo);
-                }
-                Map<String, Object> groupInfo = grouped.get(bookId);
-                groupInfo.put("totalCount", (int) groupInfo.get("totalCount") + 1);
-                if (item.getReturnDate() != null) {
-                    groupInfo.put("returnedCount", (int) groupInfo.get("returnedCount") + 1);
-                } else {
-                    ((List<Long>) groupInfo.get("unreturnedIds")).add(item.getId());
-                }
-            }
-            data.put("groupedItems", new ArrayList<>(grouped.values()));
+            List<Map<String, Object>> groupedItems = borrowService.getGroupedItemsForTransaction(borrow.getId());
+            data.put("groupedItems", groupedItems);
             
             data.put("itemCount", borrow.getItems().size());
             return data;

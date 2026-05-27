@@ -4,7 +4,7 @@ import com.librarymanagementsystem.model.book.Wishlist;
 import com.librarymanagementsystem.model.borrow.BorrowRequestItem;
 import com.librarymanagementsystem.model.borrow.status.RequestStatus;
 import com.librarymanagementsystem.model.user.User;
-import com.librarymanagementsystem.repository.borrow.BorrowTransactionRepository;
+
 import com.librarymanagementsystem.service.user.UserService;
 import com.librarymanagementsystem.service.wishlist.WishlistService;
 import com.librarymanagementsystem.service.borrow.BorrowService;
@@ -31,7 +31,6 @@ import java.util.ArrayList;
 public class WishlistController {
     private final WishlistService wishlistService;
     private final UserService userService;
-    private final BorrowTransactionRepository borrowTransactionRepository;
     private final BorrowService borrowService;
 
     @GetMapping
@@ -45,22 +44,11 @@ public class WishlistController {
         model.addAttribute("totalWishlists", wishlists.size());
 
         // Lấy danh sách truyện đang được mượn
-        List<Long> borrowedBookIds = borrowTransactionRepository
-                .findBorrowedBookIdsByUser(userId);
+        List<Long> borrowedBookIds = borrowService.getBorrowedBookIdsByUser(userId);
         model.addAttribute("borrowedBookIds", borrowedBookIds);
 
         // Lấy danh sách truyện đang chờ duyệt mượn
-        List<Long> pendingBookIds = new ArrayList<>();
-        List<BorrowRequest> userRequests = borrowService.getUserBorrowRequests(userId);
-        if (userRequests != null) {
-            for (BorrowRequest req : userRequests) {
-                if (req.getRequestStatus() == RequestStatus.PENDING) {
-                    for (BorrowRequestItem item : req.getBorrowRequestItems()) {
-                        pendingBookIds.add(item.getBook().getId());
-                    }
-                }
-            }
-        }
+        List<Long> pendingBookIds = borrowService.getPendingBookIdsByUser(userId);
         model.addAttribute("pendingBookIds", pendingBookIds);
 
         return "wishlist/my-wishlist";

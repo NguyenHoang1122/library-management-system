@@ -44,4 +44,8 @@ public interface UserService {
 
     // Tự động xóa vĩnh viễn các user
     void permanentlyDeleteOldUsers();
+    //nap tiền
+    Double deposit(Long userId, Double amount);
+    //rut tiền
+    Double withdraw(Long userId, Double amount);
 }

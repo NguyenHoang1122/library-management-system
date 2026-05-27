@@ -9,6 +9,8 @@ import com.librarymanagementsystem.repository.book.BookRepository;
 import com.librarymanagementsystem.repository.book.SensitiveWordRepository;
 import com.librarymanagementsystem.repository.user.UserRepository;
 import com.librarymanagementsystem.service.book.BookCommentService;
+import com.librarymanagementsystem.service.book.GeminiService;
+import com.librarymanagementsystem.service.book.SystemSettingService;
 import com.librarymanagementsystem.service.notification.NotificationService;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
@@ -33,6 +35,8 @@ public class BookCommentServiceImpl implements BookCommentService {
     private final UserRepository userRepository;
     private final SensitiveWordRepository sensitiveWordRepository;
     private final NotificationService notificationService;
+    private final GeminiService geminiService;
+    private final SystemSettingService systemSettingService;
 
     @PostConstruct
     public void initSensitiveWords() {
@@ -58,6 +62,56 @@ public class BookCommentServiceImpl implements BookCommentService {
         }
     }
 
+    private String applyManualFilter(String text) {
+        List<SensitiveWord> sensitiveWords = sensitiveWordRepository.findAll();
+        String filtered = text;
+        for (SensitiveWord sw : sensitiveWords) {
+            String word = sw.getWord();
+            filtered = filtered.replaceAll("(?i)\\b" + word + "\\b", "****");
+        }
+        return filtered;
+    }
+
+    private String moderateContent(String content, BookComment comment) {
+        if (systemSettingService.isAiModerationEnabled()) {
+            try {
+                String apiKey = systemSettingService.getAiApiKey();
+                String action = systemSettingService.getAiModerationAction();
+
+                GeminiService.ModerationResult result = geminiService.moderateText(content, apiKey);
+                if (result.isSensitive()) {
+                    if ("BLOCK".equalsIgnoreCase(action)) {
+                        throw new RuntimeException("Bình luận chứa nội dung không phù hợp: " + result.getReason());
+                    } else if ("HIDE".equalsIgnoreCase(action)) {
+                        comment.setHidden(true);
+                        return result.getCensoredText();
+                    } else { // CENSOR
+                        // Auto-learn new sensitive words!
+                        for (String word : result.getSensitiveWordsFound()) {
+                            if (word != null && !word.trim().isEmpty()) {
+                                String cleanWord = word.trim().toLowerCase();
+                                if (!sensitiveWordRepository.existsByWordIgnoreCase(cleanWord)) {
+                                    sensitiveWordRepository.save(new SensitiveWord(null, cleanWord));
+                                }
+                            }
+                        }
+                        return result.getCensoredText();
+                    }
+                } else {
+                    return result.getCensoredText();
+                }
+            } catch (Exception e) {
+                if (e.getMessage() != null && e.getMessage().contains("Bình luận chứa nội dung không phù hợp")) {
+                    throw e;
+                }
+                // Fallback to manual filter if AI fails
+                return applyManualFilter(content);
+            }
+        } else {
+            return applyManualFilter(content);
+        }
+    }
+
     @Override
     public BookComment addComment(Long bookId, Long userId, String content) {
         if (content == null || content.trim().isEmpty()) {
@@ -69,21 +123,14 @@ public class BookCommentServiceImpl implements BookCommentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        // Filter sensitive words
-        List<SensitiveWord> sensitiveWords = sensitiveWordRepository.findAll();
-        String filteredContent = content;
-        for (SensitiveWord sw : sensitiveWords) {
-            String word = sw.getWord();
-            // Case insensitive replacement using regex
-            filteredContent = filteredContent.replaceAll("(?i)\\b" + word + "\\b", "****");
-        }
-
         BookComment comment = new BookComment();
         comment.setBook(book);
         comment.setUser(user);
-        comment.setContent(filteredContent);
         comment.setHidden(false);
         comment.setCreatedDate(LocalDateTime.now());
+
+        String filteredContent = moderateContent(content, comment);
+        comment.setContent(filteredContent);
 
         return bookCommentRepository.save(comment);
     }
@@ -118,14 +165,7 @@ public class BookCommentServiceImpl implements BookCommentService {
             throw new RuntimeException("Nội dung bình luận không được để trống.");
         }
 
-        // Lọc từ nhạy cảm
-        List<SensitiveWord> sensitiveWords = sensitiveWordRepository.findAll();
-        String filteredContent = newContent;
-        for (SensitiveWord sw : sensitiveWords) {
-            String word = sw.getWord();
-            filteredContent = filteredContent.replaceAll("(?i)\\b" + word + "\\b", "****");
-        }
-
+        String filteredContent = moderateContent(newContent, comment);
         comment.setContent(filteredContent);
         comment.setEdited(true);
         bookCommentRepository.save(comment);

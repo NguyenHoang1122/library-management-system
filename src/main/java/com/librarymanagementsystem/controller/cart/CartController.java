@@ -4,7 +4,6 @@ import com.librarymanagementsystem.model.cart.Cart;
 import com.librarymanagementsystem.model.user.User;
 import com.librarymanagementsystem.service.cart.CartService;
 import com.librarymanagementsystem.service.user.UserService;
-import com.librarymanagementsystem.service.shipping.ShippingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Controller
@@ -25,9 +23,6 @@ public class CartController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private ShippingService shippingService;
 
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -42,29 +37,10 @@ public class CartController {
         User currentUser = getCurrentUser();
         if (currentUser == null) return "redirect:/login";
 
-        Cart cart = cartService.getCartByUserId(currentUser.getId());
-        model.addAttribute("cart", cart);
-        
-        int totalQuantity = cart.getItems().stream()
-                .mapToInt(item -> item.getQuantity() != null ? item.getQuantity() : 0)
-                .sum();
-        model.addAttribute("totalQuantity", totalQuantity);
+        Map<String, Object> summary = cartService.getCartSummary(currentUser.getId());
+        model.addAllAttributes(summary);
 
-        double totalDeposit = cart.getItems().stream()
-                .mapToDouble(item -> (item.getBook().getDepositPrice() != null ? item.getBook().getDepositPrice() : 0.0) * item.getQuantity())
-                .sum();
-        model.addAttribute("totalDeposit", totalDeposit);
-
-        // Tính phí giao hàng dự kiến
-        double shippingFee = 0.0;
-        if (currentUser.getAddress() != null && !currentUser.getAddress().isEmpty()) {
-             double distance = shippingService.calculateDistance(currentUser.getAddress());
-             shippingFee = shippingService.calculateShippingFee(distance, totalQuantity);
-        }
-        model.addAttribute("shippingFee", shippingFee);
-        model.addAttribute("totalAmount", totalDeposit + shippingFee);
-
-        return "user/cart"; // Thymeleaf template location
+        return "cart/cart"; // Thymeleaf template location
     }
 
     @PostMapping("/add")

@@ -46,37 +46,30 @@ public class BookController {
     private final BorrowService borrowService;
 
     // Hỗ trợ điền danh sách truyện
-    private void populateListModel(Model model, String title, Long category,
-                                   int page, String sortBy, Authentication authentication) {
+    private void populateListModel(Model model, String query, Long category, int page, String sortBy, Authentication authentication) {
         Sort sort = Sort.unsorted();
-        if ("author".equals(sortBy)) {
-            sort = Sort.by(Sort.Direction.ASC, "author.name");
-        } else if ("category".equals(sortBy)) {
-            sort = Sort.by(Sort.Direction.ASC, "categories.categoryName");
-        } else if ("quantity".equals(sortBy)) {
-            sort = Sort.by(Sort.Direction.DESC, "quantity");
-        }
+        if ("author".equals(sortBy)) sort = Sort.by("author.name");
+        else if ("category".equals(sortBy)) sort = Sort.by("categories.categoryName");
+        else if ("quantity".equals(sortBy)) sort = Sort.by(Sort.Direction.DESC, "quantity");
 
-        if (page < 1) page = 1;
-        Pageable pageable = PageRequest.of(page - 1, 10, sort);
-
-        Page<Book> bookPage;
-        if (title != null && !title.isEmpty()) {
-            bookPage = bookService.searchBooks(title, pageable);
-        } else if (category != null) {
-            bookPage = bookService.getBooksByCategory(category, pageable);
-        } else {
-            bookPage = bookService.getAllBooks(pageable);
-        }
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), 10, sort);
+        Page<Book> bookPage = (query != null && !query.trim().isEmpty()) 
+                ? bookService.searchBooks(query, pageable)
+                : (category != null ? bookService.getBooksByCategory(category, pageable) : bookService.getAllBooks(pageable));
 
         model.addAttribute("books", bookPage.getContent());
         model.addAttribute("currentPage", bookPage.getNumber() + 1);
-        model.addAttribute("totalPages", bookPage.getTotalPages() > 0 ? bookPage.getTotalPages() : 1);
+        model.addAttribute("totalPages", Math.max(1, bookPage.getTotalPages()));
         model.addAttribute("totalItems", bookPage.getTotalElements());
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("category", category);
+        if (query != null && !query.trim().isEmpty()) {
+            model.addAttribute("searchQuery", query);
+        }
 
-        addUserDataToModel(model, authentication);
+        if (authentication != null && authentication.isAuthenticated()) {
+            userService.findByUserName(authentication.getName()).ifPresent(user -> model.addAttribute("userId", user.getId()));
+        }
     }
 
     // Danh sách truyện
@@ -96,11 +89,8 @@ public class BookController {
             model.addAttribute("editBookDTO", new BookDTO());
         }
 
-        boolean isAdminOrLibrarian = false;
-        if (authentication != null && authentication.isAuthenticated()) {
-            isAdminOrLibrarian = authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_LIBRARIAN"));
-        }
+        boolean isAdminOrLibrarian = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_LIBRARIAN"));
 
         return isAdminOrLibrarian ? "book/list" : "book/user-list";
     }
@@ -112,47 +102,12 @@ public class BookController {
                               @RequestParam(required = false) String sortBy,
                               Model model,
                               Authentication authentication) {
-        Sort sort = Sort.unsorted();
-        if ("author".equals(sortBy)) {
-            sort = Sort.by(Sort.Direction.ASC, "author.name");
-        } else if ("category".equals(sortBy)) {
-            sort = Sort.by(Sort.Direction.ASC, "categories.categoryName");
-        } else if ("quantity".equals(sortBy)) {
-            sort = Sort.by(Sort.Direction.DESC, "quantity");
-        }
+        populateListModel(model, query, null, page, sortBy, authentication);
 
-        if (page < 1) page = 1;
-        Pageable pageable = PageRequest.of(page - 1, 10, sort);
-
-        Page<Book> bookPage = bookService.searchBooks(query, pageable);
-
-        model.addAttribute("books", bookPage.getContent());
-        model.addAttribute("searchQuery", query);
-        model.addAttribute("currentPage", bookPage.getNumber() + 1);
-        model.addAttribute("totalPages", bookPage.getTotalPages() > 0 ? bookPage.getTotalPages() : 1);
-        model.addAttribute("totalItems", bookPage.getTotalElements());
-        model.addAttribute("sortBy", sortBy);
-        
-        addUserDataToModel(model, authentication);
-
-        boolean isAdminOrLibrarian = false;
-        if (authentication != null && authentication.isAuthenticated()) {
-            isAdminOrLibrarian = authentication.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_LIBRARIAN"));
-        }
+        boolean isAdminOrLibrarian = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_LIBRARIAN"));
 
         return isAdminOrLibrarian ? "book/list" : "book/user-list";
-    }
-
-    // đưa tt user vào model
-    private void addUserDataToModel(Model model, Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated()) {
-            String userName = authentication.getName();
-            User user = userService.findByUserName(userName).orElse(null);
-            if (user != null) {
-                model.addAttribute("userId", user.getId());
-            }
-        }
     }
 
 

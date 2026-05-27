@@ -9,4 +9,5 @@ public interface CartService {
     void removeFromCart(Long userId, Long bookId);
     void clearCart(Long userId);
     Integer getCartItemCount(Long userId);
+    java.util.Map<String, Object> getCartSummary(Long userId);
 }

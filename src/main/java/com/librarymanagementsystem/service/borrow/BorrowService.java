@@ -20,6 +20,8 @@ public interface BorrowService {
 
     BorrowRequest createBorrowRequest(Long userId, Long bookId, String note);
 
+    List<Long> getBorrowedBookIdsByUser(Long userId);
+
     //danh sách yêu cầu mượn của user
     List<BorrowRequest> getUserBorrowRequests(Long userId);
 
@@ -110,4 +112,16 @@ public interface BorrowService {
     
     // User hủy yêu cầu trả sách
     void cancelReturnRequest(Long requestId, Long userId);
+
+    org.springframework.data.domain.Page<com.librarymanagementsystem.model.borrow.dto.CombinedHistoryDTO> getCombinedBorrowHistory(Long userId, String keyword, Long bookId, String statusFilter, String sortOption, org.springframework.data.domain.Pageable pageable);
+
+    java.util.Map<String, Object> getBorrowRequestDetailForUser(Long requestId, Long userId);
+
+    java.util.List<java.util.Map<String, Object>> getReturnRequestDetails(Long requestId);
+
+    java.util.List<java.util.Map<String, Object>> getActiveBooksGrouped(Long userId);
+
+    java.util.List<java.util.Map<String, Object>> getGroupedItemsForTransaction(Long transactionId);
+
+    java.util.List<Long> getPendingBookIdsByUser(Long userId);
 }

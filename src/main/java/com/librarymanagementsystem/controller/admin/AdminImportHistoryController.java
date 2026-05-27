@@ -1,7 +1,7 @@
 package com.librarymanagementsystem.controller.admin;
 
 import com.librarymanagementsystem.model.book.BookImportHistory;
-import com.librarymanagementsystem.repository.book.BookImportHistoryRepository;
+import com.librarymanagementsystem.service.book.BookImportHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,7 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN')")
 public class AdminImportHistoryController {
 
-    private final BookImportHistoryRepository bookImportHistoryRepository;
+    private final BookImportHistoryService bookImportHistoryService;
 
     @GetMapping("/import-history")
     public String viewImportHistory(
@@ -28,7 +28,7 @@ public class AdminImportHistoryController {
             @RequestParam(defaultValue = "10") int size,
             Model model) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<BookImportHistory> historyPage = bookImportHistoryRepository.findAllByOrderByImportDateDesc(pageable);
+        Page<BookImportHistory> historyPage = bookImportHistoryService.getImportHistory(pageable);
         model.addAttribute("historyPage", historyPage);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", historyPage.getTotalPages());
