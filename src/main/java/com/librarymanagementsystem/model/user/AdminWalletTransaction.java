@@ -28,13 +28,12 @@ public class AdminWalletTransaction {
     private BigDecimal amount; // Số tiền giao dịch: Dương nếu là Thu, Âm nếu là Chi
 
     @Column(nullable = false, precision = 15, scale = 2)
-    @Max(value = 1000000000, message = "Số dư sau giao dịch không được vượt quá 1 tỷ VNĐ")
+    @Max(value = 2000000000, message = "Số dư sau giao dịch không được vượt quá 1 tỷ VNĐ")
     @Min(value = 0, message = "Số dư không được nhỏ hơn 0")
     private BigDecimal balanceAfter; // Số dư ví ảo sau khi thực hiện giao dịch này
 
     @Column(nullable = false)
-    private String type; // Loại hoạt động: IMPORT (Nhập truyện), BORROW_INCOME (Thu mượn truyện), REFUND_EXPENSE (Hoàn cọc), FINE_INCOME (Phạt), MANUAL_ADJUST (Điều chỉnh)
-
+    private String type; // Loại hoạt động: IMPORT (Nhập truyện), BORROW_INCOME (Thu mượn truyện), REFUND_EXPENSE (Hoàn cọc), FINE_INCOME (Phạt), MANUAL_ADJUST (Điều chỉnh)3
     @Column(length = 500)
     private String description; // Mô tả chi tiết giao dịch
 
